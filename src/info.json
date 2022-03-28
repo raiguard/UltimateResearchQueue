@@ -1,0 +1,14 @@
+{
+  "name": "UltimateResearchQueue",
+  "version": "1.0.0",
+  "title": "Ultimate Research Queue",
+  "description": "Queue technologies for research, see research time ETAs, automatically research all prerequisites, auto-research infinite technologies.",
+  "author": "raiguard",
+  "contact": "Discord: raiguard#7402",
+  "homepage": "https://github.com/raiguard/Factorio-UltimateResearchQueue",
+  "factorio_version": "1.1",
+  "dependencies": [ "base >= 1.1.55", "flib >= 0.10.0" ],
+  "package": {
+    "git_publish_branch": "main"
+  }
+}
