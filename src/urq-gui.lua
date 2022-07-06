@@ -1,11 +1,42 @@
 local gui = require("__flib__.gui")
 
+local constants = require("constants")
+
 --- @class GuiRefs
 --- @field window LuaGuiElement
 --- @field titlebar_flow LuaGuiElement
+--- @field techs_table LuaGuiElement
+--- @field queue_table LuaGuiElement
 
 --- @class UrqGui
 local UrqGui = {}
+
+function UrqGui:update()
+  --- @type LuaGuiElement[]
+  local buttons = {}
+  local force_table = global.forces[self.player.force.index]
+  for _, tech in pairs(force_table.technologies) do
+    local style = "button"
+    if tech.state == constants.research_state.researched then
+      style = "green_button"
+    elseif tech.state == constants.research_state.not_available then
+      style = "red_button"
+    end
+    table.insert(buttons, {
+      type = "choose-elem-button",
+      name = tech.tech.name,
+      style = style,
+      style_mods = { width = 72, height = 100 },
+      elem_type = "technology",
+      technology = tech.tech.name,
+      elem_mods = { locked = true },
+    })
+  end
+
+  local techs_table = self.refs.techs_table
+  techs_table.clear()
+  gui.build(techs_table, buttons)
+end
 
 local M = {}
 
@@ -28,6 +59,7 @@ end
 
 --- @param player LuaPlayer
 --- @param player_table PlayerTable
+--- @return UrqGui
 function M.new(player, player_table)
   --- @type GuiRefs
   local refs = gui.build(player.gui.screen, {
@@ -62,27 +94,46 @@ function M.new(player, player_table)
           style = "inside_deep_frame",
           direction = "vertical",
           {
+            type = "frame",
+            style = "subheader_frame",
+            style_mods = { horizontally_stretchable = true },
+            { type = "label", style = "subheader_caption_label", caption = "List of technologies" },
+          },
+          {
             type = "scroll-pane",
             style = "flib_naked_scroll_pane_no_padding",
-            {
-              type = "flow",
-              style_mods = { vertical_spacing = 0 },
-              direction = "vertical",
-              { type = "sprite-button", style = "red_button", style_mods = { width = 72, height = 100 } },
-              { type = "sprite-button", style = "red_button", style_mods = { width = 72, height = 100 } },
-              { type = "sprite-button", style = "red_button", style_mods = { width = 72, height = 100 } },
-              { type = "sprite-button", style = "red_button", style_mods = { width = 72, height = 100 } },
-              { type = "sprite-button", style = "red_button", style_mods = { width = 72, height = 100 } },
-              { type = "sprite-button", style = "red_button", style_mods = { width = 72, height = 100 } },
-              { type = "sprite-button", style = "red_button", style_mods = { width = 72, height = 100 } },
-              { type = "sprite-button", style = "red_button", style_mods = { width = 72, height = 100 } },
-            },
+            style_mods = { horizontally_stretchable = true, height = 100 * 7, width = 72 * 8 + 12 },
+            vertical_scroll_policy = "auto-and-reserve-space",
+            { type = "table", style = "technology_slot_table", column_count = 8, ref = { "techs_table" } },
           },
         },
         {
           type = "flow",
-          style_mods = { width = 700, vertical_spacing = 12 },
+          style_mods = { vertical_spacing = 12 },
           direction = "vertical",
+          {
+            type = "frame",
+            style = "inside_deep_frame",
+            direction = "vertical",
+            {
+              type = "frame",
+              style = "subheader_frame",
+              style_mods = { horizontally_stretchable = true },
+              { type = "label", style = "subheader_caption_label", caption = "Research queue" },
+            },
+            {
+              type = "scroll-pane",
+              style = "flib_naked_scroll_pane_no_padding",
+              style_mods = { width = 72 * 7 + 12, height = 100 * 2 },
+              vertical_scroll_policy = "auto-and-reserve-space",
+              {
+                type = "table",
+                style = "technology_slot_table",
+                column_count = 7,
+                ref = { "queue_table" },
+              },
+            },
+          },
           {
             type = "frame",
             style = "inside_shallow_frame",
@@ -90,23 +141,19 @@ function M.new(player, player_table)
             {
               type = "frame",
               style = "subheader_frame",
-              {
-                type = "label",
-                style = "subheader_caption_label",
-                caption = "Select a research to show its details",
-              },
-              { type = "empty-widget", style = "flib_horizontal_pusher" },
+              style_mods = { horizontally_stretchable = true },
+              { type = "label", style = "subheader_caption_label", caption = "No technology selected" },
             },
             {
               type = "flow",
-              style_mods = { padding = 12 },
-              { type = "empty-widget", style_mods = { horizontally_stretchable = true, height = 200 } },
+              style_mods = {
+                horizontally_stretchable = true,
+                vertically_stretchable = true,
+                horizontal_align = "center",
+                vertical_align = "center",
+              },
+              { type = "label", caption = "Technology info here..." },
             },
-          },
-          {
-            type = "frame",
-            style = "inside_deep_frame",
-            style_mods = { horizontally_stretchable = true, vertically_stretchable = true },
           },
         },
       },
@@ -116,7 +163,7 @@ function M.new(player, player_table)
   refs.titlebar_flow.drag_target = refs.window
   refs.window.force_auto_center()
 
-  --- @type UrqGui
+  --- @class UrqGui
   local self = {
     player = player,
     player_table = player_table,
@@ -125,6 +172,8 @@ function M.new(player, player_table)
   }
   M.load(self)
   player_table.gui = self
+
+  return self
 end
 
 function M.load(self)
