@@ -1,7 +1,7 @@
 local constants = {}
 
 -- This is a super ugly way to do an enum type
---- @class ResearchState
+--- @class ResearchState: integer
 --- @class ResearchState.available : ResearchState
 --- @class ResearchState.conditionally_available : ResearchState
 --- @class ResearchState.not_available : ResearchState

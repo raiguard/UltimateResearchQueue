@@ -1,9 +1,9 @@
 local event = require("__flib__.event")
--- local gui = require("__flib__.gui")
+local libgui = require("__flib__.gui")
 local on_tick_n = require("__flib__.on-tick-n")
 
+local gui = require("gui.index")
 local sort_techs = require("sort-techs")
-local Gui = require("urq-gui")
 
 --- @class UpgradeState
 --- @field min_not_researched_level number
@@ -24,13 +24,13 @@ local function init_force(force)
   sort_techs(force, force_table)
 end
 
---- @param player_index number
+--- @param player_index uint
 local function init_player(player_index)
   --- @class PlayerTable
-  --- @field gui UrqGui
+  --- @field gui Gui
   global.players[player_index] = {}
 
-  local gui = Gui.new(game.get_player(player_index), global.players[player_index])
+  local gui = gui.new(game.get_player(player_index), global.players[player_index])
   gui:update()
 end
 
@@ -51,20 +51,48 @@ event.on_init(function()
   end
 end)
 
+event.on_load(function()
+  for _, player_table in pairs(global.players) do
+    if player_table.gui then
+      gui.load(player_table.gui)
+    end
+  end
+end)
+
 event.on_force_created(function(e)
-  init_force(e.force.index)
+  init_force(e.force)
 end)
 
 event.on_player_created(function(e)
   init_player(e.player_index)
 end)
 
--- gui.hook_events(function(e)
---   local action = gui.get_action(e)
---   if action then
---     -- TODO: GUI actions
---   end
--- end)
+libgui.hook_events(function(e)
+  local action = libgui.read_action(e)
+  if action then
+    --- @type PlayerTable
+    local player_table = global.players[e.player_index]
+    if player_table.gui then
+      player_table.gui:dispatch(action, e)
+    end
+  end
+end)
+
+event.register("urq-toggle-gui", function(e)
+  local player_table = global.players[e.player_index]
+  if player_table and player_table.gui then
+    player_table.gui:toggle_visible()
+  end
+end)
+
+event.on_lua_shortcut(function(e)
+  if e.prototype_name == "urq-toggle-gui" then
+    local player_table = global.players[e.player_index]
+    if player_table and player_table.gui then
+      player_table.gui:toggle_visible()
+    end
+  end
+end)
 
 event.register({ defines.events.on_research_finished, defines.events.on_research_reversed }, function(e)
   local force_index = e.research.force.index
