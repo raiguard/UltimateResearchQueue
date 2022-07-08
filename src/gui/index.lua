@@ -23,6 +23,7 @@ local m = {}
 --- @field search_button LuaGuiElement
 --- @field search_textfield LuaGuiElement
 --- @field pin_button LuaGuiElement
+--- @field close_button LuaGuiElement
 --- @field techs_table LuaGuiElement
 --- @field queue_table LuaGuiElement
 
@@ -135,9 +136,13 @@ function gui:toggle_pinned()
   toggle_frame_action_button(self.refs.pin_button, "flib_pin", self.state.pinned)
   if self.state.pinned then
     self.player.opened = nil
+    self.refs.search_button.tooltip = { "gui.search" }
+    self.refs.close_button.tooltip = { "gui.close" }
   else
     self.player.opened = self.refs.window
     self.refs.window.force_auto_center()
+    self.refs.search_button.tooltip = { "gui.urq-search-instruction" }
+    self.refs.close_button.tooltip = { "gui.close-instruction" }
   end
 end
 
