@@ -1,14 +1,25 @@
 local event = require("__flib__.event")
+local dictionary = require("__flib__.dictionary")
 local libgui = require("__flib__.gui")
+local migration = require("__flib__.migration")
 local on_tick_n = require("__flib__.on-tick-n")
 
 local gui = require("gui.index")
 local sort_techs = require("sort-techs")
 
---- @class UpgradeState
---- @field min_not_researched_level number
---- @field researched_level number
---- @field max_queued_level number
+local function build_dictionaries()
+  dictionary.init()
+
+  local recipes = dictionary.new("recipe", true)
+  local technologies = dictionary.new("technology", true)
+
+  for name, recipe in pairs(game.recipe_prototypes) do
+    recipes:add(name, recipe.localised_name)
+  end
+  for name, technology in pairs(game.technology_prototypes) do
+    technologies:add(name, technology.localised_name)
+  end
+end
 
 --- @param force LuaForce
 local function init_force(force)
@@ -27,14 +38,25 @@ end
 --- @param player_index uint
 local function init_player(player_index)
   --- @class PlayerTable
-  --- @field gui Gui
+  --- @field gui Gui?
+  --- @field dictionaries table<string, table<string, string>>?
   global.players[player_index] = {}
+end
 
-  local gui = gui.new(game.get_player(player_index), global.players[player_index])
+--- @param player LuaPlayer
+local function migrate_player(player)
+  local player_table = global.players[player.index]
+  if player_table.gui then
+    player_table.gui:destroy()
+  end
+  player_table.dictionaries = nil
+  local gui = gui.new(player, player_table)
   gui:refresh_tech_list()
+  dictionary.translate(player)
 end
 
 event.on_init(function()
+  build_dictionaries()
   on_tick_n.init()
 
   --- @type table<uint, ForceTable>
@@ -46,15 +68,26 @@ event.on_init(function()
   for _, force in pairs(game.forces) do
     init_force(force)
   end
-  for player_index in pairs(game.players) do
-    init_player(player_index)
+  for _, player in pairs(game.players) do
+    init_player(player.index)
+    migrate_player(player)
   end
 end)
 
 event.on_load(function()
+  dictionary.load()
   for _, player_table in pairs(global.players) do
     if player_table.gui then
       gui.load(player_table.gui)
+    end
+  end
+end)
+
+event.on_configuration_changed(function(e)
+  if migration.on_config_changed({}, e) then
+    build_dictionaries()
+    for _, player in pairs(game.players) do
+      migrate_player(player)
     end
   end
 end)
@@ -65,6 +98,7 @@ end)
 
 event.on_player_created(function(e)
   init_player(e.player_index)
+  migrate_player(game.get_player(e.player_index))
 end)
 
 libgui.hook_events(function(e)
@@ -116,7 +150,21 @@ event.register({ defines.events.on_research_finished, defines.events.on_research
   end
 end)
 
+event.on_string_translated(function(e)
+  local result = dictionary.process_translation(e)
+  if result then
+    for _, player_index in pairs(result.players) do
+      local player_table = global.players[player_index]
+      if player_table then
+        player_table.dictionaries = result.dictionaries
+        -- TODO: Assemble search strings for each tech
+      end
+    end
+  end
+end)
+
 event.on_tick(function(e)
+  dictionary.check_skipped()
   for _, job in pairs(on_tick_n.retrieve(e.tick) or {}) do
     if job.id == "sort_techs" then
       --- @type LuaForce
