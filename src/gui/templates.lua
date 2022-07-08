@@ -39,7 +39,6 @@ function templates.base()
         { "search_button" }
       ),
       templates.frame_action_button("flib_pin", "toggle_pinned", { "gui.flib-keep-open" }, { "pin_button" }),
-      templates.frame_action_button("flib_settings", "toggle_settings"),
       templates.frame_action_button("utility/close", "hide", { "gui.close-instruction" }, { "close_button" }),
     },
     {
