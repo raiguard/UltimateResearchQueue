@@ -1,4 +1,5 @@
 local libgui = require("__flib__.gui")
+local on_tick_n = require("__flib__.on-tick-n")
 local constants = require("constants")
 
 --- @param elem LuaGuiElement
@@ -172,7 +173,20 @@ function gui:update_search_query()
     return
   end
   self.state.search_query = self.refs.search_textfield.text
-  self:update_tech_list()
+
+  local update_job = self.state.update_job
+  if update_job then
+    on_tick_n.remove(update_job)
+  end
+
+  if game.tick_paused or #self.state.search_query == 0 then
+    self:update_tech_list()
+  else
+    self.state.update_job = on_tick_n.add(
+      game.tick + 30,
+      { id = "gui", player_index = self.player.index, action = "update_tech_list" }
+    )
+  end
 end
 
 -- Updates tech list button visibility based on search query

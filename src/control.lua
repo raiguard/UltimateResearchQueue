@@ -107,8 +107,12 @@ end)
 event.register({ defines.events.on_research_finished, defines.events.on_research_reversed }, function(e)
   local force_index = e.research.force.index
   local force_table = global.forces[force_index]
-  if force_table and not force_table.sort_techs_job then
-    force_table.sort_techs_job = on_tick_n.add(game.tick + 1, { id = "sort_techs", force = force_index })
+  if force_table then
+    if game.tick_paused then
+      sort_techs(e.research.force, force_table)
+    elseif not force_table.sort_techs_job then
+      force_table.sort_techs_job = on_tick_n.add(game.tick + 1, { id = "sort_techs", force = force_index })
+    end
   end
 end)
 
