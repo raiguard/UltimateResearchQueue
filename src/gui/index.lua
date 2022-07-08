@@ -15,8 +15,6 @@ local function toggle_frame_action_button(elem, sprite_base, value)
   end
 end
 
-local m = {}
-
 --- @class GuiRefs
 --- @field window LuaGuiElement
 --- @field titlebar_flow LuaGuiElement
@@ -34,7 +32,7 @@ gui.templates = require("gui.templates")
 function gui:ensure_valid()
   if not self.refs.window.valid then
     self:destroy()
-    m.new(self.player, self.player_table)
+    gui.new(self.player, self.player_table)
     self.player.print({ "message.urq-recreated-gui" })
     return true
   end
@@ -187,10 +185,8 @@ function gui:update_search_query()
   if game.tick_paused or #self.state.search_query == 0 then
     self:update_tech_list()
   else
-    self.state.update_job = on_tick_n.add(
-      game.tick + 30,
-      { id = "gui", player_index = self.player.index, action = "update_tech_list" }
-    )
+    self.state.update_job =
+      on_tick_n.add(game.tick + 30, { id = "gui", player_index = self.player.index, action = "update_tech_list" })
   end
 end
 
@@ -212,7 +208,7 @@ end
 --- @param player LuaPlayer
 --- @param player_table PlayerTable
 --- @return Gui
-function m.new(player, player_table)
+function gui.new(player, player_table)
   --- @type GuiRefs
   local refs = libgui.build(player.gui.screen, { gui.templates.base() })
 
@@ -230,7 +226,7 @@ function m.new(player, player_table)
       search_query = "",
     },
   }
-  m.load(self)
+  gui.load(self)
   player_table.gui = self
 
   self:refresh_tech_list()
@@ -238,8 +234,8 @@ function m.new(player, player_table)
   return self
 end
 
-function m.load(self)
+function gui.load(self)
   setmetatable(self, { __index = gui })
 end
 
-return m
+return gui
