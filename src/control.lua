@@ -31,7 +31,7 @@ local function init_player(player_index)
   global.players[player_index] = {}
 
   local gui = gui.new(game.get_player(player_index), global.players[player_index])
-  gui:update()
+  gui:update_list()
 end
 
 event.on_init(function()
@@ -78,6 +78,16 @@ libgui.hook_events(function(e)
   end
 end)
 
+event.register("urq-focus-search", function(e)
+  local player = game.get_player(e.player_index)
+  if player.opened_gui_type == defines.gui_type.custom and player.opened and player.opened.name == "urq-window" then
+    local player_table = global.players[e.player_index]
+    if player_table and player_table.gui then
+      player_table.gui:toggle_search()
+    end
+  end
+end)
+
 event.register("urq-toggle-gui", function(e)
   local player_table = global.players[e.player_index]
   if player_table and player_table.gui then
@@ -114,7 +124,7 @@ event.on_tick(function(e)
       for _, player in pairs(force.players) do
         local player_table = global.players[player.index]
         if player_table and player_table.gui then
-          player_table.gui:update()
+          player_table.gui:update_list()
         end
       end
     end

@@ -3,6 +3,7 @@ local templates = {}
 function templates.base()
   return {
     type = "frame",
+    name = "urq-window",
     direction = "vertical",
     visible = false,
     ref = { "window" },
@@ -21,7 +22,22 @@ function templates.base()
         ignored_by_interaction = true,
       },
       { type = "empty-widget", style = "flib_titlebar_drag_handle", ignored_by_interaction = true },
-      templates.frame_action_button("utility/search", "toggle_search"),
+      {
+        type = "textfield",
+        style = "urq_search_textfield",
+        visible = false,
+        clear_and_focus_on_right_click = true,
+        ref = { "search_textfield" },
+        actions = {
+          on_text_changed = "update_search_query",
+        },
+      },
+      templates.frame_action_button(
+        "utility/search",
+        "toggle_search",
+        { "gui.urq-search-instruction" },
+        { "search_button" }
+      ),
       templates.frame_action_button("flib_pin", "toggle_pinned", { "gui.flib-keep-open" }, { "pin_button" }),
       templates.frame_action_button("flib_settings", "toggle_settings"),
       templates.frame_action_button("utility/close", "hide", { "gui.close-instruction" }),
@@ -41,7 +57,7 @@ function templates.base()
         },
         {
           type = "scroll-pane",
-          style = "flib_naked_scroll_pane_no_padding",
+          style = "urq_tech_list_scroll_pane",
           style_mods = { horizontally_stretchable = true, height = 100 * 7, width = 72 * 8 + 12 },
           vertical_scroll_policy = "auto-and-reserve-space",
           { type = "table", style = "technology_slot_table", column_count = 8, ref = { "techs_table" } },
@@ -63,7 +79,7 @@ function templates.base()
           },
           {
             type = "scroll-pane",
-            style = "flib_naked_scroll_pane_no_padding",
+            style = "urq_tech_list_scroll_pane",
             style_mods = { width = 72 * 7 + 12, height = 100 * 2 },
             vertical_scroll_policy = "auto-and-reserve-space",
             {
