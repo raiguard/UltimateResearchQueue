@@ -75,7 +75,8 @@ function gui:hide(msg)
       self.player.opened = self.refs.window
       return
     end
-  elseif not msg.by_closed_event then
+  end
+  if self.player.opened_gui_type == defines.gui_type.custom and self.player.opened == self.refs.window then
     self.player.opened = nil
   end
   self.refs.window.visible = false
@@ -120,6 +121,7 @@ function gui:show()
     return
   end
   self.refs.window.visible = true
+  self.refs.window.bring_to_front()
   if not self.state.pinned then
     self.player.opened = self.refs.window
   end
