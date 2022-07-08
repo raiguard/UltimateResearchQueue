@@ -31,7 +31,7 @@ local function init_player(player_index)
   global.players[player_index] = {}
 
   local gui = gui.new(game.get_player(player_index), global.players[player_index])
-  gui:update_list()
+  gui:refresh_tech_list()
 end
 
 event.on_init(function()
@@ -107,7 +107,7 @@ end)
 event.register({ defines.events.on_research_finished, defines.events.on_research_reversed }, function(e)
   local force_index = e.research.force.index
   local force_table = global.forces[force_index]
-  if not force_table.sort_techs_job then
+  if force_table and not force_table.sort_techs_job then
     force_table.sort_techs_job = on_tick_n.add(game.tick + 1, { id = "sort_techs", force = force_index })
   end
 end)
@@ -118,14 +118,22 @@ event.on_tick(function(e)
       --- @type LuaForce
       local force = game.forces[job.force]
       local force_table = global.forces[job.force]
-      force_table.sort_techs_job = nil
-      sort_techs(force, force_table)
+      if force_table then
+        force_table.sort_techs_job = nil
+        sort_techs(force, force_table)
 
-      for _, player in pairs(force.players) do
-        local player_table = global.players[player.index]
-        if player_table and player_table.gui then
-          player_table.gui:update_list()
+        for _, player in pairs(force.players) do
+          local player_table = global.players[player.index]
+          if player_table and player_table.gui then
+            player_table.gui:refresh_tech_list()
+          end
         end
+      end
+    elseif job.id == "gui" then
+      --- @type PlayerTable
+      local player_table = global.players[job.player_index]
+      if player_table and player_table.gui then
+        player_table.gui:dispatch(job, e)
       end
     end
   end
