@@ -10,14 +10,20 @@ local sort_techs = require("sort-techs")
 local function build_dictionaries()
   dictionary.init()
 
-  local recipes = dictionary.new("recipe", true)
-  local technologies = dictionary.new("technology", true)
-
-  for name, recipe in pairs(game.recipe_prototypes) do
-    recipes:add(name, recipe.localised_name)
-  end
+  -- Each technology will be searchable by its name, and the names of the recipes it unlocks
+  -- What could possibly go wrong here?
+  local dict = dictionary.new("technology_search")
   for name, technology in pairs(game.technology_prototypes) do
-    technologies:add(name, technology.localised_name)
+    local ref = { "", technology.localised_name, " " }
+    local str = { "", ref }
+    for _, effect in pairs(technology.effects) do
+      if effect.type == "unlock-recipe" then
+        local name = { "", game.recipe_prototypes[effect.recipe].localised_name, " " }
+        table.insert(ref, name)
+        ref = name
+      end
+    end
+    dict:add(name, str)
   end
 end
 

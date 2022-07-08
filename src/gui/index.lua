@@ -204,7 +204,7 @@ function gui:update_tech_list()
     -- TODO: Filter by science pack
     local tech_name = button.name
     if self.player_table.dictionaries then
-      tech_name = self.player_table.dictionaries.technology[tech_name]
+      tech_name = self.player_table.dictionaries.technology_search[tech_name]
     end
     button.visible = is_empty or string.find(string.lower(tech_name), query, 1, true)
   end
