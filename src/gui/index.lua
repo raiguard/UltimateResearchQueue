@@ -32,6 +32,7 @@ gui.templates = require("gui.templates")
 
 --- @param e on_gui_click
 function gui:add_to_queue(_, e)
+  e.element.enabled = false
   local tech_name = e.element.name
   local tech_data = self.force_table.technologies[tech_name]
   if tech_data.state == constants.research_state.researched then

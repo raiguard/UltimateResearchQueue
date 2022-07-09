@@ -144,8 +144,7 @@ function templates.tech_button(tech)
   return {
     type = "sprite-button",
     name = tech.tech.name,
-    style = "button",
-    style_mods = { width = 72, height = 100 },
+    style = "urq_technology_slot_available",
     sprite = "technology/" .. tech.tech.name,
     actions = {
       on_click = "add_to_queue",

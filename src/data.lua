@@ -25,6 +25,33 @@ data:extend({
 
 local styles = data.raw["gui-style"].default
 
+styles.urq_technology_slot_available = {
+  type = "button_style",
+  default_graphical_set = {
+    filename = "__UltimateResearchQueue__/graphics/technology-slots.png",
+    position = { 0, 0 },
+    size = { 144, 200 },
+  },
+  hovered_graphical_set = {
+    filename = "__UltimateResearchQueue__/graphics/technology-slots.png",
+    position = { 144, 0 },
+    size = { 144, 200 },
+  },
+  clicked_graphical_set = {
+    filename = "__UltimateResearchQueue__/graphics/technology-slots.png",
+    position = { 144, 0 },
+    size = { 144, 200 },
+  },
+  disabled_graphical_set = {
+    filename = "__UltimateResearchQueue__/graphics/technology-slots.png",
+    position = { 144, 0 },
+    size = { 144, 200 },
+  },
+  bottom_padding = 32,
+  size = { 72, 100 },
+  left_click_sound = { filename = "__core__/sound/gui-square-button-large.ogg", volume = 1 },
+}
+
 styles.urq_tech_list_scroll_pane = {
   type = "scroll_pane_style",
   parent = "flib_naked_scroll_pane_no_padding",
