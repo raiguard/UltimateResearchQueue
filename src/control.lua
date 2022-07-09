@@ -6,6 +6,7 @@ local on_tick_n = require("__flib__.on-tick-n")
 
 local gui = require("gui.index")
 local sort_techs = require("sort-techs")
+local queue = require("queue")
 
 local function build_dictionaries()
   dictionary.init()
@@ -31,13 +32,20 @@ end
 local function init_force(force)
   --- @class ForceTable
   local force_table = {
-    --- @type string[]
-    queue = {},
+    queue = queue.new(force),
     --- @type ToShow[]
     technologies = {},
   }
   global.forces[force.index] = force_table
+end
 
+--- @param force LuaForce
+local function migrate_force(force)
+  local force_table = global.forces[force.index]
+  if not force_table then
+    return
+  end
+  force_table.queue:verify_integrity()
   sort_techs(force, force_table)
 end
 
@@ -52,6 +60,9 @@ end
 --- @param player LuaPlayer
 local function migrate_player(player)
   local player_table = global.players[player.index]
+  if not player_table then
+    return
+  end
   if player_table.gui then
     player_table.gui:destroy()
   end
@@ -73,6 +84,7 @@ event.on_init(function()
   -- game.forces is apparently keyed by name, not index
   for _, force in pairs(game.forces) do
     init_force(force)
+    migrate_force(force)
   end
   for _, player in pairs(game.players) do
     init_player(player.index)
@@ -82,6 +94,9 @@ end)
 
 event.on_load(function()
   dictionary.load()
+  for _, force_table in pairs(global.forces) do
+    queue.load(force_table.queue)
+  end
   for _, player_table in pairs(global.players) do
     if player_table.gui then
       gui.load(player_table.gui)
@@ -92,6 +107,9 @@ end)
 event.on_configuration_changed(function(e)
   if migration.on_config_changed({}, e) then
     build_dictionaries()
+    for _, force in pairs(game.forces) do
+      migrate_force(force)
+    end
     for _, player in pairs(game.players) do
       migrate_player(player)
     end
@@ -100,6 +118,7 @@ end)
 
 event.on_force_created(function(e)
   init_force(e.force)
+  migrate_force(e.force)
 end)
 
 event.on_player_created(function(e)

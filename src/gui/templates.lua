@@ -1,5 +1,9 @@
+local table = require("__flib__.table")
+local constants = require("constants")
+
 local templates = {}
 
+--- @return GuiBuildStructure
 function templates.base()
   return {
     type = "frame",
@@ -118,6 +122,7 @@ end
 --- @param sprite string
 --- @param action string?
 --- @param tooltip LocalisedString?
+--- @return GuiBuildStructure
 function templates.frame_action_button(sprite, action, tooltip, ref)
   return {
     type = "sprite-button",
@@ -129,6 +134,21 @@ function templates.frame_action_button(sprite, action, tooltip, ref)
     ref = ref,
     actions = {
       on_click = action,
+    },
+  }
+end
+
+--- @param tech ToShow
+--- @return GuiBuildStructure
+function templates.tech_button(tech)
+  return {
+    type = "sprite-button",
+    name = tech.tech.name,
+    style = "button",
+    style_mods = { width = 72, height = 100 },
+    sprite = "technology/" .. tech.tech.name,
+    actions = {
+      on_click = "add_to_queue",
     },
   }
 end

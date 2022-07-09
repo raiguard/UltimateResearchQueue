@@ -1,6 +1,7 @@
 local libgui = require("__flib__.gui")
 local on_tick_n = require("__flib__.on-tick-n")
 local constants = require("constants")
+local util = require("util")
 
 --- @param elem LuaGuiElement
 --- @param sprite_base string
@@ -28,6 +29,22 @@ end
 --- @class Gui
 local gui = {}
 gui.templates = require("gui.templates")
+
+--- @param e on_gui_click
+function gui:add_to_queue(_, e)
+  local tech_name = e.element.name
+  local tech_data = self.force_table.technologies[tech_name]
+  if tech_data.state == constants.research_state.researched then
+    util.flying_text(self.player, { "message.urq-already-researched" })
+    return
+  end
+  if not self.force_table.queue:add(tech_name, e.shift and 1 or nil) then
+    util.flying_text(self.player, { "message.urq-already-in-queue" })
+    return
+  end
+  -- TODO: Update queue GUIs for all players
+  self:refresh_queue()
+end
 
 function gui:ensure_valid()
   if not self.refs.window.valid then
@@ -83,6 +100,22 @@ function gui:hide(msg)
   self.player.set_shortcut_toggled("urq-toggle-gui", false)
 end
 
+function gui:refresh_queue()
+  if self:ensure_valid() then
+    return
+  end
+  --- @type LuaGuiElement[]
+  local buttons = {}
+  for _, tech_name in pairs(self.force_table.queue.queue) do
+    table.insert(buttons, self.templates.tech_button(self.force_table.technologies[tech_name]))
+  end
+
+  -- TODO: Don't clear it every time
+  local queue_table = self.refs.queue_table
+  queue_table.clear()
+  libgui.build(queue_table, buttons)
+end
+
 function gui:refresh_tech_list()
   if self:ensure_valid() then
     return
@@ -91,21 +124,7 @@ function gui:refresh_tech_list()
   local buttons = {}
   local force_table = global.forces[self.player.force.index]
   for _, tech in pairs(force_table.technologies) do
-    local style = "button"
-    if tech.state == constants.research_state.researched then
-      style = "green_button"
-    elseif tech.state == constants.research_state.not_available then
-      style = "red_button"
-    end
-    table.insert(buttons, {
-      type = "choose-elem-button",
-      name = tech.tech.name,
-      style = style,
-      style_mods = { width = 72, height = 100 },
-      elem_type = "technology",
-      technology = tech.tech.name,
-      elem_mods = { locked = true },
-    })
+    table.insert(buttons, self.templates.tech_button(tech))
   end
 
   -- TODO: Don't clear it every time
@@ -222,6 +241,8 @@ function gui.new(player, player_table)
 
   --- @class Gui
   local self = {
+    force = player.force,
+    force_table = global.forces[player.force.index],
     player = player,
     player_table = player_table,
     refs = refs,
@@ -234,6 +255,7 @@ function gui.new(player, player_table)
   gui.load(self)
   player_table.gui = self
 
+  self:refresh_queue()
   self:refresh_tech_list()
 
   return self

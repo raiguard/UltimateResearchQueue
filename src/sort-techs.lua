@@ -42,10 +42,11 @@ end
 --- @param force_table ForceTable
 return function(force, force_table)
   local techs = {}
-  for _, tech in pairs(force.technologies) do
+  for name, tech in pairs(force.technologies) do
     local research_state = get_research_state(force_table, tech)
     if research_state ~= constants.research_state.disabled then
-      table.insert(techs, { state = research_state, tech = tech })
+      -- Factorio Lua preserves the insertion order of technologies
+      techs[name] = { state = research_state, tech = tech }
     end
   end
   force_table.technologies = techs
