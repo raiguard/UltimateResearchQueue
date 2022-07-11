@@ -1,6 +1,8 @@
 local libgui = require("__flib__.gui")
 local on_tick_n = require("__flib__.on-tick-n")
+local table = require("__flib__.table")
 local constants = require("constants")
+local sort_techs = require("sort-techs")
 local util = require("util")
 
 --- @param elem LuaGuiElement
@@ -25,26 +27,28 @@ end
 --- @field close_button LuaGuiElement
 --- @field techs_table LuaGuiElement
 --- @field queue_table LuaGuiElement
+--- @field tech_info TechInfoRefs
+--- @class TechInfoRefs
+--- @field name_label LuaGuiElement
 
 --- @class Gui
 local gui = {}
 gui.templates = require("gui.templates")
 
---- @param e on_gui_click
-function gui:add_to_queue(_, e)
-  e.element.enabled = false
-  local tech_name = e.element.name
+--- @param tech_name string
+--- @param position integer?
+function gui:add_to_queue(tech_name, position)
   local tech_data = self.force_table.technologies[tech_name]
   if tech_data.state == constants.research_state.researched then
     util.flying_text(self.player, { "message.urq-already-researched" })
     return
   end
-  if not self.force_table.queue:add(tech_name, e.shift and 1 or nil) then
+  if not self.force_table.queue:add(tech_name, position) then
     util.flying_text(self.player, { "message.urq-already-in-queue" })
     return
   end
   -- TODO: Update queue GUIs for all players
-  self:refresh_queue()
+  self:refresh()
 end
 
 function gui:ensure_valid()
@@ -78,6 +82,16 @@ function gui:dispatch(msg, e)
   else
     log("Unknown GUI event handler: " .. msg.action)
   end
+end
+
+function gui:handle_tech_click(_, e)
+  local tech_name = e.element.name
+  if e.shift then
+    self:add_to_queue(tech_name)
+    return
+  end
+  self.state.selected = tech_name
+  self:refresh()
 end
 
 function gui:hide(msg)
@@ -121,13 +135,16 @@ function gui:refresh_tech_list()
   if self:ensure_valid() then
     return
   end
+  --- TODO: We should only fire this once per force
+  sort_techs(self.force, self.force_table)
   --- @type LuaGuiElement[]
   local buttons = {}
   local force_table = global.forces[self.player.force.index]
   for _, tech in pairs(force_table.technologies) do
-    table.insert(buttons, self.templates.tech_button(tech))
+    if tech.state ~= constants.research_state.disabled or tech.tech.visible_when_disabled then
+      table.insert(buttons, self.templates.tech_button(tech, self.state.selected))
+    end
   end
-
   -- TODO: Don't clear it every time
   local techs_table = self.refs.techs_table
   techs_table.clear()
@@ -240,9 +257,11 @@ function gui.new(player, player_table)
   refs.titlebar_flow.drag_target = refs.window
   refs.window.force_auto_center()
 
+  local force = player.force --[[@as LuaForce]]
+
   --- @class Gui
   local self = {
-    force = player.force,
+    force = force,
     force_table = global.forces[player.force.index],
     player = player,
     player_table = player_table,
@@ -251,6 +270,8 @@ function gui.new(player, player_table)
       pinned = false,
       search_open = false,
       search_query = "",
+      --- @type string?
+      selected = nil,
     },
   }
   gui.load(self)

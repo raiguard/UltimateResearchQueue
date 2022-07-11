@@ -139,15 +139,19 @@ function templates.frame_action_button(sprite, action, tooltip, ref)
 end
 
 --- @param tech ToShow
+--- @param selected_name string?
 --- @return GuiBuildStructure
-function templates.tech_button(tech)
+function templates.tech_button(tech, selected_name)
+  local state = table.find(constants.research_state, tech.state)
+  local selected = selected_name == tech.tech.name
+  local leveled = tech.tech.upgrade or tech.tech.level > 1
   return {
     type = "sprite-button",
     name = tech.tech.name,
-    style = "urq_technology_slot_available",
+    style = "urq_technology_slot_" .. (selected and "selected_" or "") .. (leveled and "leveled_" or "") .. state,
     sprite = "technology/" .. tech.tech.name,
     actions = {
-      on_click = "add_to_queue",
+      on_click = "handle_tech_click",
     },
   }
 end

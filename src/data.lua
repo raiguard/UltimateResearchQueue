@@ -25,32 +25,137 @@ data:extend({
 
 local styles = data.raw["gui-style"].default
 
-styles.urq_technology_slot_available = {
-  type = "button_style",
-  default_graphical_set = {
-    filename = "__UltimateResearchQueue__/graphics/technology-slots.png",
-    position = { 0, 0 },
-    size = { 144, 200 },
-  },
-  hovered_graphical_set = {
-    filename = "__UltimateResearchQueue__/graphics/technology-slots.png",
-    position = { 144, 0 },
-    size = { 144, 200 },
-  },
-  clicked_graphical_set = {
-    filename = "__UltimateResearchQueue__/graphics/technology-slots.png",
-    position = { 144, 0 },
-    size = { 144, 200 },
-  },
-  disabled_graphical_set = {
-    filename = "__UltimateResearchQueue__/graphics/technology-slots.png",
-    position = { 144, 0 },
-    size = { 144, 200 },
-  },
-  bottom_padding = 32,
-  size = { 72, 100 },
-  left_click_sound = { filename = "__core__/sound/gui-square-button-large.ogg", volume = 1 },
-}
+local function technology_slot(name, y)
+  styles["urq_technology_slot_" .. name] = {
+    type = "button_style",
+    default_graphical_set = {
+      base = {
+        filename = "__UltimateResearchQueue__/graphics/technology-slots.png",
+        position = { 0, y },
+        size = { 144, 200 },
+      },
+      shadow = default_shadow,
+    },
+    hovered_graphical_set = {
+      base = {
+        filename = "__UltimateResearchQueue__/graphics/technology-slots.png",
+        position = { 144, y },
+        size = { 144, 200 },
+      },
+      shadow = default_shadow,
+    },
+    clicked_graphical_set = {
+      base = {
+        filename = "__UltimateResearchQueue__/graphics/technology-slots.png",
+        position = { 144, y },
+        size = { 144, 200 },
+      },
+      shadow = default_shadow,
+    },
+    bottom_padding = 32,
+    size = { 72, 100 },
+    left_click_sound = { filename = "__core__/sound/gui-square-button-large.ogg", volume = 1 },
+  }
+
+  styles["urq_technology_slot_selected_" .. name] = {
+    type = "button_style",
+    default_graphical_set = {
+      base = {
+        filename = "__UltimateResearchQueue__/graphics/technology-slots.png",
+        position = { 288, y },
+        size = { 144, 200 },
+      },
+      shadow = default_shadow,
+    },
+    hovered_graphical_set = {
+      base = {
+        filename = "__UltimateResearchQueue__/graphics/technology-slots.png",
+        position = { 432, y },
+        size = { 144, 200 },
+      },
+      shadow = default_shadow,
+    },
+    clicked_graphical_set = {
+      base = {
+        filename = "__UltimateResearchQueue__/graphics/technology-slots.png",
+        position = { 432, y },
+        size = { 144, 200 },
+      },
+      shadow = default_shadow,
+    },
+    bottom_padding = 32,
+    size = { 72, 100 },
+    left_click_sound = { filename = "__core__/sound/gui-square-button-large.ogg", volume = 1 },
+  }
+
+  styles["urq_technology_slot_leveled_" .. name] = {
+    type = "button_style",
+    default_graphical_set = {
+      base = {
+        filename = "__UltimateResearchQueue__/graphics/technology-slots.png",
+        position = { 576, y },
+        size = { 144, 200 },
+      },
+      shadow = default_shadow,
+    },
+    hovered_graphical_set = {
+      base = {
+        filename = "__UltimateResearchQueue__/graphics/technology-slots.png",
+        position = { 720, y },
+        size = { 144, 200 },
+      },
+      shadow = default_shadow,
+    },
+    clicked_graphical_set = {
+      base = {
+        filename = "__UltimateResearchQueue__/graphics/technology-slots.png",
+        position = { 720, y },
+        size = { 144, 200 },
+      },
+      shadow = default_shadow,
+    },
+    bottom_padding = 32,
+    size = { 72, 100 },
+    left_click_sound = { filename = "__core__/sound/gui-square-button-large.ogg", volume = 1 },
+  }
+
+  styles["urq_technology_slot_selected_leveled_" .. name] = {
+    type = "button_style",
+    default_graphical_set = {
+      base = {
+        filename = "__UltimateResearchQueue__/graphics/technology-slots.png",
+        position = { 864, y },
+        size = { 144, 200 },
+      },
+      shadow = default_shadow,
+    },
+    hovered_graphical_set = {
+      base = {
+        filename = "__UltimateResearchQueue__/graphics/technology-slots.png",
+        position = { 1008, y },
+        size = { 144, 200 },
+      },
+      shadow = default_shadow,
+    },
+    clicked_graphical_set = {
+      base = {
+        filename = "__UltimateResearchQueue__/graphics/technology-slots.png",
+        position = { 1008, y },
+        size = { 144, 200 },
+      },
+      shadow = default_shadow,
+    },
+    bottom_padding = 32,
+    size = { 72, 100 },
+    left_click_sound = { filename = "__core__/sound/gui-square-button-large.ogg", volume = 1 },
+  }
+end
+
+technology_slot("available", 0)
+technology_slot("conditionally_available", 200)
+technology_slot("not_available", 400)
+technology_slot("researched", 600)
+technology_slot("disabled", 800)
 
 styles.urq_tech_list_scroll_pane = {
   type = "scroll_pane_style",

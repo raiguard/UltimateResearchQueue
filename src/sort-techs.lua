@@ -2,12 +2,11 @@ local table = require("__flib__.table")
 local constants = require("constants")
 
 --- @param tech LuaTechnology
+--- @param queue Queue?
 local function are_prereqs_satisfied(tech, queue)
   for name, prereq in pairs(tech.prerequisites) do
     if not prereq.researched then
-      if not queue or not table.find(queue, function(tech)
-        return tech.name == name
-      end) then
+      if not queue or not table.find(queue.queue, name) then
         return false
       end
     end
@@ -29,7 +28,7 @@ local function get_research_state(force_table, tech)
     return constants.research_state.available
   end
   if are_prereqs_satisfied(tech, force_table.queue) then
-    return constants.research_state.available
+    return constants.research_state.conditionally_available
   end
   return constants.research_state.not_available
 end
@@ -44,10 +43,8 @@ return function(force, force_table)
   local techs = {}
   for name, tech in pairs(force.technologies) do
     local research_state = get_research_state(force_table, tech)
-    if research_state ~= constants.research_state.disabled then
-      -- Factorio Lua preserves the insertion order of technologies
-      techs[name] = { state = research_state, tech = tech }
-    end
+    -- Factorio Lua preserves the insertion order of technologies
+    techs[name] = { state = research_state, tech = tech }
   end
   force_table.technologies = techs
 end
