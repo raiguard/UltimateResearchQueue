@@ -137,6 +137,15 @@ libgui.hook_events(function(e)
   end
 end)
 
+event.on_gui_opened(function(e)
+  local player = game.get_player(e.player_index)
+  if player.opened_gui_type == defines.gui_type.research then
+    local player_table = global.players[e.player_index]
+    player.opened = nil
+    player_table.gui:show()
+  end
+end)
+
 event.register("urq-focus-search", function(e)
   local player = game.get_player(e.player_index)
   if player.opened_gui_type == defines.gui_type.custom and player.opened and player.opened.name == "urq-window" then
