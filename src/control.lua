@@ -68,7 +68,7 @@ local function migrate_player(player)
   end
   player_table.dictionaries = nil
   local gui = gui.new(player, player_table)
-  gui:refresh_tech_list()
+  gui:refresh()
   dictionary.translate(player)
 end
 
@@ -202,7 +202,7 @@ event.on_tick(function(e)
         for _, player in pairs(force.players) do
           local player_table = global.players[player.index]
           if player_table and player_table.gui then
-            player_table.gui:refresh_tech_list()
+            player_table.gui:refresh()
           end
         end
       end

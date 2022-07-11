@@ -115,26 +115,28 @@ function gui:hide(msg)
   self.player.set_shortcut_toggled("urq-toggle-gui", false)
 end
 
-function gui:refresh_queue()
+function gui:refresh()
   if self:ensure_valid() then
     return
   end
-  --- @type LuaGuiElement[]
-  local buttons = {}
-  for _, tech_name in pairs(self.force_table.queue.queue) do
-    table.insert(buttons, self.templates.tech_button(self.force_table.technologies[tech_name]))
-  end
 
+  -- Queue
+
+  --- @type LuaGuiElement[]
+  local queue_buttons = {}
+  for _, tech_name in pairs(self.force_table.queue.queue) do
+    table.insert(
+      queue_buttons,
+      self.templates.tech_button(self.force_table.technologies[tech_name], self.state.selected)
+    )
+  end
   -- TODO: Don't clear it every time
   local queue_table = self.refs.queue_table
   queue_table.clear()
-  libgui.build(queue_table, buttons)
-end
+  libgui.build(queue_table, queue_buttons)
 
-function gui:refresh_tech_list()
-  if self:ensure_valid() then
-    return
-  end
+  -- Tech list
+
   --- TODO: We should only fire this once per force
   sort_techs(self.force, self.force_table)
   --- @type LuaGuiElement[]
@@ -150,7 +152,14 @@ function gui:refresh_tech_list()
   techs_table.clear()
   libgui.build(techs_table, buttons)
 
-  self:update_tech_list()
+  -- Tech information
+
+  local name_label = { "gui.urq-no-technology-selected" }
+  local selected_tech = self.state.selected
+  if selected_tech then
+    name_label = self.force_table.technologies[self.state.selected].tech.localised_name
+  end
+  self.refs.tech_info.name_label.caption = name_label
 end
 
 function gui:show()
@@ -195,7 +204,7 @@ function gui:toggle_search()
   else
     self.state.search_query = ""
     self.refs.search_textfield.text = ""
-    self:refresh_tech_list()
+    self:refresh()
   end
 end
 
@@ -277,8 +286,7 @@ function gui.new(player, player_table)
   gui.load(self)
   player_table.gui = self
 
-  self:refresh_queue()
-  self:refresh_tech_list()
+  self:refresh()
 
   return self
 end

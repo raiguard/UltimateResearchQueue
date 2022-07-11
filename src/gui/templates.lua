@@ -56,7 +56,7 @@ function templates.base()
           type = "frame",
           style = "subheader_frame",
           style_mods = { horizontally_stretchable = true },
-          { type = "label", style = "subheader_caption_label", caption = "List of technologies" },
+          { type = "label", style = "subheader_caption_label", caption = { "gui-technologies-list.title" } },
         },
         {
           type = "scroll-pane",
@@ -78,7 +78,7 @@ function templates.base()
             type = "frame",
             style = "subheader_frame",
             style_mods = { horizontally_stretchable = true },
-            { type = "label", style = "subheader_caption_label", caption = "Research queue" },
+            { type = "label", style = "subheader_caption_label", caption = { "gui-technology-queue.title" } },
           },
           {
             type = "scroll-pane",
@@ -101,7 +101,12 @@ function templates.base()
             type = "frame",
             style = "subheader_frame",
             style_mods = { horizontally_stretchable = true },
-            { type = "label", style = "subheader_caption_label", caption = "No technology selected" },
+            {
+              type = "label",
+              style = "subheader_caption_label",
+              caption = { "gui.urq-no-technology-selected" },
+              ref = { "tech_info", "name_label" },
+            },
           },
           {
             type = "flow",
