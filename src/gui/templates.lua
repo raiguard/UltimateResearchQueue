@@ -154,11 +154,45 @@ function templates.tech_button(tech, selected_name)
     type = "sprite-button",
     name = tech.tech.name,
     style = "urq_technology_slot_" .. (selected and "selected_" or "") .. (leveled and "leveled_" or "") .. state,
-    sprite = "technology/" .. tech.tech.name,
+    tooltip = tech.tech.localised_name,
     actions = {
       on_click = "handle_tech_click",
     },
+    {
+      type = "flow",
+      style = "urq_technology_slot_sprite_flow",
+      ignored_by_interaction = true,
+      {
+        type = "sprite",
+        style = "urq_technology_slot_sprite",
+        sprite = "technology/" .. tech.tech.name,
+      },
+    },
   }
+end
+
+--- @param tech ToShow
+--- @param selected_name string?
+--- @return GuiBuildStructure
+function templates.tech_button_with_controls(tech, selected_name)
+  local base = templates.tech_button(tech, selected_name)
+  table.insert(base, {
+    type = "frame",
+    style = "urq_technology_slot_overlay",
+    { type = "label", style = "urq_technology_slot_eta_label", caption = "0:42" },
+    {
+      type = "sprite-button",
+      name = tech.tech.name,
+      style = "urq_technology_slot_cancel_button",
+      sprite = "urq-technology-slot-close",
+      hovered_sprite = "urq-technology-slot-close-hovered",
+      clicked_sprite = "urq-technology-slot-close-hovered",
+      actions = {
+        on_click = "cancel_research",
+      },
+    },
+  })
+  return base
 end
 
 return templates

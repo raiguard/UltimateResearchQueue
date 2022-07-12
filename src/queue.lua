@@ -9,6 +9,7 @@ function queue:add(tech_name, position)
   if not table.find(self.queue, tech_name) then
     position = position or #self.queue + 1
     table.insert(self.queue, position, tech_name)
+    self:update()
     return position
   end
 end
@@ -21,13 +22,24 @@ function queue:move(tech_name, position)
     position = position - 1
   end
   self:add(tech_name, position)
+  self:update()
 end
 
 --- @param tech_name string
 function queue:remove(tech_name)
   local index = table.find(self.queue, tech_name)
   table.remove(self.queue, index)
+  self:update()
   return index
+end
+
+function queue:update()
+  local first_tech = self.queue[1]
+  if first_tech then
+    self.force.add_research(first_tech)
+  else
+    self.force.cancel_current_research()
+  end
 end
 
 function queue:verify_integrity()
@@ -38,6 +50,7 @@ function queue:verify_integrity()
     end
   end
   self.queue = new_queue
+  self:update()
 end
 
 --- @param force LuaForce

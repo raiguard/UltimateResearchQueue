@@ -13,6 +13,29 @@ data:extend({
     linked_game_control = "open-technology-gui",
     consuming = "game-only",
   },
+  {
+    type = "font",
+    name = "urq-technology-slot-eta",
+    from = "default-bold",
+    border = true,
+    border_color = {},
+    size = 13,
+  },
+  {
+    type = "sprite",
+    name = "urq-technology-slot-close",
+    filename = "__UltimateResearchQueue__/graphics/technology-slot-close.png",
+    size = 20,
+    flags = { "gui-icon" },
+  },
+  {
+    type = "sprite",
+    name = "urq-technology-slot-close-hovered",
+    filename = "__UltimateResearchQueue__/graphics/technology-slot-close.png",
+    tint = { r = 1, g = 0.5, b = 0.5 },
+    size = 20,
+    flags = { "gui-icon" },
+  },
 })
 
 local styles = data.raw["gui-style"].default
@@ -44,7 +67,7 @@ local function technology_slot(name, y)
       },
       shadow = default_shadow,
     },
-    bottom_padding = 32,
+    padding = 0,
     size = { 72, 100 },
     left_click_sound = { filename = "__core__/sound/gui-square-button-large.ogg", volume = 1 },
   }
@@ -75,7 +98,7 @@ local function technology_slot(name, y)
       },
       shadow = default_shadow,
     },
-    bottom_padding = 32,
+    padding = 0,
     size = { 72, 100 },
     left_click_sound = { filename = "__core__/sound/gui-square-button-large.ogg", volume = 1 },
   }
@@ -106,7 +129,7 @@ local function technology_slot(name, y)
       },
       shadow = default_shadow,
     },
-    bottom_padding = 32,
+    padding = 0,
     size = { 72, 100 },
     left_click_sound = { filename = "__core__/sound/gui-square-button-large.ogg", volume = 1 },
   }
@@ -137,7 +160,7 @@ local function technology_slot(name, y)
       },
       shadow = default_shadow,
     },
-    bottom_padding = 32,
+    padding = 0,
     size = { 72, 100 },
     left_click_sound = { filename = "__core__/sound/gui-square-button-large.ogg", volume = 1 },
   }
@@ -148,6 +171,56 @@ technology_slot("conditionally_available", 200)
 technology_slot("not_available", 400)
 technology_slot("researched", 600)
 technology_slot("disabled", 800)
+
+styles.urq_technology_slot_sprite_flow = {
+  type = "horizontal_flow_style",
+  width = 72,
+  height = 68,
+  vertical_align = "center",
+  horizontal_align = "center",
+}
+
+styles.urq_technology_slot_sprite = {
+  type = "image_style",
+  size = 64,
+  stretch_image_to_widget_size = true,
+}
+
+styles.urq_technology_slot_overlay = {
+  type = "frame_style",
+  graphical_set = {
+    position = { 472, 141 },
+    size = { 1, 12 },
+  },
+  width = 72,
+  height = 20,
+  padding = 0,
+  horizontal_flow_style = {
+    type = "horizontal_flow_style",
+    horizontal_spacing = 0,
+    padding = 0,
+  },
+}
+
+styles.urq_technology_slot_eta_label = {
+  type = "label_style",
+  font = "urq-technology-slot-eta",
+  width = 72 - 16,
+  left_padding = 4,
+}
+
+styles.urq_technology_slot_cancel_button = {
+  type = "button_style",
+  size = { 16, 20 },
+  top_padding = 0,
+  right_padding = 2,
+  bottom_padding = 0,
+  left_padding = 2,
+  margin = 0,
+  default_graphical_set = {},
+  hovered_graphical_set = {},
+  clicked_graphical_set = {},
+}
 
 styles.urq_tech_list_scroll_pane = {
   type = "scroll_pane_style",

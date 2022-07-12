@@ -51,6 +51,12 @@ function gui:add_to_queue(tech_name, position)
   self:refresh()
 end
 
+function gui:cancel_research(_, e)
+  local tech_name = e.element.name
+  self.force_table.queue:remove(tech_name)
+  self:refresh()
+end
+
 function gui:ensure_valid()
   if not self.refs.window.valid then
     self:destroy()
@@ -125,7 +131,7 @@ function gui:refresh()
   for _, tech_name in pairs(self.force_table.queue.queue) do
     table.insert(
       queue_buttons,
-      self.templates.tech_button(self.force_table.technologies[tech_name], self.state.selected)
+      self.templates.tech_button_with_controls(self.force_table.technologies[tech_name], self.state.selected)
     )
   end
   -- TODO: Don't clear it every time

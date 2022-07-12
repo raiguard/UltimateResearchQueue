@@ -172,14 +172,24 @@ event.on_lua_shortcut(function(e)
   end
 end)
 
-event.register({ defines.events.on_research_finished, defines.events.on_research_reversed }, function(e)
-  local force_index = e.research.force.index
-  local force_table = global.forces[force_index]
+event.register({
+  defines.events.on_research_started,
+  defines.events.on_research_cancelled,
+  defines.events.on_research_finished,
+  defines.events.on_research_reversed,
+}, function(e)
+  local force
+  if e.name == defines.events.on_research_cancelled then
+    force = e.force
+  else
+    force = e.research.force
+  end
+  local force_table = global.forces[force.index]
   if force_table then
     if game.tick_paused then
-      sort_techs(e.research.force, force_table)
+      sort_techs(force, force_table)
     elseif not force_table.sort_techs_job then
-      force_table.sort_techs_job = on_tick_n.add(game.tick + 1, { id = "sort_techs", force = force_index })
+      force_table.sort_techs_job = on_tick_n.add(game.tick + 1, { id = "sort_techs", force = force.index })
     end
   end
 end)
