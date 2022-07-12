@@ -64,7 +64,6 @@ function gui:destroy()
   if self.refs.window.valid then
     self.refs.window.destroy()
   end
-  -- self.player.set_shortcut_toggled("urq-toggle-gui", false)
   self.player_table.gui = nil
 end
 
@@ -112,7 +111,6 @@ function gui:hide(msg)
     self.player.opened = nil
   end
   self.refs.window.visible = false
-  -- self.player.set_shortcut_toggled("urq-toggle-gui", false)
 end
 
 function gui:refresh()
@@ -171,7 +169,6 @@ function gui:show()
   if not self.state.pinned then
     self.player.opened = self.refs.window
   end
-  -- self.player.set_shortcut_toggled("urq-toggle-gui", true)
 end
 
 function gui:toggle_pinned()
