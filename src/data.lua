@@ -245,6 +245,18 @@ styles.urq_technology_slot_cancel_button = {
   clicked_graphical_set = {},
 }
 
+styles.urq_technology_slot_ingredients_flow = {
+  type = "horizontal_flow_style",
+  top_padding = 82,
+  left_padding = 2,
+}
+
+styles.urq_technology_slot_ingredient = {
+  type = "image_style",
+  size = 16,
+  stretch_image_to_widget_size = true,
+}
+
 styles.urq_tech_list_scroll_pane = {
   type = "scroll_pane_style",
   parent = "flib_naked_scroll_pane_no_padding",

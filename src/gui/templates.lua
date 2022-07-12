@@ -163,7 +163,7 @@ function templates.tech_button(tech, selected_name)
     ingredients_len = i
     table.insert(ingredients, {
       type = "sprite",
-      style_mods = { size = 16, stretch_image_to_widget_size = true },
+      style = "urq_technology_slot_ingredient",
       sprite = ingredient.type .. "/" .. ingredient.name,
       ignored_by_interaction = true,
     })
@@ -205,7 +205,8 @@ function templates.tech_button(tech, selected_name)
     } or {},
     {
       type = "flow",
-      style_mods = { top_padding = 82, left_padding = 2, horizontal_spacing = ingredients_spacing },
+      style = "urq_technology_slot_ingredients_flow",
+      style_mods = { horizontal_spacing = ingredients_spacing },
       children = ingredients,
       ignored_by_interaction = true,
     },
