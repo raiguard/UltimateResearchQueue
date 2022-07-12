@@ -1,3 +1,4 @@
+local math = require("__flib__.math")
 local table = require("__flib__.table")
 local constants = require("constants")
 
@@ -150,6 +151,12 @@ function templates.tech_button(tech, selected_name)
   local state = table.find(constants.research_state, tech.state)
   local selected = selected_name == tech.tech.name
   local leveled = tech.tech.upgrade or tech.tech.level > 1
+
+  local max_level = tech.tech.prototype.max_level
+  local ranged = tech.tech.prototype.level ~= max_level
+  local leveled = leveled or ranged
+  local max_level_str = max_level == math.max_uint and "∞" or tostring(max_level)
+
   return {
     type = "sprite-button",
     name = tech.tech.name,
@@ -168,6 +175,18 @@ function templates.tech_button(tech, selected_name)
         sprite = "technology/" .. tech.tech.name,
       },
     },
+    leveled and {
+      type = "label",
+      style = "urq_technology_slot_level_label_" .. state,
+      caption = tech.tech.level,
+      ignored_by_interaction = true,
+    } or {},
+    ranged and {
+      type = "label",
+      style = "urq_technology_slot_level_range_label_" .. state,
+      caption = tech.tech.prototype.level .. " - " .. max_level_str,
+      ignored_by_interaction = true,
+    } or {},
   }
 end
 

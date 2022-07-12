@@ -40,7 +40,11 @@ data:extend({
 
 local styles = data.raw["gui-style"].default
 
-local function technology_slot(name, y)
+--- @param name string
+--- @param y number
+--- @param level_color Color
+--- @param level_range_color Color
+local function technology_slot(name, y, level_color, level_range_color)
   styles["urq_technology_slot_" .. name] = {
     type = "button_style",
     default_graphical_set = {
@@ -164,13 +168,32 @@ local function technology_slot(name, y)
     size = { 72, 100 },
     left_click_sound = { filename = "__core__/sound/gui-square-button-large.ogg", volume = 1 },
   }
+
+  styles["urq_technology_slot_level_label_" .. name] = {
+    type = "label_style",
+    font = "technology-slot-level-font",
+    font_color = level_color,
+    top_padding = 66,
+    width = 26,
+    horizontal_align = "center",
+  }
+
+  styles["urq_technology_slot_level_range_label_" .. name] = {
+    type = "label_style",
+    font = "technology-slot-level-font",
+    font_color = level_range_color,
+    top_padding = 66,
+    right_padding = 4,
+    width = 72,
+    horizontal_align = "right",
+  }
 end
 
-technology_slot("available", 0)
-technology_slot("conditionally_available", 200)
-technology_slot("not_available", 400)
-technology_slot("researched", 600)
-technology_slot("disabled", 800)
+technology_slot("available", 0, { 77, 71, 48 }, { 255, 241, 183 })
+technology_slot("conditionally_available", 200, { 95, 68, 32 }, { 255, 234, 206 })
+technology_slot("not_available", 400, { 116, 34, 32 }, { 255, 214, 213 })
+technology_slot("researched", 600, { 0, 84, 5 }, { 165, 255, 171 })
+technology_slot("disabled", 800, { 132, 132, 132 }, { 132, 132, 132 })
 
 styles.urq_technology_slot_sprite_flow = {
   type = "horizontal_flow_style",
