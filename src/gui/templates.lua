@@ -157,7 +157,23 @@ function templates.tech_button(tech, selected_name)
   local leveled = leveled or ranged
   local max_level_str = max_level == math.max_uint and "∞" or tostring(max_level)
 
-  return {
+  local ingredients = {}
+  local ingredients_len = 0
+  for i, ingredient in pairs(tech.tech.research_unit_ingredients) do
+    ingredients_len = i
+    table.insert(ingredients, {
+      type = "sprite",
+      style_mods = { size = 16, stretch_image_to_widget_size = true },
+      sprite = ingredient.type .. "/" .. ingredient.name,
+      ignored_by_interaction = true,
+    })
+  end
+
+  -- TODO: Add remainder to always fill available space
+  local ingredients_spacing = math.clamp((68 - 16) / (ingredients_len - 1) - 16, -15, -5)
+
+  --- @type GuiBuildStructure
+  local elem = {
     type = "sprite-button",
     name = tech.tech.name,
     style = "urq_technology_slot_" .. (selected and "selected_" or "") .. (leveled and "leveled_" or "") .. state,
@@ -187,7 +203,15 @@ function templates.tech_button(tech, selected_name)
       caption = tech.tech.prototype.level .. " - " .. max_level_str,
       ignored_by_interaction = true,
     } or {},
+    {
+      type = "flow",
+      style_mods = { top_padding = 82, left_padding = 2, horizontal_spacing = ingredients_spacing },
+      children = ingredients,
+      ignored_by_interaction = true,
+    },
   }
+
+  return elem
 end
 
 --- @param tech ToShow
