@@ -170,6 +170,7 @@ function gui:show()
   if self:ensure_valid() then
     return
   end
+  self:refresh()
   self.refs.window.visible = true
   self.refs.window.bring_to_front()
   if not self.state.pinned then

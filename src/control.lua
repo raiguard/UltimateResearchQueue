@@ -220,7 +220,12 @@ event.on_tick(function(e)
 
         for _, player in pairs(force.players) do
           local player_table = global.players[player.index]
-          if player_table and player_table.gui then
+          if
+            player_table
+            and player_table.gui
+            and player_table.gui.refs.window.valid
+            and player_table.gui.refs.window.visible
+          then
             player_table.gui:refresh()
           end
         end
