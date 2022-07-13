@@ -222,10 +222,12 @@ function templates.tech_button_with_controls(tech, selected_name)
   local base = templates.tech_button(tech, selected_name)
   table.insert(base, {
     type = "frame",
+    name = "overlay_frame",
     style = "urq_technology_slot_overlay",
-    { type = "label", style = "urq_technology_slot_eta_label", caption = "0:42" },
+    { type = "label", name = "eta_label", style = "urq_technology_slot_eta_label" },
     {
       type = "sprite-button",
+      -- TODO: Use the name of the technology slot instead
       name = tech.tech.name,
       style = "urq_technology_slot_cancel_button",
       sprite = "urq-technology-slot-close",

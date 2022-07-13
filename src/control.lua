@@ -7,6 +7,7 @@ local on_tick_n = require("__flib__.on-tick-n")
 local gui = require("gui.index")
 local sort_techs = require("sort-techs")
 local queue = require("queue")
+local util = require("util")
 
 local function build_dictionaries()
   dictionary.init()
@@ -129,10 +130,9 @@ end)
 libgui.hook_events(function(e)
   local action = libgui.read_action(e)
   if action then
-    --- @type PlayerTable
-    local player_table = global.players[e.player_index]
-    if player_table.gui then
-      player_table.gui:dispatch(action, e)
+    local gui = util.get_gui(e.player_index)
+    if gui then
+      gui:dispatch(action, e)
     end
   end
 end)
@@ -140,34 +140,36 @@ end)
 event.on_gui_opened(function(e)
   local player = game.get_player(e.player_index)
   if player.opened_gui_type == defines.gui_type.research then
-    local player_table = global.players[e.player_index]
-    player.opened = nil
-    player_table.gui:show()
+    local gui = util.get_gui(player)
+    if gui then
+      player.opened = nil
+      gui:show()
+    end
   end
 end)
 
 event.register("urq-focus-search", function(e)
   local player = game.get_player(e.player_index)
   if player.opened_gui_type == defines.gui_type.custom and player.opened and player.opened.name == "urq-window" then
-    local player_table = global.players[e.player_index]
-    if player_table and player_table.gui then
-      player_table.gui:toggle_search()
+    local gui = util.get_gui(player)
+    if gui then
+      gui:toggle_search()
     end
   end
 end)
 
 event.register("urq-toggle-gui", function(e)
-  local player_table = global.players[e.player_index]
-  if player_table and player_table.gui then
-    player_table.gui:toggle_visible()
+  local gui = util.get_gui(e.player_index)
+  if gui then
+    gui:toggle_visible()
   end
 end)
 
 event.on_lua_shortcut(function(e)
   if e.prototype_name == "urq-toggle-gui" then
-    local player_table = global.players[e.player_index]
-    if player_table and player_table.gui then
-      player_table.gui:toggle_visible()
+    local gui = util.get_gui(e.player_index)
+    if gui then
+      gui:toggle_visible()
     end
   end
 end)
@@ -219,22 +221,16 @@ event.on_tick(function(e)
         sort_techs(force, force_table)
 
         for _, player in pairs(force.players) do
-          local player_table = global.players[player.index]
-          if
-            player_table
-            and player_table.gui
-            and player_table.gui.refs.window.valid
-            and player_table.gui.refs.window.visible
-          then
-            player_table.gui:refresh()
+          local gui = util.get_gui(player)
+          if gui and gui.refs.window.visible then
+            gui:refresh()
           end
         end
       end
     elseif job.id == "gui" then
-      --- @type PlayerTable
-      local player_table = global.players[job.player_index]
-      if player_table and player_table.gui then
-        player_table.gui:dispatch(job, e)
+      local gui = util.get_gui(job.player_index)
+      if gui then
+        gui:dispatch(job, e)
       end
     end
   end

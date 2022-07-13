@@ -57,15 +57,6 @@ function gui:cancel_research(_, e)
   self:refresh()
 end
 
-function gui:ensure_valid()
-  if not self.refs.window.valid then
-    self:destroy()
-    gui.new(self.player, self.player_table)
-    self.player.print({ "message.urq-recreated-gui" })
-    return true
-  end
-end
-
 function gui:destroy()
   if self.refs.window.valid then
     self.refs.window.destroy()
@@ -74,10 +65,6 @@ function gui:destroy()
 end
 
 function gui:dispatch(msg, e)
-  if self:ensure_valid() then
-    return
-  end
-
   if type(msg) == "string" then
     msg = { action = msg }
   end
@@ -100,9 +87,6 @@ function gui:handle_tech_click(_, e)
 end
 
 function gui:hide(msg)
-  if self:ensure_valid() then
-    return
-  end
   if msg.by_closed_event then
     if self.state.pinned then
       return
@@ -120,10 +104,6 @@ function gui:hide(msg)
 end
 
 function gui:refresh()
-  if self:ensure_valid() then
-    return
-  end
-
   -- Queue
 
   --- @type LuaGuiElement[]
@@ -167,9 +147,6 @@ function gui:refresh()
 end
 
 function gui:show()
-  if self:ensure_valid() then
-    return
-  end
   self:refresh()
   self.refs.window.visible = true
   self.refs.window.bring_to_front()
@@ -179,9 +156,6 @@ function gui:show()
 end
 
 function gui:toggle_pinned()
-  if self:ensure_valid() then
-    return
-  end
   self.state.pinned = not self.state.pinned
   toggle_frame_action_button(self.refs.pin_button, "flib_pin", self.state.pinned)
   if self.state.pinned then
@@ -197,9 +171,6 @@ function gui:toggle_pinned()
 end
 
 function gui:toggle_search()
-  if self:ensure_valid() then
-    return
-  end
   self.state.search_open = not self.state.search_open
   toggle_frame_action_button(self.refs.search_button, "utility/search", self.state.search_open)
   self.refs.search_textfield.visible = self.state.search_open
@@ -213,9 +184,6 @@ function gui:toggle_search()
 end
 
 function gui:toggle_visible()
-  if self:ensure_valid() then
-    return
-  end
   if self.refs.window.visible then
     self:hide({})
   else
@@ -224,9 +192,6 @@ function gui:toggle_visible()
 end
 
 function gui:update_search_query()
-  if self:ensure_valid() then
-    return
-  end
   self.state.search_query = self.refs.search_textfield.text
 
   local update_job = self.state.update_job
@@ -244,9 +209,6 @@ end
 
 -- Updates tech list button visibility based on search query
 function gui:update_tech_list()
-  if self:ensure_valid() then
-    return
-  end
   local query = self.state.search_query
   local is_empty = #query == 0
   for _, button in pairs(self.refs.techs_table.children) do

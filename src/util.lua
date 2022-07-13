@@ -26,4 +26,25 @@ end
 --- @field color Color?
 --- @field sound SoundPath|boolean?
 
+--- @param player LuaPlayer|uint
+--- @return Gui?
+function util.get_gui(player)
+  if type(player) == "table" then
+    player = player.index
+  end
+  --- @type PlayerTable?
+  local player_table = global.players[player]
+  if player_table then
+    local gui = player_table.gui
+    if gui then
+      if not gui.refs.window.valid then
+        gui:destroy()
+        gui = gui.new(gui.player, gui.player_table)
+        gui.player.print({ "message.urq-recreated-gui" })
+      end
+      return gui
+    end
+  end
+end
+
 return util
