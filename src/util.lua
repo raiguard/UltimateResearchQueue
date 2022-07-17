@@ -63,6 +63,19 @@ function util.get_gui(player)
   end
 end
 
+--- @param tech LuaTechnology
+--- @return double
+function util.get_research_progress(tech)
+  local force = tech.force
+  local current_research = force.current_research
+  if current_research and current_research.name == tech.name then
+    return force.research_progress
+    -- TODO: Handle infinite researches
+  else
+    return force.get_saved_technology_progress(tech) or 0
+  end
+end
+
 --- @param force_table ForceTable
 --- @param tech LuaTechnology
 --- @return ResearchState
@@ -80,6 +93,19 @@ function util.get_research_state(force_table, tech)
     return util.research_state.conditionally_available
   end
   return util.research_state.not_available
+end
+
+--- @param tech LuaTechnology
+--- @return double
+function util.get_research_unit_count(tech)
+  local formula = tech.research_unit_count_formula
+  if formula then
+    local level = tech.level --[[@as double]]
+    return game.evaluate_expression(formula, { l = level, L = level })
+  else
+    return tech.research_unit_count --[[@as double]]
+  end
+  return tech.research_unit_count --[[@as double]]
 end
 
 util.research_queue_updated_event = event.generate_id()

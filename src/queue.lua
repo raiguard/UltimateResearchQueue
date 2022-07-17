@@ -1,4 +1,5 @@
 local event = require("__flib__.event")
+local misc = require("__flib__.misc")
 local table = require("__flib__.table")
 
 local util = require("util")
@@ -61,6 +62,22 @@ function queue:update()
   event.raise(util.research_queue_updated_event, { force = self.force })
 end
 
+--- @param speed number
+function queue:update_durations(speed)
+  self.durations = {}
+  local duration = 0
+  for _, tech_name in pairs(self.queue) do
+    if speed == 0 then
+      self.durations[tech_name] = "[img=infinity]"
+    else
+      local tech = self.force.technologies[tech_name]
+      local progress = util.get_research_progress(tech)
+      duration = duration + (1 - progress) * util.get_research_unit_count(tech) * tech.research_unit_energy / speed
+      self.durations[tech_name] = misc.ticks_to_timestring(duration)
+    end
+  end
+end
+
 function queue:verify_integrity()
   local new_queue = {}
   for _, tech_name in pairs(self.queue) do
@@ -77,6 +94,8 @@ end
 function queue.new(force)
   --- @class Queue
   local self = {
+    --- @type table<string, string>
+    durations = {},
     force = force,
     --- @type string[]
     queue = {},

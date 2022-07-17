@@ -15,7 +15,7 @@ data:extend({
   },
   {
     type = "font",
-    name = "urq-technology-slot-eta",
+    name = "urq-technology-slot-duration",
     from = "default-bold",
     border = true,
     border_color = {},
@@ -194,9 +194,9 @@ styles.urq_technology_slot_sprite = {
   stretch_image_to_widget_size = true,
 }
 
-styles.urq_technology_slot_eta_label = {
+styles.urq_technology_slot_duration_label = {
   type = "label_style",
-  font = "urq-technology-slot-eta",
+  font = "urq-technology-slot-duration",
   height = 70,
   left_padding = 4,
   vertical_align = "bottom",

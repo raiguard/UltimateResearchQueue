@@ -1,5 +1,5 @@
-local event = require("__flib__.event")
 local dictionary = require("__flib__.dictionary")
+local event = require("__flib__.event")
 local libgui = require("__flib__.gui")
 local migration = require("__flib__.migration")
 local on_tick_n = require("__flib__.on-tick-n")
@@ -33,6 +33,8 @@ local function init_force(force)
   --- @class ForceTable
   local force_table = {
     queue = queue.new(force),
+    --- @type ProgressSample[]
+    research_progress_samples = {},
     --- @type table<string, ToShow>
     technologies = {},
   }
@@ -231,6 +233,53 @@ event.on_tick(function(e)
       local gui = util.get_gui(job.player_index)
       if gui then
         gui:dispatch(job, e)
+      end
+    end
+  end
+end)
+
+event.on_nth_tick(60, function()
+  for force_index, force_table in pairs(global.forces) do
+    local force = game.forces[force_index]
+    local current = force.current_research
+    if current then
+      local samples = force_table.research_progress_samples
+      --- @class ProgressSample
+      local sample = { progress = force.research_progress, tech = current.name }
+      table.insert(samples, sample)
+      if #samples > 3 then
+        table.remove(samples, 1)
+      end
+
+      local speed = 0
+      local num_samples = 0
+      if #samples > 1 then
+        for i = 2, #samples do
+          local previous_sample = samples[i - 1]
+          local current_sample = samples[i]
+          if previous_sample.tech == current_sample.tech then
+            -- How much the progress increased per tick
+            local diff = (current_sample.progress - previous_sample.progress) / 60
+            -- Don't add if the speed is negative for whatever reason
+            if diff > 0 then
+              speed = speed + diff * util.get_research_unit_count(current) * current.research_unit_energy
+              num_samples = num_samples + 1
+            end
+          end
+        end
+        -- Rolling average
+        if num_samples > 0 then
+          speed = speed / num_samples
+        end
+      end
+
+      force_table.queue:update_durations(speed)
+
+      for _, player in pairs(force.players) do
+        local gui = util.get_gui(player)
+        if gui then
+          gui:update_queue_durations()
+        end
       end
     end
   end

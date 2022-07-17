@@ -1,4 +1,5 @@
 local libgui = require("__flib__.gui")
+local misc = require("__flib__.misc")
 local on_tick_n = require("__flib__.on-tick-n")
 local table = require("__flib__.table")
 
@@ -123,6 +124,8 @@ function gui:refresh()
   queue_table.clear()
   libgui.build(queue_table, queue_buttons)
 
+  self:update_queue_durations()
+
   -- Tech list
 
   --- @type LuaGuiElement[]
@@ -192,6 +195,15 @@ function gui:toggle_visible()
     self:hide({})
   else
     self:show()
+  end
+end
+
+function gui:update_queue_durations()
+  local queue_table = self.refs.queue_table
+  for _, button in pairs(queue_table.children) do
+    local tech_name = button.name
+    local duration = self.force_table.queue.durations[tech_name] or misc.ticks_to_timestring(0)
+    button.duration_label.caption = duration
   end
 end
 

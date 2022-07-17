@@ -156,7 +156,7 @@ function templates.tech_button(tech, selected_name)
   local max_level = tech.tech.prototype.max_level
   local ranged = tech.tech.prototype.level ~= max_level
   local leveled = leveled or ranged
-  local max_level_str = max_level == math.max_uint and "∞" or tostring(max_level)
+  local max_level_str = max_level == math.max_uint and "[img=infinity]" or tostring(max_level)
 
   local ingredients = {}
   local ingredients_len = 0
@@ -213,8 +213,8 @@ function templates.tech_button(tech, selected_name)
     },
     {
       type = "label",
-      name = "eta_label",
-      style = "urq_technology_slot_eta_label",
+      name = "duration_label",
+      style = "urq_technology_slot_duration_label",
       ignored_by_interaction = true,
     },
   }
