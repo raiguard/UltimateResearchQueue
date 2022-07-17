@@ -31,13 +31,14 @@ end
 --- @param force LuaForce
 local function init_force(force)
   --- @class ForceTable
+  --- @field queue Queue
   local force_table = {
-    queue = queue.new(force),
     --- @type ProgressSample[]
     research_progress_samples = {},
     --- @type table<string, ToShow>
     technologies = {},
   }
+  force_table.queue = queue.new(force, force_table)
   global.forces[force.index] = force_table
 end
 
@@ -191,9 +192,13 @@ event.register({
   local force_table = global.forces[force.index]
   if force_table then
     if game.tick_paused then
+      -- TODO: This doesn't perform any of the other logic
       util.sort_techs(force, force_table)
     elseif not force_table.sort_techs_job then
-      force_table.sort_techs_job = on_tick_n.add(game.tick + 1, { id = "sort_techs", force = force.index })
+      force_table.sort_techs_job = on_tick_n.add(
+        game.tick + 1,
+        { id = "sort_techs", force = force.index, update_queue = e.name == defines.events.on_research_finished }
+      )
     end
   end
 end)
@@ -221,6 +226,9 @@ event.on_tick(function(e)
       if force_table then
         force_table.sort_techs_job = nil
         util.sort_techs(force, force_table)
+        if job.update_queue then
+          force_table.queue:update()
+        end
 
         for _, player in pairs(force.players) do
           local gui = util.get_gui(player)

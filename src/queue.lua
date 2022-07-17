@@ -44,8 +44,8 @@ function queue:update()
     if not tech_name then
       break
     end
-    local tech = self.force.technologies[tech_name]
-    if util.are_prereqs_satisfied(tech, self) then
+    local tech_data = self.force_table.technologies[tech_name]
+    if util.are_prereqs_satisfied(tech_data.tech, self) and tech_data.state ~= util.research_state.researched then
       i = next(self.queue, i)
     else
       table.remove(self.queue, i)
@@ -90,13 +90,15 @@ function queue:verify_integrity()
 end
 
 --- @param force LuaForce
+--- @param force_table ForceTable
 --- @return Queue
-function queue.new(force)
+function queue.new(force, force_table)
   --- @class Queue
   local self = {
     --- @type table<string, string>
     durations = {},
     force = force,
+    force_table = force_table,
     --- @type string[]
     queue = {},
   }
