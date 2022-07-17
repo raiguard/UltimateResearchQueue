@@ -78,6 +78,11 @@ end
 
 function gui:handle_tech_click(_, e)
   local tech_name = e.element.name
+  if e.button == defines.mouse_button_type.right then
+    self.force_table.queue:remove(tech_name)
+    self:refresh()
+    return
+  end
   if e.shift then
     self:add_to_queue(tech_name)
     return

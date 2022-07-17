@@ -21,21 +21,6 @@ data:extend({
     border_color = {},
     size = 13,
   },
-  {
-    type = "sprite",
-    name = "urq-technology-slot-close",
-    filename = "__UltimateResearchQueue__/graphics/technology-slot-close.png",
-    size = 20,
-    flags = { "gui-icon" },
-  },
-  {
-    type = "sprite",
-    name = "urq-technology-slot-close-hovered",
-    filename = "__UltimateResearchQueue__/graphics/technology-slot-close.png",
-    tint = { r = 1, g = 0.5, b = 0.5 },
-    size = 20,
-    flags = { "gui-icon" },
-  },
 })
 
 local styles = data.raw["gui-style"].default
@@ -209,40 +194,12 @@ styles.urq_technology_slot_sprite = {
   stretch_image_to_widget_size = true,
 }
 
-styles.urq_technology_slot_overlay = {
-  type = "frame_style",
-  graphical_set = {
-    position = { 472, 141 },
-    size = { 1, 12 },
-  },
-  width = 72,
-  height = 20,
-  padding = 0,
-  horizontal_flow_style = {
-    type = "horizontal_flow_style",
-    horizontal_spacing = 0,
-    padding = 0,
-  },
-}
-
 styles.urq_technology_slot_eta_label = {
   type = "label_style",
   font = "urq-technology-slot-eta",
-  width = 72 - 16,
+  height = 70,
   left_padding = 4,
-}
-
-styles.urq_technology_slot_cancel_button = {
-  type = "button_style",
-  size = { 16, 20 },
-  top_padding = 0,
-  right_padding = 2,
-  bottom_padding = 0,
-  left_padding = 2,
-  margin = 0,
-  default_graphical_set = {},
-  hovered_graphical_set = {},
-  clicked_graphical_set = {},
+  vertical_align = "bottom",
 }
 
 styles.urq_technology_slot_ingredients_flow = {
