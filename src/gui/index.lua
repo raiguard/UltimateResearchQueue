@@ -1,7 +1,7 @@
 local libgui = require("__flib__.gui")
 local on_tick_n = require("__flib__.on-tick-n")
 local table = require("__flib__.table")
-local constants = require("constants")
+
 local util = require("util")
 
 --- @param elem LuaGuiElement
@@ -38,8 +38,12 @@ gui.templates = require("gui.templates")
 --- @param position integer?
 function gui:add_to_queue(tech_name, position)
   local tech_data = self.force_table.technologies[tech_name]
-  if tech_data.state == constants.research_state.researched then
+  if tech_data.state == util.research_state.researched then
     util.flying_text(self.player, { "message.urq-already-researched" })
+    return
+  end
+  if tech_data.state == util.research_state.not_available then
+    util.flying_text(self.player, "Not yet implemented")
     return
   end
   if not self.force_table.queue:add(tech_name, position) then
@@ -125,7 +129,7 @@ function gui:refresh()
   local buttons = {}
   local force_table = global.forces[self.player.force.index]
   for _, tech in pairs(force_table.technologies) do
-    if tech.state ~= constants.research_state.disabled or tech.tech.visible_when_disabled then
+    if tech.state ~= util.research_state.disabled or tech.tech.visible_when_disabled then
       table.insert(buttons, self.templates.tech_button(tech, self.state.selected))
     end
   end

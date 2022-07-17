@@ -4,9 +4,7 @@ local libgui = require("__flib__.gui")
 local migration = require("__flib__.migration")
 local on_tick_n = require("__flib__.on-tick-n")
 
-local constants = require("constants")
 local gui = require("gui.index")
-local sort_techs = require("sort-techs")
 local queue = require("queue")
 local util = require("util")
 
@@ -48,7 +46,7 @@ local function migrate_force(force)
     return
   end
   force_table.queue:verify_integrity()
-  sort_techs(force, force_table)
+  util.sort_techs(force, force_table)
 end
 
 --- @param player_index uint
@@ -180,10 +178,10 @@ event.register({
   defines.events.on_research_cancelled,
   defines.events.on_research_finished,
   defines.events.on_research_reversed,
-  constants.research_queue_updated_event,
+  util.research_queue_updated_event,
 }, function(e)
   local force
-  if e.name == defines.events.on_research_cancelled or e.name == constants.research_queue_updated_event then
+  if e.name == defines.events.on_research_cancelled or e.name == util.research_queue_updated_event then
     force = e.force
   else
     force = e.research.force
@@ -191,7 +189,7 @@ event.register({
   local force_table = global.forces[force.index]
   if force_table then
     if game.tick_paused then
-      sort_techs(force, force_table)
+      util.sort_techs(force, force_table)
     elseif not force_table.sort_techs_job then
       force_table.sort_techs_job = on_tick_n.add(game.tick + 1, { id = "sort_techs", force = force.index })
     end
@@ -220,7 +218,7 @@ event.on_tick(function(e)
       local force_table = global.forces[job.force]
       if force_table then
         force_table.sort_techs_job = nil
-        sort_techs(force, force_table)
+        util.sort_techs(force, force_table)
 
         for _, player in pairs(force.players) do
           local gui = util.get_gui(player)

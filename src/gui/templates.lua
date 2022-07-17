@@ -1,6 +1,7 @@
 local math = require("__flib__.math")
 local table = require("__flib__.table")
-local constants = require("constants")
+
+local util = require("util")
 
 local templates = {}
 
@@ -148,7 +149,7 @@ end
 --- @param selected_name string?
 --- @return GuiBuildStructure
 function templates.tech_button(tech, selected_name)
-  local state = table.find(constants.research_state, tech.state)
+  local state = table.find(util.research_state, tech.state)
   local selected = selected_name == tech.tech.name
   local leveled = tech.tech.upgrade or tech.tech.level > 1
 

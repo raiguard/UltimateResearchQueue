@@ -1,7 +1,7 @@
 local event = require("__flib__.event")
 local table = require("__flib__.table")
 
-local constants = require("constants")
+local util = require("util")
 
 --- @class Queue
 local queue = {}
@@ -44,7 +44,7 @@ function queue:update()
     self.force.cancel_current_research()
   end
 
-  event.raise(constants.research_queue_updated_event, { force = self.force })
+  event.raise(util.research_queue_updated_event, { force = self.force })
 end
 
 function queue:verify_integrity()
