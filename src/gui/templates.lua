@@ -19,7 +19,7 @@ function templates.base()
       style = "flib_titlebar_flow",
       ref = { "titlebar_flow" },
       actions = {
-        on_click = "recenter_if_middle",
+        on_click = "handle_titlebar_click",
       },
       {
         type = "label",

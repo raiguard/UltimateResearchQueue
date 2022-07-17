@@ -91,6 +91,13 @@ function gui:handle_tech_click(_, e)
   self:refresh()
 end
 
+--- @param e on_gui_click
+function gui:handle_titlebar_click(_, e)
+  if e.button == defines.mouse_button_type.middle then
+    self.refs.window.force_auto_center()
+  end
+end
+
 function gui:hide(msg)
   if msg.by_closed_event then
     if self.state.pinned then
