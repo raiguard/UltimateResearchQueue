@@ -4,6 +4,7 @@ local libgui = require("__flib__.gui")
 local migration = require("__flib__.migration")
 local on_tick_n = require("__flib__.on-tick-n")
 
+local constants = require("constants")
 local gui = require("gui.index")
 local sort_techs = require("sort-techs")
 local queue = require("queue")
@@ -34,7 +35,7 @@ local function init_force(force)
   --- @class ForceTable
   local force_table = {
     queue = queue.new(force),
-    --- @type ToShow[]
+    --- @type table<string, ToShow>
     technologies = {},
   }
   global.forces[force.index] = force_table
@@ -179,9 +180,10 @@ event.register({
   defines.events.on_research_cancelled,
   defines.events.on_research_finished,
   defines.events.on_research_reversed,
+  constants.research_queue_updated_event,
 }, function(e)
   local force
-  if e.name == defines.events.on_research_cancelled then
+  if e.name == defines.events.on_research_cancelled or e.name == constants.research_queue_updated_event then
     force = e.force
   else
     force = e.research.force

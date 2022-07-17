@@ -1,3 +1,5 @@
+local event = require("__flib__.event")
+
 local constants = {}
 
 -- This is a super ugly way to do an enum type
@@ -20,5 +22,7 @@ constants.research_state = {
   researched = 3,
   disabled = 4,
 }
+
+constants.research_queue_updated_event = event.generate_id()
 
 return constants

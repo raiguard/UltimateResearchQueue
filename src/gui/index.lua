@@ -47,14 +47,11 @@ function gui:add_to_queue(tech_name, position)
     util.flying_text(self.player, { "message.urq-already-in-queue" })
     return
   end
-  -- TODO: Update queue GUIs for all players
-  self:refresh()
 end
 
 function gui:cancel_research(_, e)
   local tech_name = e.element.name
   self.force_table.queue:remove(tech_name)
-  self:refresh()
 end
 
 function gui:destroy()
@@ -80,7 +77,6 @@ function gui:handle_tech_click(_, e)
   local tech_name = e.element.name
   if e.button == defines.mouse_button_type.right then
     self.force_table.queue:remove(tech_name)
-    self:refresh()
     return
   end
   if e.shift then
@@ -126,8 +122,6 @@ function gui:refresh()
 
   -- Tech list
 
-  --- TODO: We should only fire this once per force
-  sort_techs(self.force, self.force_table)
   --- @type LuaGuiElement[]
   local buttons = {}
   local force_table = global.forces[self.player.force.index]
@@ -140,6 +134,8 @@ function gui:refresh()
   local techs_table = self.refs.techs_table
   techs_table.clear()
   libgui.build(techs_table, buttons)
+
+  self:update_tech_list()
 
   -- Tech information
 
@@ -184,7 +180,7 @@ function gui:toggle_search()
   else
     self.state.search_query = ""
     self.refs.search_textfield.text = ""
-    self:refresh()
+    self:update_tech_list()
   end
 end
 
