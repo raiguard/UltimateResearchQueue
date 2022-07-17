@@ -2,7 +2,6 @@ local libgui = require("__flib__.gui")
 local on_tick_n = require("__flib__.on-tick-n")
 local table = require("__flib__.table")
 local constants = require("constants")
-local sort_techs = require("sort-techs")
 local util = require("util")
 
 --- @param elem LuaGuiElement
@@ -112,7 +111,7 @@ function gui:refresh()
   for _, tech_name in pairs(self.force_table.queue.queue) do
     table.insert(
       queue_buttons,
-      self.templates.tech_button_with_controls(self.force_table.technologies[tech_name], self.state.selected)
+      self.templates.tech_button(self.force_table.technologies[tech_name], self.state.selected)
     )
   end
   -- TODO: Don't clear it every time

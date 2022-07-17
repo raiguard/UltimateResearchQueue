@@ -210,24 +210,15 @@ function templates.tech_button(tech, selected_name)
       children = ingredients,
       ignored_by_interaction = true,
     },
+    {
+      type = "label",
+      name = "eta_label",
+      style = "urq_technology_slot_eta_label",
+      ignored_by_interaction = true,
+    },
   }
 
   return elem
-end
-
---- @param tech ToShow
---- @param selected_name string?
---- @return GuiBuildStructure
-function templates.tech_button_with_controls(tech, selected_name)
-  local base = templates.tech_button(tech, selected_name)
-  table.insert(base, {
-    type = "label",
-    name = "eta_label",
-    style = "urq_technology_slot_eta_label",
-    caption = "4:20:69",
-    ignored_by_interaction = true,
-  })
-  return base
 end
 
 return templates
