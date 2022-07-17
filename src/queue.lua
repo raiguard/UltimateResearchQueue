@@ -37,6 +37,20 @@ function queue:remove(tech_name)
 end
 
 function queue:update()
+  local i = next(self.queue)
+  while i do
+    local tech_name = self.queue[i]
+    if not tech_name then
+      break
+    end
+    local tech = self.force.technologies[tech_name]
+    if util.are_prereqs_satisfied(tech, self) then
+      i = next(self.queue, i)
+    else
+      table.remove(self.queue, i)
+    end
+  end
+
   local first_tech = self.queue[1]
   if first_tech then
     self.force.add_research(first_tech)
