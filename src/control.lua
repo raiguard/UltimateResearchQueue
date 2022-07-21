@@ -129,6 +129,14 @@ event.on_player_created(function(e)
   migrate_player(game.get_player(e.player_index))
 end)
 
+event.on_player_joined_game(function(e)
+  dictionary.translate(game.get_player(e.player_index))
+end)
+
+event.on_player_left_game(function(e)
+  dictionary.cancel_translation(e.player_index)
+end)
+
 libgui.hook_events(function(e)
   local action = libgui.read_action(e)
   if action then
