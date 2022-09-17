@@ -128,11 +128,15 @@ end)
 
 event.on_player_created(function(e)
   init_player(e.player_index)
-  migrate_player(game.get_player(e.player_index))
+  migrate_player(
+    game.get_player(e.player_index) --[[@as LuaPlayer]]
+  )
 end)
 
 event.on_player_joined_game(function(e)
-  dictionary.translate(game.get_player(e.player_index))
+  dictionary.translate(
+    game.get_player(e.player_index) --[[@as LuaPlayer]]
+  )
 end)
 
 event.on_player_left_game(function(e)
@@ -150,7 +154,7 @@ libgui.hook_events(function(e)
 end)
 
 event.on_gui_opened(function(e)
-  local player = game.get_player(e.player_index)
+  local player = game.get_player(e.player_index) --[[@as LuaPlayer]]
   if player.opened_gui_type == defines.gui_type.research then
     local gui = util.get_gui(player)
     if gui then
@@ -161,7 +165,7 @@ event.on_gui_opened(function(e)
 end)
 
 event.register("urq-focus-search", function(e)
-  local player = game.get_player(e.player_index)
+  local player = game.get_player(e.player_index) --[[@as LuaPlayer]]
   if player.opened_gui_type == defines.gui_type.custom and player.opened and player.opened.name == "urq-window" then
     local gui = util.get_gui(player)
     if gui then
