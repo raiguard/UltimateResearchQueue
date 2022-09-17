@@ -2,7 +2,7 @@ local event = require("__flib__.event")
 local misc = require("__flib__.misc")
 local table = require("__flib__.table")
 
-local util = require("util")
+local util = require("__UltimateResearchQueue__.util")
 
 --- @class Queue
 local queue = {}

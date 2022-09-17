@@ -3,7 +3,7 @@ local misc = require("__flib__.misc")
 local on_tick_n = require("__flib__.on-tick-n")
 local table = require("__flib__.table")
 
-local util = require("util")
+local util = require("__UltimateResearchQueue__.util")
 
 --- @param elem LuaGuiElement
 --- @param sprite_base string

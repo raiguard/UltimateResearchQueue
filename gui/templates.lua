@@ -1,7 +1,7 @@
 local math = require("__flib__.math")
 local table = require("__flib__.table")
 
-local util = require("util")
+local util = require("__UltimateResearchQueue__.util")
 
 local templates = {}
 

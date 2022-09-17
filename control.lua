@@ -4,9 +4,9 @@ local libgui = require("__flib__.gui")
 local migration = require("__flib__.migration")
 local on_tick_n = require("__flib__.on-tick-n")
 
-local gui = require("gui.index")
-local queue = require("queue")
-local util = require("util")
+local gui = require("__UltimateResearchQueue__.gui.index")
+local queue = require("__UltimateResearchQueue__.queue")
+local util = require("__UltimateResearchQueue__.util")
 
 local function build_dictionaries()
   dictionary.init()
