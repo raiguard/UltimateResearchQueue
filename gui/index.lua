@@ -25,7 +25,9 @@ end
 --- @field search_textfield LuaGuiElement
 --- @field pin_button LuaGuiElement
 --- @field close_button LuaGuiElement
+--- @field techs_scroll_pane LuaGuiElement
 --- @field techs_table LuaGuiElement
+--- @field queue_scroll_pane LuaGuiElement
 --- @field queue_table LuaGuiElement
 --- @field tech_info TechInfoRefs
 --- @class TechInfoRefs
@@ -117,7 +119,8 @@ function gui:hide(msg)
   self.refs.window.visible = false
 end
 
-function gui:refresh()
+--- @param scroll_to string?
+function gui:refresh(scroll_to)
   -- Queue
 
   --- @type LuaGuiElement[]
@@ -132,6 +135,12 @@ function gui:refresh()
   local queue_table = self.refs.queue_table
   queue_table.clear()
   libgui.build(queue_table, queue_buttons)
+  if scroll_to then
+    local button = queue_table[scroll_to]
+    if button then
+      self.refs.queue_scroll_pane.scroll_to_element(button)
+    end
+  end
 
   self:update_durations_and_progress()
 
@@ -149,6 +158,12 @@ function gui:refresh()
   local techs_table = self.refs.techs_table
   techs_table.clear()
   libgui.build(techs_table, buttons)
+  if scroll_to then
+    local button = techs_table[scroll_to]
+    if button then
+      self.refs.techs_scroll_pane.scroll_to_element(button)
+    end
+  end
 
   self:update_tech_list()
 
@@ -167,10 +182,9 @@ end
 --- @param select_tech string?
 function gui:show(select_tech)
   if select_tech then
-    -- TODO: Scroll to show tech in queue and tech list
     self.state.selected = select_tech
   end
-  self:refresh()
+  self:refresh(select_tech)
   self.refs.window.visible = true
   self.refs.window.bring_to_front()
   if not self.state.pinned then

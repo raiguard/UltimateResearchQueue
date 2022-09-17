@@ -64,6 +64,7 @@ function templates.base()
           type = "scroll-pane",
           style = "urq_tech_list_scroll_pane",
           style_mods = { horizontally_stretchable = true, height = 100 * 7, width = 72 * 8 + 12 },
+          ref = {"techs_scroll_pane"},
           vertical_scroll_policy = "auto-and-reserve-space",
           { type = "table", style = "technology_slot_table", column_count = 8, ref = { "techs_table" } },
         },
@@ -87,6 +88,7 @@ function templates.base()
             style = "urq_tech_list_scroll_pane",
             style_mods = { height = 100 * 2, horizontally_stretchable = true },
             vertical_scroll_policy = "auto-and-reserve-space",
+            refs = {"queue_scroll_pane"},
             {
               type = "table",
               style = "technology_slot_table",
