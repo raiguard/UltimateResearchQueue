@@ -2,5 +2,6 @@
 .gitignore export-ignore
 .kakrc export-ignore
 .mailmap export-ignore
+pesticide.toml export-ignore
 stylua.toml export-ignore
 .vscode export-ignore
