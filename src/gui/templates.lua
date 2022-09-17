@@ -158,6 +158,8 @@ function templates.tech_button(tech, selected_name)
   local leveled = leveled or ranged
   local max_level_str = max_level == math.max_uint and "[img=infinity]" or tostring(max_level)
 
+  local progress = util.get_research_progress(tech.tech)
+
   local ingredients = {}
   local ingredients_len = 0
   for i, ingredient in pairs(tech.tech.research_unit_ingredients) do
@@ -173,8 +175,7 @@ function templates.tech_button(tech, selected_name)
   -- TODO: Add remainder to always fill available space
   local ingredients_spacing = math.clamp((68 - 16) / (ingredients_len - 1) - 16, -15, -5)
 
-  --- @type GuiBuildStructure
-  local elem = {
+  return {
     type = "sprite-button",
     name = tech.tech.name,
     style = "urq_technology_slot_" .. (selected and "selected_" or "") .. (leveled and "leveled_" or "") .. state,
@@ -217,9 +218,15 @@ function templates.tech_button(tech, selected_name)
       style = "urq_technology_slot_duration_label",
       ignored_by_interaction = true,
     },
+    {
+      type = "progressbar",
+      name = "progressbar",
+      style = "urq_technology_slot_progressbar",
+      value = progress,
+      visible = progress > 0,
+      ignored_by_interaction = true,
+    },
   }
-
-  return elem
 end
 
 return templates

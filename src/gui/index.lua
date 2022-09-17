@@ -77,6 +77,33 @@ function gui:dispatch(msg, e)
   end
 end
 
+function gui:update_durations_and_progress()
+  local queue_table = self.refs.queue_table
+  local techs_table = self.refs.techs_table
+  for _, tech_name in pairs(self.force_table.queue.queue) do
+    local queue_button = queue_table[tech_name]
+    local techs_button = techs_table[tech_name]
+    if not queue_button or not techs_button then
+      goto continue
+    end
+
+    local duration = self.force_table.queue.durations[tech_name] or misc.ticks_to_timestring(0)
+    if queue_button then
+      queue_button.duration_label.caption = duration
+    end
+    techs_button.duration_label.caption = duration
+
+    local progress = util.get_research_progress(self.force.technologies[tech_name])
+    if queue_button then
+      queue_button.progressbar.value = progress
+      queue_button.progressbar.visible = progress > 0
+    end
+    techs_button.progressbar.value = progress
+    techs_button.progressbar.visible = progress > 0
+  end
+  ::continue::
+end
+
 function gui:handle_tech_click(_, e)
   local tech_name = e.element.name
   if e.button == defines.mouse_button_type.right then
@@ -131,7 +158,7 @@ function gui:refresh()
   queue_table.clear()
   libgui.build(queue_table, queue_buttons)
 
-  self:update_queue_durations()
+  self:update_durations_and_progress()
 
   -- Tech list
 
@@ -202,15 +229,6 @@ function gui:toggle_visible()
     self:hide({})
   else
     self:show()
-  end
-end
-
-function gui:update_queue_durations()
-  local queue_table = self.refs.queue_table
-  for _, button in pairs(queue_table.children) do
-    local tech_name = button.name
-    local duration = self.force_table.queue.durations[tech_name] or misc.ticks_to_timestring(0)
-    button.duration_label.caption = duration
   end
 end
 

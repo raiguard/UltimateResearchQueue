@@ -214,6 +214,22 @@ styles.urq_technology_slot_ingredient = {
   stretch_image_to_widget_size = true,
 }
 
+styles.urq_technology_slot_progressbar = {
+  type = "progressbar_style",
+  bar = { position = { 305, 39 }, corner_size = 4 },
+  bar_shadow = {
+    base = { position = { 296, 39 }, corner_size = 4 },
+    shadow = {
+      left = { position = { 456, 152 }, size = { 16, 1 } },
+      center = { position = { 472, 152 }, size = { 1, 1 } },
+      right = { position = { 473, 152 }, size = { 16, 1 } },
+    },
+  },
+  bar_width = 4,
+  color = { g = 1 },
+  width = 72,
+}
+
 styles.urq_tech_list_scroll_pane = {
   type = "scroll_pane_style",
   parent = "flib_naked_scroll_pane_no_padding",

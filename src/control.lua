@@ -296,7 +296,7 @@ event.on_nth_tick(60, function()
       for _, player in pairs(force.players) do
         local gui = util.get_gui(player)
         if gui then
-          gui:update_queue_durations()
+          gui:update_durations_and_progress()
         end
       end
     end
