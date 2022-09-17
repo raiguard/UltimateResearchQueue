@@ -70,7 +70,7 @@ function templates.base()
       },
       {
         type = "flow",
-        style_mods = { vertical_spacing = 12 },
+        style_mods = { vertical_spacing = 12, width = 72 * 7 + 12 },
         direction = "vertical",
         {
           type = "frame",
@@ -85,7 +85,7 @@ function templates.base()
           {
             type = "scroll-pane",
             style = "urq_tech_list_scroll_pane",
-            style_mods = { width = 72 * 7 + 12, height = 100 * 2 },
+            style_mods = { height = 100 * 2, horizontally_stretchable = true },
             vertical_scroll_policy = "auto-and-reserve-space",
             {
               type = "table",
@@ -111,14 +111,18 @@ function templates.base()
             },
           },
           {
+            type = "scroll-pane",
+            style = "flib_naked_scroll_pane",
+            style_mods = { horizontally_stretchable = true, vertically_stretchable = true },
+            vertical_scroll_policy = "auto-and-reserve-space",
+            ref = { "tech_info", "main_scroll" },
+          },
+          {
             type = "flow",
-            style_mods = {
-              horizontally_stretchable = true,
-              vertically_stretchable = true,
-              horizontal_align = "center",
-              vertical_align = "center",
-            },
-            { type = "label", caption = "Technology info here..." },
+            style_mods = { padding = 12, vertically_stretchable = true },
+            direction = "vertical",
+            ref = { "tech_info", "tutorial_flow" },
+            { type = "label", style_mods = { single_line = false }, caption = { "gui.urq-tutorial" } },
           },
         },
       },

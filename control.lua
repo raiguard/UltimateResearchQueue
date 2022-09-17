@@ -18,6 +18,7 @@ local function build_dictionaries()
     local ref = { "", technology.localised_name, " " }
     local str = { "", ref }
     for _, effect in pairs(technology.effects) do
+      -- TODO: Search by all effects
       if effect.type == "unlock-recipe" then
         local name = { "", game.recipe_prototypes[effect.recipe].localised_name, " " }
         table.insert(ref, name)

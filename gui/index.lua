@@ -29,11 +29,13 @@ end
 --- @field queue_table LuaGuiElement
 --- @field tech_info TechInfoRefs
 --- @class TechInfoRefs
+--- @field main_scroll LuaGuiElement
 --- @field name_label LuaGuiElement
+--- @field tutorial_flow LuaGuiElement
 
 --- @class Gui
 local gui = {}
-gui.templates = require("gui.templates")
+gui.templates = require("__UltimateResearchQueue__.gui.templates")
 
 --- @param tech_name string
 --- @param position integer?
@@ -75,33 +77,6 @@ function gui:dispatch(msg, e)
   else
     log("Unknown GUI event handler: " .. msg.action)
   end
-end
-
-function gui:update_durations_and_progress()
-  local queue_table = self.refs.queue_table
-  local techs_table = self.refs.techs_table
-  for _, tech_name in pairs(self.force_table.queue.queue) do
-    local queue_button = queue_table[tech_name]
-    local techs_button = techs_table[tech_name]
-    if not queue_button or not techs_button then
-      goto continue
-    end
-
-    local duration = self.force_table.queue.durations[tech_name] or misc.ticks_to_timestring(0)
-    if queue_button then
-      queue_button.duration_label.caption = duration
-    end
-    techs_button.duration_label.caption = duration
-
-    local progress = util.get_research_progress(self.force.technologies[tech_name])
-    if queue_button then
-      queue_button.progressbar.value = progress
-      queue_button.progressbar.visible = progress > 0
-    end
-    techs_button.progressbar.value = progress
-    techs_button.progressbar.visible = progress > 0
-  end
-  ::continue::
 end
 
 function gui:handle_tech_click(_, e)
@@ -181,6 +156,8 @@ function gui:refresh()
 
   local name_label = { "gui.urq-no-technology-selected" }
   local selected_tech = self.state.selected
+  self.refs.tech_info.main_scroll.visible = not not selected_tech
+  self.refs.tech_info.tutorial_flow.visible = not selected_tech
   if selected_tech then
     name_label = self.force_table.technologies[self.state.selected].tech.localised_name
   end
@@ -237,6 +214,33 @@ function gui:toggle_visible()
   end
 end
 
+function gui:update_durations_and_progress()
+  local queue_table = self.refs.queue_table
+  local techs_table = self.refs.techs_table
+  for _, tech_name in pairs(self.force_table.queue.queue) do
+    local queue_button = queue_table[tech_name]
+    local techs_button = techs_table[tech_name]
+    if not queue_button or not techs_button then
+      goto continue
+    end
+
+    local duration = self.force_table.queue.durations[tech_name] or misc.ticks_to_timestring(0)
+    if queue_button then
+      queue_button.duration_label.caption = duration
+    end
+    techs_button.duration_label.caption = duration
+
+    local progress = util.get_research_progress(self.force.technologies[tech_name])
+    if queue_button then
+      queue_button.progressbar.value = progress
+      queue_button.progressbar.visible = progress > 0
+    end
+    techs_button.progressbar.value = progress
+    techs_button.progressbar.visible = progress > 0
+  end
+  ::continue::
+end
+
 function gui:update_search_query()
   self.state.search_query = self.refs.search_textfield.text
 
@@ -258,13 +262,15 @@ function gui:update_tech_list()
   local query = self.state.search_query
   local is_empty = #query == 0
   for _, button in pairs(self.refs.techs_table.children) do
-    -- TODO: Search by effect names
     -- TODO: Filter by science pack
     local tech_name = button.name
     if self.player_table.dictionaries then
       tech_name = self.player_table.dictionaries.technology_search[tech_name]
     end
-    button.visible = is_empty or string.find(string.lower(tech_name), query, 1, true)
+    if not is_empty then
+      is_empty = string.find(string.lower(tech_name), query, 1, true) and true or false
+    end
+    button.visible = is_empty
   end
 end
 
