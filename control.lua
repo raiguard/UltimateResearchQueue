@@ -158,8 +158,9 @@ event.on_gui_opened(function(e)
   if player.opened_gui_type == defines.gui_type.research then
     local gui = util.get_gui(player)
     if gui then
+      local opened = player.opened --[[@as LuaTechnology?]]
       player.opened = nil
-      gui:show()
+      gui:show(opened and opened.name or nil)
     end
   end
 end)

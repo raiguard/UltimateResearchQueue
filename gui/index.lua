@@ -187,7 +187,12 @@ function gui:refresh()
   self.refs.tech_info.name_label.caption = name_label
 end
 
-function gui:show()
+--- @param select_tech string?
+function gui:show(select_tech)
+  if select_tech then
+    -- TODO: Scroll to show tech in queue and tech list
+    self.state.selected = select_tech
+  end
   self:refresh()
   self.refs.window.visible = true
   self.refs.window.bring_to_front()
