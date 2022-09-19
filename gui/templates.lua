@@ -64,7 +64,7 @@ function templates.base()
           type = "scroll-pane",
           style = "urq_tech_list_scroll_pane",
           style_mods = { horizontally_stretchable = true, height = 100 * 7, width = 72 * 8 + 12 },
-          ref = {"techs_scroll_pane"},
+          ref = { "techs_scroll_pane" },
           vertical_scroll_policy = "auto-and-reserve-space",
           { type = "table", style = "technology_slot_table", column_count = 8, ref = { "techs_table" } },
         },
@@ -88,7 +88,7 @@ function templates.base()
             style = "urq_tech_list_scroll_pane",
             style_mods = { height = 100 * 2, horizontally_stretchable = true },
             vertical_scroll_policy = "auto-and-reserve-space",
-            refs = {"queue_scroll_pane"},
+            refs = { "queue_scroll_pane" },
             {
               type = "table",
               style = "technology_slot_table",
@@ -115,9 +115,63 @@ function templates.base()
           {
             type = "scroll-pane",
             style = "flib_naked_scroll_pane",
-            style_mods = { horizontally_stretchable = true, vertically_stretchable = true },
+            style_mods = { horizontally_stretchable = true, vertically_stretchable = true, right_padding = 0 },
+            direction = "vertical",
             vertical_scroll_policy = "auto-and-reserve-space",
             ref = { "tech_info", "main_scroll" },
+            {
+              type = "flow",
+              style_mods = { horizontal_spacing = 12 },
+              {
+                type = "frame",
+                style = "deep_frame_in_shallow_frame",
+                ref = { "tech_info", "main_slot_frame" },
+              },
+              {
+                type = "flow",
+                direction = "vertical",
+                {
+                  type = "label",
+                  style_mods = { single_line = false, horizontally_stretchable = true },
+                  caption = "",
+                  ref = { "tech_info", "description_label" },
+                },
+              },
+            },
+            {
+              type = "line",
+              direction = "horizontal",
+              style_mods = { left_margin = -2, right_margin = -2, top_margin = 4 },
+            },
+            { type = "label", style = "heading_2_label", caption = { "gui-technology-preview.unit-ingredients" } },
+            {
+              type = "flow",
+              style = "centering_horizontal_flow",
+              {
+                type = "frame",
+                style = "slot_group_frame",
+                { type = "table", column_count = 9, ref = { "tech_info", "ingredients_table" } },
+              },
+              {
+                type = "flow",
+                style_mods = { vertical_spacing = -2, padding = 0, top_padding = -4 },
+                direction = "vertical",
+                { type = "label", style = "count_label", ref = { "tech_info", "ingredients_count_label" } },
+                { type = "label", style = "count_label", ref = { "tech_info", "ingredients_time_label" } },
+              },
+            },
+            {
+              type = "line",
+              direction = "horizontal",
+              style_mods = { left_margin = -2, right_margin = -2, top_margin = 4 },
+            },
+            { type = "label", style = "heading_2_label", caption = { "gui-technology-preview.effects" } },
+            {
+              type = "table",
+              style_mods = { horizontal_spacing = 8 },
+              column_count = 12,
+              ref = { "tech_info", "effects_table" },
+            },
           },
           {
             type = "flow",
@@ -153,8 +207,9 @@ end
 
 --- @param tech ToShow
 --- @param selected_name string?
+--- @param ignored_by_interaction boolean?
 --- @return GuiBuildStructure
-function templates.tech_button(tech, selected_name)
+function templates.tech_button(tech, selected_name, ignored_by_interaction)
   local state = table.find(util.research_state, tech.state)
   local selected = selected_name == tech.tech.name
   local leveled = tech.tech.upgrade or tech.tech.level > 1
@@ -186,6 +241,7 @@ function templates.tech_button(tech, selected_name)
     name = tech.tech.name,
     style = "urq_technology_slot_" .. (selected and "selected_" or "") .. (leveled and "leveled_" or "") .. state,
     tooltip = tech.tech.localised_name,
+    ignored_by_interaction = ignored_by_interaction,
     actions = {
       on_click = "handle_tech_click",
     },

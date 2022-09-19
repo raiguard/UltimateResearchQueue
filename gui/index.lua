@@ -1,4 +1,5 @@
 local libgui = require("__flib__.gui")
+local math = require("__flib__.math")
 local misc = require("__flib__.misc")
 local on_tick_n = require("__flib__.on-tick-n")
 local table = require("__flib__.table")
@@ -31,9 +32,15 @@ end
 --- @field queue_table LuaGuiElement
 --- @field tech_info TechInfoRefs
 --- @class TechInfoRefs
+--- @field tutorial_flow LuaGuiElement
 --- @field main_scroll LuaGuiElement
 --- @field name_label LuaGuiElement
---- @field tutorial_flow LuaGuiElement
+--- @field main_slot_frame LuaGuiElement
+--- @field description_label LuaGuiElement
+--- @field ingredients_table LuaGuiElement
+--- @field ingredients_count_label LuaGuiElement
+--- @field ingredients_time_label LuaGuiElement
+--- @field effects_table LuaGuiElement
 
 --- @class Gui
 local gui = {}
@@ -119,6 +126,7 @@ function gui:hide(msg)
   self.refs.window.visible = false
 end
 
+-- TODO: Don't delete and recreate everything every time
 --- @param scroll_to string?
 function gui:refresh(scroll_to)
   -- Queue
@@ -131,7 +139,6 @@ function gui:refresh(scroll_to)
       self.templates.tech_button(self.force_table.technologies[tech_name], self.state.selected)
     )
   end
-  -- TODO: Don't clear it every time
   local queue_table = self.refs.queue_table
   queue_table.clear()
   libgui.build(queue_table, queue_buttons)
@@ -154,7 +161,6 @@ function gui:refresh(scroll_to)
       table.insert(buttons, self.templates.tech_button(tech, self.state.selected))
     end
   end
-  -- TODO: Don't clear it every time
   local techs_table = self.refs.techs_table
   techs_table.clear()
   libgui.build(techs_table, buttons)
@@ -169,14 +175,56 @@ function gui:refresh(scroll_to)
 
   -- Tech information
 
-  local name_label = { "gui.urq-no-technology-selected" }
   local selected_tech = self.state.selected
   self.refs.tech_info.main_scroll.visible = not not selected_tech
   self.refs.tech_info.tutorial_flow.visible = not selected_tech
-  if selected_tech then
-    name_label = self.force_table.technologies[self.state.selected].tech.localised_name
+  if not selected_tech then
+    -- self.refs.tech_info.name_label.caption = { "gui.urq-no-technology-selected" }
+    return
   end
-  self.refs.tech_info.name_label.caption = name_label
+  local tech_data = self.force_table.technologies[selected_tech]
+  -- Slot
+  local main_slot_frame = self.refs.tech_info.main_slot_frame
+  main_slot_frame.clear()
+  if selected_tech then
+    libgui.add(main_slot_frame, self.templates.tech_button(self.force_table.technologies[selected_tech], nil, true))
+  end
+  -- Name and description
+  self.refs.tech_info.name_label.caption = tech_data.tech.localised_name
+  self.refs.tech_info.description_label.caption = tech_data.tech.localised_description
+  -- Ingredients
+  local ingredients_table = self.refs.tech_info.ingredients_table
+  ingredients_table.clear()
+  local ingredients_children = table.map(tech_data.tech.research_unit_ingredients, function(ingredient)
+    return {
+      type = "sprite-button",
+      style = "transparent_slot",
+      sprite = "item/" .. ingredient.name,
+      number = ingredient.amount,
+      tooltip = game.item_prototypes[ingredient.name].localised_name,
+    }
+  end)
+  libgui.build(ingredients_table, ingredients_children)
+  self.refs.tech_info.ingredients_time_label.caption = "[img=quantity-time] "
+    .. math.round(tech_data.tech.research_unit_energy / 60, 0.1)
+  self.refs.tech_info.ingredients_count_label.caption = "[img=quantity-multiplier] "
+    .. tech_data.tech.research_unit_count
+  -- Effects
+  local effects_table = self.refs.tech_info.effects_table
+  effects_table.clear()
+  local effects_children = table.map(tech_data.tech.effects, function(effect)
+    --- @cast effect TechnologyModifier
+    local sprite = "utility/" .. string.gsub(effect.type, "%-", "_") .. "_modifier_icon"
+    if effect.type == "unlock-recipe" then
+      sprite = "recipe/" .. effect.recipe
+    end
+    return {
+      type = "sprite-button",
+      style = "transparent_slot",
+      sprite = sprite,
+    }
+  end)
+  libgui.build(effects_table, effects_children)
 end
 
 --- @param select_tech string?
