@@ -324,15 +324,16 @@ function gui:update_tech_list()
   local query = self.state.search_query
   local is_empty = #query == 0
   for _, button in pairs(self.refs.techs_table.children) do
-    -- TODO: Filter by science pack
-    local tech_name = button.name
-    if self.player_table.dictionaries then
-      tech_name = self.player_table.dictionaries.technology_search[tech_name]
+    if is_empty then
+      button.visible = true
+    else
+      -- TODO: Filter by science pack
+      local tech_name = button.name
+      if self.player_table.dictionaries then
+        tech_name = self.player_table.dictionaries.technology_search[tech_name]
+      end
+      button.visible = string.find(string.lower(tech_name), query, 1, true) and true or false
     end
-    if not is_empty then
-      is_empty = string.find(string.lower(tech_name), query, 1, true) and true or false
-    end
-    button.visible = is_empty
   end
 end
 
