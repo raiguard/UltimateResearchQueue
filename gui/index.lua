@@ -94,7 +94,7 @@ function gui:handle_tech_click(_, e)
     self.force_table.queue:remove(tech_name)
     return
   end
-  if e.shift then
+  if util.is_double_click(e.element) then
     self:add_to_queue(tech_name)
     return
   end

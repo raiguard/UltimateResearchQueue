@@ -1,4 +1,5 @@
 local event = require("__flib__.event")
+local gui = require("__flib__.gui")
 local table = require("__flib__.table")
 
 local util = {}
@@ -105,7 +106,14 @@ function util.get_research_unit_count(tech)
   else
     return tech.research_unit_count --[[@as double]]
   end
-  return tech.research_unit_count --[[@as double]]
+end
+
+--- @param elem LuaGuiElement
+function util.is_double_click(elem)
+  local tags = gui.get_tags(elem)
+  local last_click_tick = (tags.last_click_tick or 0)
+  tags.last_click_tick = game.ticks_played
+  return game.ticks_played - last_click_tick < 2
 end
 
 util.research_queue_updated_event = event.generate_id()
