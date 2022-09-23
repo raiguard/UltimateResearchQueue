@@ -145,6 +145,33 @@ function util.sort_techs(force, force_table)
   force_table.technologies = techs
 end
 
+--- Get all unreearched prerequisites. Note that the table is returned in reverse order and must be iterated in
+--- reverse.
+--- @param force_table ForceTable
+--- @param tech LuaTechnology
+--- @return string[]
+function util.get_unresearched_prerequisites(force_table, tech)
+  local added = {}
+  local to_research = { tech.name }
+  local to_iterate = { tech }
+  local i, next_tech = next(to_iterate)
+  while next_tech do
+    for prereq_name, prereq in pairs(next_tech.prerequisites) do
+      local research_state = util.get_research_state(force_table, prereq)
+      if research_state ~= util.research_state.researched then
+        if added[prereq_name] then
+          table.remove(to_research, table.find(to_research, prereq_name))
+        else
+          table.insert(to_iterate, prereq)
+        end
+        table.insert(to_research, prereq_name)
+      end
+    end
+    i, next_tech = next(to_iterate, i)
+  end
+  return to_research
+end
+
 --- @class ToShow
 --- @field tech LuaTechnology
 --- @field state ResearchState

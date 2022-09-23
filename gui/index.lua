@@ -53,7 +53,11 @@ function gui:add_to_queue(tech_name, position)
     return
   end
   if tech_data.state == util.research_state.not_available then
-    util.flying_text(self.player, "Not yet implemented")
+    -- Add all prerequisites to research this tech ASAP
+    local to_research = util.get_unresearched_prerequisites(self.force_table, tech_data.tech)
+    for i = #to_research, 1, -1 do
+      self.force_table.queue:add(to_research[i])
+    end
     return
   end
   if not self.force_table.queue:add(tech_name, position) then
