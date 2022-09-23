@@ -331,7 +331,7 @@ function gui:update_search_query()
     self:filter_tech_list()
   else
     self.state.update_job =
-      on_tick_n.add(game.tick + 30, { id = "gui", player_index = self.player.index, action = "update_tech_list" })
+      on_tick_n.add(game.tick + 30, { id = "gui", player_index = self.player.index, action = "filter_tech_list" })
   end
 end
 
