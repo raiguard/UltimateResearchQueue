@@ -293,25 +293,17 @@ function gui:update_durations_and_progress()
   for _, tech_name in pairs(self.force_table.queue.queue) do
     local queue_button = queue_table[tech_name]
     local techs_button = techs_table[tech_name]
-    if not queue_button or not techs_button then
-      goto continue
-    end
-
-    local duration = self.force_table.queue.durations[tech_name] or misc.ticks_to_timestring(0)
-    if queue_button then
+    if queue_button and techs_button then
+      local duration = self.force_table.queue.durations[tech_name] or misc.ticks_to_timestring(0)
       queue_button.duration_label.caption = duration
-    end
-    techs_button.duration_label.caption = duration
-
-    local progress = util.get_research_progress(self.force.technologies[tech_name])
-    if queue_button then
+      techs_button.duration_label.caption = duration
+      local progress = util.get_research_progress(self.force.technologies[tech_name])
       queue_button.progressbar.value = progress
       queue_button.progressbar.visible = progress > 0
+      techs_button.progressbar.value = progress
+      techs_button.progressbar.visible = progress > 0
     end
-    techs_button.progressbar.value = progress
-    techs_button.progressbar.visible = progress > 0
   end
-  ::continue::
 end
 
 function gui:update_search_query()

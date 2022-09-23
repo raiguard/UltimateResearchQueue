@@ -207,14 +207,19 @@ event.register({
   end
   local force_table = global.forces[force.index]
   if force_table then
-    if game.tick_paused then
-      -- TODO: This doesn't perform any of the other logic
-      util.sort_techs(force, force_table)
-    elseif not force_table.sort_techs_job then
-      force_table.sort_techs_job = on_tick_n.add(
-        game.tick + 1,
-        { id = "sort_techs", force = force.index, update_queue = e.name == defines.events.on_research_finished }
-      )
+    util.sort_techs(force, force_table)
+    if e.name == defines.events.on_research_finished then
+      force_table.queue:update(true)
+    end
+    for _, player in pairs(force.players) do
+      local gui = util.get_gui(player)
+      if gui then
+        if gui.refs.window.visible then
+          gui:refresh()
+        else
+          gui.state.needs_refresh = true
+        end
+      end
     end
   end
 end)
@@ -235,25 +240,7 @@ end)
 event.on_tick(function(e)
   dictionary.check_skipped()
   for _, job in pairs(on_tick_n.retrieve(e.tick) or {}) do
-    if job.id == "sort_techs" then
-      --- @type LuaForce
-      local force = game.forces[job.force]
-      local force_table = global.forces[job.force]
-      if force_table then
-        force_table.sort_techs_job = nil
-        util.sort_techs(force, force_table)
-        if job.update_queue then
-          force_table.queue:update()
-        end
-
-        for _, player in pairs(force.players) do
-          local gui = util.get_gui(player)
-          if gui and gui.refs.window.visible then
-            gui:refresh()
-          end
-        end
-      end
-    elseif job.id == "gui" then
+    if job.id == "gui" then
       local gui = util.get_gui(job.player_index)
       if gui then
         gui:dispatch(job, e)
