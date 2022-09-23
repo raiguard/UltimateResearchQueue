@@ -1,6 +1,5 @@
 local libgui = require("__flib__.gui")
 local math = require("__flib__.math")
-local misc = require("__flib__.misc")
 local on_tick_n = require("__flib__.on-tick-n")
 local table = require("__flib__.table")
 
