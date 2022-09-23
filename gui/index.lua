@@ -1,5 +1,6 @@
 local libgui = require("__flib__.gui")
 local math = require("__flib__.math")
+local misc = require("__flib__.misc")
 local on_tick_n = require("__flib__.on-tick-n")
 local table = require("__flib__.table")
 
@@ -297,17 +298,25 @@ function gui:update_durations_and_progress()
   for _, tech_name in pairs(self.force_table.queue.queue) do
     local queue_button = queue_table[tech_name]
     local techs_button = techs_table[tech_name]
-    if queue_button and techs_button then
-      local duration = self.force_table.queue.durations[tech_name] or "[img=infinity]"
+    if not queue_button or not techs_button then
+      goto continue
+    end
+
+    local duration = self.force_table.queue.durations[tech_name] or "[img=infinity]"
+    if queue_button then
       queue_button.duration_label.caption = duration
-      techs_button.duration_label.caption = duration
-      local progress = util.get_research_progress(self.force.technologies[tech_name])
+    end
+    techs_button.duration_label.caption = duration
+
+    local progress = util.get_research_progress(self.force.technologies[tech_name])
+    if queue_button then
       queue_button.progressbar.value = progress
       queue_button.progressbar.visible = progress > 0
-      techs_button.progressbar.value = progress
-      techs_button.progressbar.visible = progress > 0
     end
+    techs_button.progressbar.value = progress
+    techs_button.progressbar.visible = progress > 0
   end
+  ::continue::
 end
 
 function gui:update_search_query()

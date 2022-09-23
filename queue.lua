@@ -37,8 +37,7 @@ function queue:remove(tech_name)
   return index
 end
 
---- @param skip_event boolean?
-function queue:update(skip_event)
+function queue:update()
   local i = next(self.queue)
   while i do
     local tech_name = self.queue[i]
@@ -60,9 +59,7 @@ function queue:update(skip_event)
     self.force.cancel_current_research()
   end
 
-  if not skip_event then
-    event.raise(util.research_queue_updated_event, { force = self.force })
-  end
+  event.raise(util.research_queue_updated_event, { force = self.force })
 end
 
 --- @param speed number
