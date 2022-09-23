@@ -130,7 +130,7 @@ function templates.base()
               {
                 type = "frame",
                 style = "slot_group_frame",
-                { type = "table", column_count = 9, ref = { "tech_info", "ingredients_table" } },
+                { type = "table", column_count = 12, ref = { "tech_info", "ingredients_table" } },
               },
               {
                 type = "flow",
