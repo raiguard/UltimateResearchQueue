@@ -295,7 +295,7 @@ function gui:update_durations_and_progress()
     local queue_button = queue_table[tech_name]
     local techs_button = techs_table[tech_name]
     if queue_button and techs_button then
-      local duration = self.force_table.queue.durations[tech_name] or misc.ticks_to_timestring(0)
+      local duration = self.force_table.queue.durations[tech_name] or "[img=infinity]"
       queue_button.duration_label.caption = duration
       techs_button.duration_label.caption = duration
       local progress = util.get_research_progress(self.force.technologies[tech_name])
