@@ -111,9 +111,15 @@ end
 --- @param elem LuaGuiElement
 function util.is_double_click(elem)
   local tags = gui.get_tags(elem)
-  local last_click_tick = (tags.last_click_tick or 0)
-  tags.last_click_tick = game.ticks_played
-  return game.ticks_played - last_click_tick < 2
+  local last_click_tick = tags.last_click_tick or 0
+  local is_double_click = game.ticks_played - last_click_tick < 12
+  if is_double_click then
+    tags.last_click_tick = nil
+  else
+    tags.last_click_tick = game.ticks_played
+  end
+  gui.set_tags(elem, tags)
+  return is_double_click
 end
 
 util.research_queue_updated_event = event.generate_id()

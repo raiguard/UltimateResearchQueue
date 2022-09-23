@@ -99,7 +99,6 @@ function templates.base()
             style_mods = { horizontally_stretchable = true, vertically_stretchable = true, right_padding = 0 },
             direction = "vertical",
             vertical_scroll_policy = "auto-and-reserve-space",
-            ref = { "tech_info", "main_scroll" },
             {
               type = "flow",
               style_mods = { horizontal_spacing = 12 },
@@ -153,13 +152,6 @@ function templates.base()
               column_count = 12,
               ref = { "tech_info", "effects_table" },
             },
-          },
-          {
-            type = "flow",
-            style_mods = { padding = 12, vertically_stretchable = true },
-            direction = "vertical",
-            ref = { "tech_info", "tutorial_flow" },
-            { type = "label", style_mods = { single_line = false }, caption = { "gui.urq-tutorial" } },
           },
         },
       },

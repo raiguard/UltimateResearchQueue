@@ -33,7 +33,6 @@ end
 --- @field tech_info TechInfoRefs
 --- @class TechInfoRefs
 --- @field tutorial_flow LuaGuiElement
---- @field main_scroll LuaGuiElement
 --- @field name_label LuaGuiElement
 --- @field main_slot_frame LuaGuiElement
 --- @field description_label LuaGuiElement
@@ -88,6 +87,24 @@ function gui:dispatch(msg, e)
   end
 end
 
+-- Updates tech list button visibility based on search query
+function gui:filter_tech_list()
+  local query = self.state.search_query
+  local is_empty = #query == 0
+  for _, button in pairs(self.refs.techs_table.children) do
+    if is_empty then
+      button.visible = true
+    else
+      -- TODO: Filter by science pack
+      local tech_name = button.name
+      if self.player_table.dictionaries then
+        tech_name = self.player_table.dictionaries.technology_search[tech_name]
+      end
+      button.visible = string.find(string.lower(tech_name), query, 1, true) and true or false
+    end
+  end
+end
+
 function gui:handle_tech_click(_, e)
   local tech_name = e.element.name
   if e.button == defines.mouse_button_type.right then
@@ -98,8 +115,7 @@ function gui:handle_tech_click(_, e)
     self:add_to_queue(tech_name)
     return
   end
-  self.state.selected = tech_name
-  self:refresh()
+  self:select_tech(tech_name)
 end
 
 --- @param e on_gui_click
@@ -126,68 +142,64 @@ function gui:hide(msg)
   self.refs.window.visible = false
 end
 
--- TODO: Don't delete and recreate everything every time
---- @param scroll_to string?
-function gui:refresh(scroll_to)
+function gui:refresh()
+  local force_technologies = self.force_table.technologies
+  local selected_technology = self.state.selected
   -- Queue
-
   --- @type LuaGuiElement[]
   local queue_buttons = {}
   for _, tech_name in pairs(self.force_table.queue.queue) do
-    table.insert(
-      queue_buttons,
-      self.templates.tech_button(self.force_table.technologies[tech_name], self.state.selected)
-    )
+    table.insert(queue_buttons, self.templates.tech_button(force_technologies[tech_name], selected_technology))
   end
   local queue_table = self.refs.queue_table
   queue_table.clear()
   libgui.build(queue_table, queue_buttons)
-  if scroll_to then
-    local button = queue_table[scroll_to]
-    if button then
-      self.refs.queue_scroll_pane.scroll_to_element(button)
-    end
-  end
-
-  self:update_durations_and_progress()
-
   -- Tech list
-
   --- @type LuaGuiElement[]
   local buttons = {}
-  local force_table = global.forces[self.player.force.index]
-  for _, tech in pairs(force_table.technologies) do
+  for _, tech in pairs(force_technologies) do
     if tech.state ~= util.research_state.disabled or tech.tech.visible_when_disabled then
-      table.insert(buttons, self.templates.tech_button(tech, self.state.selected))
+      table.insert(buttons, self.templates.tech_button(tech, selected_technology))
     end
   end
   local techs_table = self.refs.techs_table
   techs_table.clear()
   libgui.build(techs_table, buttons)
-  if scroll_to then
-    local button = techs_table[scroll_to]
-    if button then
-      self.refs.techs_scroll_pane.scroll_to_element(button)
+
+  self:update_durations_and_progress()
+  self:filter_tech_list()
+end
+
+--- @param tech_name string
+function gui:select_tech(tech_name)
+  local former_selected = self.state.selected
+  if former_selected == tech_name then
+    return
+  end
+  self.state.selected = tech_name
+
+  -- Queue and techs list
+  for _, table in pairs({ self.refs.queue_table, self.refs.techs_table }) do
+    if former_selected then
+      local former_slot = table[former_selected]
+      if former_slot then
+        former_slot.style = string.gsub(former_slot.style.name, "selected_", "")
+      end
+    end
+    local new_slot = table[tech_name]
+    if new_slot then
+      new_slot.style = string.gsub(new_slot.style.name, "urq_technology_slot_", "urq_technology_slot_selected_")
     end
   end
 
-  self:update_tech_list()
-
   -- Tech information
 
-  local selected_tech = self.state.selected
-  self.refs.tech_info.main_scroll.visible = not not selected_tech
-  self.refs.tech_info.tutorial_flow.visible = not selected_tech
-  if not selected_tech then
-    -- self.refs.tech_info.name_label.caption = { "gui.urq-no-technology-selected" }
-    return
-  end
-  local tech_data = self.force_table.technologies[selected_tech]
+  local tech_data = self.force_table.technologies[tech_name]
   -- Slot
   local main_slot_frame = self.refs.tech_info.main_slot_frame
-  main_slot_frame.clear()
-  if selected_tech then
-    libgui.add(main_slot_frame, self.templates.tech_button(self.force_table.technologies[selected_tech], nil, true))
+  main_slot_frame.clear() -- The best thing to do is clear it, otherwise we'd need to diff all the sub-elements
+  if tech_name then
+    libgui.add(main_slot_frame, self.templates.tech_button(tech_data, nil, true))
   end
   -- Name and description
   self.refs.tech_info.name_label.caption = tech_data.tech.localised_name
@@ -230,9 +242,8 @@ end
 --- @param select_tech string?
 function gui:show(select_tech)
   if select_tech then
-    self.state.selected = select_tech
+    self:select_tech(select_tech)
   end
-  self:refresh(select_tech)
   self.refs.window.visible = true
   self.refs.window.bring_to_front()
   if not self.state.pinned then
@@ -264,7 +275,7 @@ function gui:toggle_search()
   else
     self.state.search_query = ""
     self.refs.search_textfield.text = ""
-    self:update_tech_list()
+    self:filter_tech_list()
   end
 end
 
@@ -312,28 +323,10 @@ function gui:update_search_query()
   end
 
   if game.tick_paused or #self.state.search_query == 0 then
-    self:update_tech_list()
+    self:filter_tech_list()
   else
     self.state.update_job =
       on_tick_n.add(game.tick + 30, { id = "gui", player_index = self.player.index, action = "update_tech_list" })
-  end
-end
-
--- Updates tech list button visibility based on search query
-function gui:update_tech_list()
-  local query = self.state.search_query
-  local is_empty = #query == 0
-  for _, button in pairs(self.refs.techs_table.children) do
-    if is_empty then
-      button.visible = true
-    else
-      -- TODO: Filter by science pack
-      local tech_name = button.name
-      if self.player_table.dictionaries then
-        tech_name = self.player_table.dictionaries.technology_search[tech_name]
-      end
-      button.visible = string.find(string.lower(tech_name), query, 1, true) and true or false
-    end
   end
 end
 
