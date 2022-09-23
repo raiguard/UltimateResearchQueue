@@ -189,6 +189,7 @@ function gui:select_tech(tech_name)
     local new_slot = table[tech_name]
     if new_slot then
       new_slot.style = string.gsub(new_slot.style.name, "urq_technology_slot_", "urq_technology_slot_selected_")
+      table.parent.scroll_to_element(new_slot)
     end
   end
 
