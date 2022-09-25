@@ -19,6 +19,7 @@ local function build_dictionaries()
     local str = { "", ref }
     for _, effect in pairs(technology.effects) do
       -- TODO: Search by all effects
+      -- TODO: Prevent absurd amounts of nesting somehow
       if effect.type == "unlock-recipe" then
         local name = { "", game.recipe_prototypes[effect.recipe].localised_name, " " }
         table.insert(ref, name)
@@ -210,7 +211,11 @@ event.register({
     if game.tick_paused then
       -- TODO: This doesn't perform any of the other logic
       util.sort_techs(force, force_table)
-    elseif not force_table.sort_techs_job then
+    else
+      -- Always use the newest version of events
+      if force_table.sort_techs_job then
+        on_tick_n.remove(force_table.sort_techs_job)
+      end
       force_table.sort_techs_job = on_tick_n.add(
         game.tick + 1,
         { id = "sort_techs", force = force.index, update_queue = e.name == defines.events.on_research_finished }
