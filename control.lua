@@ -224,10 +224,11 @@ event.register({
       if force_table.sort_techs_job then
         on_tick_n.remove(force_table.sort_techs_job)
       end
-      force_table.sort_techs_job = on_tick_n.add(
-        game.tick + 1,
-        { id = "sort_techs", force = force.index, update_queue = e.name == defines.events.on_research_finished }
-      )
+      force_table.sort_techs_job = on_tick_n.add(game.tick + 1, {
+        id = "sort_techs",
+        force = force.index,
+        completed_research = e.name == defines.events.on_research_finished and e.research.name or nil,
+      })
     end
   end
 end)
@@ -253,9 +254,10 @@ event.on_tick(function(e)
       local force = game.forces[job.force]
       local force_table = global.forces[job.force]
       if force_table then
+        local completed_research = job.completed_research
         force_table.sort_techs_job = nil
         util.sort_techs(force, force_table)
-        if job.update_queue then
+        if completed_research then
           force_table.queue:update()
         end
 
@@ -263,6 +265,9 @@ event.on_tick(function(e)
           local gui = util.get_gui(player)
           if gui and gui.refs.window.visible then
             gui:refresh()
+          end
+          if completed_research and player.mod_settings["urq-print-completed-message"].value then
+            player.print({ "message.urq-research-completed", completed_research })
           end
         end
       end
