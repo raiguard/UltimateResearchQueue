@@ -146,6 +146,13 @@ function gui:hide(msg)
   self.refs.window.visible = false
 end
 
+function gui:open_in_graph()
+  local selected_technology = self.state.selected
+  if selected_technology then
+    self.player.open_technology_gui(selected_technology)
+  end
+end
+
 function gui:refresh()
   local force_technologies = self.force_table.technologies
   local selected_technology = self.state.selected
