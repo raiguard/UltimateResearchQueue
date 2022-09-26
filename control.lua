@@ -52,6 +52,7 @@ local function migrate_force(force)
   if not force_table then
     return
   end
+  util.ensure_queue_disabled(force)
   force_table.queue:verify_integrity()
   util.sort_techs(force, force_table)
 end
@@ -212,6 +213,7 @@ event.register({
   else
     force = e.research.force
   end
+  util.ensure_queue_disabled(force)
   local force_table = global.forces[force.index]
   if force_table then
     if game.tick_paused then

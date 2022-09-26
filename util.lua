@@ -17,6 +17,15 @@ function util.are_prereqs_satisfied(tech, queue)
   return true
 end
 
+--- Ensure that the vanilla research queue is disabled
+--- @param force LuaForce
+function util.ensure_queue_disabled(force)
+  if force.research_queue_enabled then
+    force.print({ "message.urq-vanilla-queue-disabled" })
+    force.research_queue_enabled = false
+  end
+end
+
 local function first_entity_prototype(type)
   --- LuaCustomTable does not work with next() and is keyed by name, so we must use pairs()
   for name in pairs(game.get_filtered_entity_prototypes({ { filter = "type", type = type } })) do
