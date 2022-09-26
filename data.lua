@@ -346,11 +346,11 @@ if DEBUG then
     },
     {
       type = "laboratory-productivity",
-      modifier = 100,
+      modifier = 1,
     },
     {
       type = "laboratory-speed",
-      modifier = 100,
+      modifier = 1,
     },
     {
       type = "max-failed-attempts-per-tick-per-construction-queue",
