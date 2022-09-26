@@ -180,6 +180,78 @@ function templates.base()
   }
 end
 
+--- @param effect TechnologyModifier
+function templates.effect_button(effect)
+  local sprite, tooltip
+
+  if effect.type == "ammo-damage" then
+    sprite = global.effect_icons[effect.ammo_category]
+    tooltip =
+      { "modifier-description." .. effect.ammo_category .. "-damage-bonus", tostring(effect.modifier * 100) .. "%" }
+  elseif effect.type == "give-item" then
+    sprite = "item/" .. effect.item
+    tooltip = { "", effect.count .. "x  ", game.item_prototypes[effect.item].localised_name }
+  elseif effect.type == "gun-speed" then
+    sprite = global.effect_icons[effect.ammo_category]
+    tooltip = {
+      "modifier-description." .. effect.ammo_category .. "-shooting-speed-bonus",
+      tostring(effect.modifier * 100) .. "%",
+    }
+  elseif effect.type == "nothing" then
+    tooltip = effect.effect_description
+  elseif effect.type == "turret-attack" then
+    sprite = "entity/" .. effect.turret_id
+    tooltip = {
+      "modifier-description." .. effect.turret_id .. "-attack-bonus",
+      tostring(effect.modifier * 100) .. "%",
+    }
+  elseif effect.type == "unlock-recipe" then
+    sprite = "recipe/" .. effect.recipe
+    tooltip = game.recipe_prototypes[effect.recipe].localised_name
+  else
+    sprite = global.effect_icons[effect.type] or ("utility/" .. string.gsub(effect.type, "%-", "_") .. "_modifier_icon")
+    local modifier = effect.modifier
+    --- @type LocalisedString
+    local formatted = tostring(modifier)
+    local format = util.effect_display_type[effect.type]
+    if format then
+      if format == "float" then
+        formatted = tostring(math.round(modifier, 0.01))
+      elseif format == "float_percent" then
+        formatted = { "format-percent", tostring(math.round(modifier * 100, 0.01)) }
+      elseif format == "signed" or format == "unsigned" then
+        formatted = tostring(math.round(modifier))
+      elseif format == "ticks" then
+        formatted = util.format_time_short(effect.modifier)
+      end
+    end
+    tooltip = { "modifier-description." .. effect.type, formatted }
+  end
+
+  --- @type string|GuiBuildStructure
+  local overlay_constant = util.overlay_constant[effect.type]
+  if overlay_constant then
+    overlay_constant =
+      { type = "sprite-button", style = "transparent_slot", sprite = overlay_constant, ignored_by_interaction = true }
+  end
+
+  -- Debugging
+  if tooltip then
+    tooltip = { "", tooltip, "\n", serpent.block(effect) }
+  else
+    tooltip = serpent.block(effect)
+  end
+
+  return {
+    type = "sprite-button",
+    style = "transparent_slot",
+    sprite = sprite or "utility/nothing_modifier_icon",
+    number = effect.count,
+    tooltip = tooltip,
+    overlay_constant,
+  }
+end
+
 --- @param sprite string
 --- @param action string?
 --- @param tooltip LocalisedString?

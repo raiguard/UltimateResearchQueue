@@ -236,19 +236,7 @@ function gui:select_tech(tech_name)
   -- Effects
   local effects_table = self.refs.tech_info.effects_table
   effects_table.clear()
-  local effects_children = table.map(tech_data.tech.effects, function(effect)
-    --- @cast effect TechnologyModifier
-    local sprite = "utility/" .. string.gsub(effect.type, "%-", "_") .. "_modifier_icon"
-    if effect.type == "unlock-recipe" then
-      sprite = "recipe/" .. effect.recipe
-    end
-    return {
-      type = "sprite-button",
-      style = "transparent_slot",
-      sprite = sprite,
-    }
-  end)
-  libgui.build(effects_table, effects_children)
+  libgui.build(effects_table, table.map(tech_data.tech.effects, self.templates.effect_button))
 end
 
 --- @param select_tech string?

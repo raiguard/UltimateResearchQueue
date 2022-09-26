@@ -81,6 +81,7 @@ end
 
 event.on_init(function()
   build_dictionaries()
+  util.build_effect_icons()
   on_tick_n.init()
 
   --- @type table<uint, ForceTable>
@@ -114,6 +115,7 @@ end)
 event.on_configuration_changed(function(e)
   if migration.on_config_changed({}, e) then
     build_dictionaries()
+    util.build_effect_icons()
     for _, force in pairs(game.forces) do
       migrate_force(force)
     end
