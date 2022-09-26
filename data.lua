@@ -1,3 +1,5 @@
+require("__UltimateResearchQueue__.debug")
+
 data:extend({
   {
     type = "custom-input",
@@ -249,182 +251,183 @@ styles.urq_invalid_search_textfield = {
   right_padding = 3,
 }
 
--- Debugging
-data.raw["technology"]["automation"].effects = {
-  {
-    type = "ammo-damage",
-    ammo_category = "bullet",
-    modifier = 100,
-  },
-  {
-    type = "artillery-range",
-    modifier = 100,
-  },
-  {
-    type = "character-build-distance",
-    modifier = 100,
-  },
-  {
-    type = "character-build-distance",
-    modifier = 100,
-  },
-  {
-    type = "character-crafting-speed",
-    modifier = 100,
-  },
-  {
-    type = "character-health-bonus",
-    modifier = 100,
-  },
-  {
-    type = "character-inventory-slots-bonus",
-    modifier = 100,
-  },
-  {
-    type = "character-item-drop-distance",
-    modifier = 100,
-  },
-  {
-    type = "character-item-pickup-distance",
-    modifier = 100,
-  },
-  {
-    type = "character-logistic-requests",
-    modifier = 100,
-  },
-  {
-    type = "character-logistic-trash-slots",
-    modifier = 100,
-  },
-  {
-    type = "character-loot-pickup-distance",
-    modifier = 100,
-  },
-  {
-    type = "character-mining-speed",
-    modifier = 100,
-  },
-  {
-    type = "character-reach-distance",
-    modifier = 100,
-  },
-  {
-    type = "character-resource-reach-distance",
-    modifier = 100,
-  },
-  {
-    type = "character-running-speed",
-    modifier = 100,
-  },
-  {
-    type = "deconstruction-time-to-live",
-    modifier = 100,
-  },
-  {
-    type = "follower-robot-lifetime",
-    modifier = 100,
-  },
-  {
-    type = "ghost-time-to-live",
-    modifier = 100,
-  },
-  {
-    type = "give-item",
-    item = "iron-plate",
-    count = 2,
-  },
-  {
-    type = "gun-speed",
-    ammo_category = "bullet",
-    modifier = 100,
-  },
-  {
-    type = "inserter-stack-size-bonus",
-    modifier = 100,
-  },
-  {
-    type = "laboratory-productivity",
-    modifier = 100,
-  },
-  {
-    type = "laboratory-speed",
-    modifier = 100,
-  },
-  {
-    type = "max-failed-attempts-per-tick-per-construction-queue",
-    modifier = 100,
-  },
-  {
-    type = "max-successful-attempts-per-tick-per-construction-queue",
-    modifier = 100,
-  },
-  {
-    type = "maximum-following-robots-count",
-    modifier = 100,
-  },
-  {
-    type = "mining-drill-productivity-bonus",
-    modifier = 100,
-  },
-  {
-    type = "nothing",
-    effect_description = "My custom description",
-  },
-  {
-    type = "stack-inserter-capacity-bonus",
-    modifier = 100,
-  },
-  {
-    type = "train-braking-force-bonus",
-    modifier = 100,
-  },
-  {
-    type = "turret-attack",
-    turret_id = "gun-turret",
-    modifier = 100,
-  },
-  {
-    type = "unlock-recipe",
-    recipe = "assembling-machine-1",
-  },
-  {
-    type = "unlock-recipe",
-    recipe = "long-handed-inserter",
-  },
-  {
-    type = "worker-robot-battery",
-    modifier = 100,
-  },
-  {
-    type = "worker-robot-speed",
-    modifier = 100,
-  },
-  {
-    type = "worker-robot-storage",
-    modifier = 100,
-  },
-  {
-    type = "zoom-to-world-blueprint-enabled",
-    modifier = true,
-  },
-  {
-    type = "zoom-to-world-deconstruction-planner-enabled",
-    modifier = true,
-  },
-  {
-    type = "zoom-to-world-enabled",
-    modifier = true,
-  },
-  {
-    type = "zoom-to-world-ghost-building-enabled",
-    modifier = true,
-  },
-  {
-    type = "zoom-to-world-selection-tool-enabled",
-    modifier = true,
-  },
-  {
-    type = "zoom-to-world-upgrade-planner-enabled",
-    modifier = true,
-  },
-}
+if DEBUG then
+  data.raw["technology"]["automation"].effects = {
+    {
+      type = "ammo-damage",
+      ammo_category = "bullet",
+      modifier = 100,
+    },
+    {
+      type = "artillery-range",
+      modifier = 100,
+    },
+    {
+      type = "character-build-distance",
+      modifier = 100,
+    },
+    {
+      type = "character-build-distance",
+      modifier = 100,
+    },
+    {
+      type = "character-crafting-speed",
+      modifier = 100,
+    },
+    {
+      type = "character-health-bonus",
+      modifier = 100,
+    },
+    {
+      type = "character-inventory-slots-bonus",
+      modifier = 100,
+    },
+    {
+      type = "character-item-drop-distance",
+      modifier = 100,
+    },
+    {
+      type = "character-item-pickup-distance",
+      modifier = 100,
+    },
+    {
+      type = "character-logistic-requests",
+      modifier = 100,
+    },
+    {
+      type = "character-logistic-trash-slots",
+      modifier = 100,
+    },
+    {
+      type = "character-loot-pickup-distance",
+      modifier = 100,
+    },
+    {
+      type = "character-mining-speed",
+      modifier = 100,
+    },
+    {
+      type = "character-reach-distance",
+      modifier = 100,
+    },
+    {
+      type = "character-resource-reach-distance",
+      modifier = 100,
+    },
+    {
+      type = "character-running-speed",
+      modifier = 100,
+    },
+    {
+      type = "deconstruction-time-to-live",
+      modifier = 100,
+    },
+    {
+      type = "follower-robot-lifetime",
+      modifier = 100,
+    },
+    {
+      type = "ghost-time-to-live",
+      modifier = 100,
+    },
+    {
+      type = "give-item",
+      item = "iron-plate",
+      count = 2,
+    },
+    {
+      type = "gun-speed",
+      ammo_category = "bullet",
+      modifier = 100,
+    },
+    {
+      type = "inserter-stack-size-bonus",
+      modifier = 100,
+    },
+    {
+      type = "laboratory-productivity",
+      modifier = 100,
+    },
+    {
+      type = "laboratory-speed",
+      modifier = 100,
+    },
+    {
+      type = "max-failed-attempts-per-tick-per-construction-queue",
+      modifier = 100,
+    },
+    {
+      type = "max-successful-attempts-per-tick-per-construction-queue",
+      modifier = 100,
+    },
+    {
+      type = "maximum-following-robots-count",
+      modifier = 100,
+    },
+    {
+      type = "mining-drill-productivity-bonus",
+      modifier = 100,
+    },
+    {
+      type = "nothing",
+      effect_description = "My custom description",
+    },
+    {
+      type = "stack-inserter-capacity-bonus",
+      modifier = 100,
+    },
+    {
+      type = "train-braking-force-bonus",
+      modifier = 100,
+    },
+    {
+      type = "turret-attack",
+      turret_id = "gun-turret",
+      modifier = 100,
+    },
+    {
+      type = "unlock-recipe",
+      recipe = "assembling-machine-1",
+    },
+    {
+      type = "unlock-recipe",
+      recipe = "long-handed-inserter",
+    },
+    {
+      type = "worker-robot-battery",
+      modifier = 100,
+    },
+    {
+      type = "worker-robot-speed",
+      modifier = 100,
+    },
+    {
+      type = "worker-robot-storage",
+      modifier = 100,
+    },
+    {
+      type = "zoom-to-world-blueprint-enabled",
+      modifier = true,
+    },
+    {
+      type = "zoom-to-world-deconstruction-planner-enabled",
+      modifier = true,
+    },
+    {
+      type = "zoom-to-world-enabled",
+      modifier = true,
+    },
+    {
+      type = "zoom-to-world-ghost-building-enabled",
+      modifier = true,
+    },
+    {
+      type = "zoom-to-world-selection-tool-enabled",
+      modifier = true,
+    },
+    {
+      type = "zoom-to-world-upgrade-planner-enabled",
+      modifier = true,
+    },
+  }
+end

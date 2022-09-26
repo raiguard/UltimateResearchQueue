@@ -1,3 +1,5 @@
+require("__UltimateResearchQueue__.debug")
+
 local dictionary = require("__flib__.dictionary")
 local event = require("__flib__.event")
 local libgui = require("__flib__.gui")
@@ -157,17 +159,19 @@ libgui.hook_events(function(e)
   end
 end)
 
--- event.on_gui_opened(function(e)
---   local player = game.get_player(e.player_index) --[[@as LuaPlayer]]
---   if player.opened_gui_type == defines.gui_type.research then
---     local gui = util.get_gui(player)
---     if gui then
---       local opened = player.opened --[[@as LuaTechnology?]]
---       player.opened = nil
---       gui:show(opened and opened.name or nil)
---     end
---   end
--- end)
+if not DEBUG then
+  event.on_gui_opened(function(e)
+    local player = game.get_player(e.player_index) --[[@as LuaPlayer]]
+    if player.opened_gui_type == defines.gui_type.research then
+      local gui = util.get_gui(player)
+      if gui then
+        local opened = player.opened --[[@as LuaTechnology?]]
+        player.opened = nil
+        gui:show(opened and opened.name or nil)
+      end
+    end
+  end)
+end
 
 event.register("urq-focus-search", function(e)
   local player = game.get_player(e.player_index) --[[@as LuaPlayer]]

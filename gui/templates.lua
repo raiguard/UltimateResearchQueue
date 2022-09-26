@@ -235,11 +235,12 @@ function templates.effect_button(effect)
       { type = "sprite-button", style = "transparent_slot", sprite = overlay_constant, ignored_by_interaction = true }
   end
 
-  -- Debugging
-  if tooltip then
-    tooltip = { "", tooltip, "\n", serpent.block(effect) }
-  else
-    tooltip = serpent.block(effect)
+  if DEBUG then
+    if tooltip then
+      tooltip = { "", tooltip, "\n", serpent.block(effect) }
+    else
+      tooltip = serpent.block(effect)
+    end
   end
 
   return {
