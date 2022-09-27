@@ -8,21 +8,25 @@ local templates = {}
 --- @param science_pack_filters table<string, boolean>
 --- @return GuiBuildStructure
 function templates.base(science_pack_filters)
-  local techs_table_header = {
-    { type = "label", style = "subheader_caption_label", caption = { "gui-technologies-list.title" } },
-    { type = "empty-widget", style = "flib_horizontal_pusher" },
+  local science_pack_table = {
+    type = "table",
+    column_count = 9,
   }
   for name, enabled in pairs(science_pack_filters) do
-    table.insert(techs_table_header, {
+    table.insert(science_pack_table, {
       type = "sprite-button",
-      style = enabled and "flib_selected_tool_button" or "tool_button",
-      style_mods = { padding = 0 },
+      style = enabled and "flib_slot_button_green" or "flib_slot_button_default",
+      style_mods = { size = 28 },
       sprite = "item/" .. name,
       tooltip = game.item_prototypes[name].localised_name,
       actions = {
         on_click = { action = "toggle_science_pack_filter", science_pack = name },
       },
     })
+  end
+  local multi_row_header = #science_pack_table > 9
+  if multi_row_header then
+    science_pack_table.column_count = 17
   end
   return {
     type = "frame",
@@ -181,8 +185,25 @@ function templates.base(science_pack_filters)
         {
           type = "frame",
           style = "subheader_frame",
-          style_mods = { horizontally_stretchable = true },
-          children = techs_table_header,
+          style_mods = { horizontally_stretchable = true, height = 0 },
+          direction = "vertical",
+          multi_row_header and {
+            type = "flow",
+            science_pack_table,
+            { type = "line", direction = "vertical" },
+            { type = "sprite-button", style = "tool_button" },
+          } or {},
+          multi_row_header and { type = "line", style = "flib_subheader_horizontal_line" } or {},
+          {
+            type = "flow",
+            style = "centering_horizontal_flow",
+            { type = "label", style = "subheader_caption_label", caption = { "gui-technologies-list.title" } },
+            { type = "empty-widget", style = "flib_horizontal_pusher" },
+            not multi_row_header and science_pack_table or {},
+            not multi_row_header and { type = "line", direction = "vertical" } or {},
+            { type = "sprite-button", style = "tool_button" },
+            { type = "sprite-button", style = "flib_tool_button_light_green" },
+          },
         },
         {
           type = "scroll-pane",

@@ -295,11 +295,11 @@ function gui:toggle_science_pack_filter(msg, e)
   local science_pack_filters = self.state.science_pack_filters
   science_pack_filters[science_pack_name] = not science_pack_filters[science_pack_name]
   if science_pack_filters[science_pack_name] then
-    e.element.style = "flib_selected_tool_button"
+    e.element.style = "flib_slot_button_green"
   else
-    e.element.style = "tool_button"
+    e.element.style = "flib_slot_button_default"
   end
-  e.element.style.padding = 0
+  e.element.style.size = 28
   self:filter_tech_list()
 end
 
