@@ -91,21 +91,45 @@ function gui:dispatch(msg, e)
   end
 end
 
--- Updates tech list button visibility based on search query
+-- Updates tech list button visibility based on search query and science pack filters
 function gui:filter_tech_list()
+  local science_pack_filters = self.state.science_pack_filters
   local query = self.state.search_query
-  local is_empty = #query == 0
+  local dictionaries = self.player_table.dictionaries
+  local technologies = self.force_table.technologies
   for _, button in pairs(self.refs.techs_table.children) do
-    if is_empty then
-      button.visible = true
-    else
-      -- TODO: Filter by science pack
-      local tech_name = button.name
-      if self.player_table.dictionaries then
-        tech_name = self.player_table.dictionaries.technology_search[tech_name]
+    local tech_name = button.name
+    local tech_data = technologies[tech_name]
+    local science_packs_matched = true
+    local search_matched = #query == 0
+    -- Science pack filters
+    for _, ingredient in pairs(tech_data.tech.research_unit_ingredients) do
+      if not science_pack_filters[ingredient.name] then
+        science_packs_matched = false
+        break
       end
-      button.visible = string.find(string.lower(tech_name), query, 1, true) and true or false
     end
+    -- Search query
+    if science_packs_matched and not search_matched then
+      local to_search = {}
+      if dictionaries then
+        table.insert(to_search, dictionaries.technology[tech_name])
+        for _, effect in pairs(tech_data.tech.effects) do
+          if effect.type == "unlock-recipe" then
+            table.insert(to_search, dictionaries.recipe[effect.recipe])
+          end
+        end
+      else
+        table.insert(to_search, tech_name)
+      end
+      for _, str in pairs(to_search) do
+        if string.find(string.lower(str), query, 1, true) then
+          search_matched = true
+          break
+        end
+      end
+    end
+    button.visible = science_packs_matched and search_matched
   end
 end
 
@@ -266,6 +290,19 @@ function gui:toggle_pinned()
   end
 end
 
+function gui:toggle_science_pack_filter(msg, e)
+  local science_pack_name = msg.science_pack
+  local science_pack_filters = self.state.science_pack_filters
+  science_pack_filters[science_pack_name] = not science_pack_filters[science_pack_name]
+  if science_pack_filters[science_pack_name] then
+    e.element.style = "flib_selected_tool_button"
+  else
+    e.element.style = "tool_button"
+  end
+  e.element.style.padding = 0
+  self:filter_tech_list()
+end
+
 function gui:toggle_search()
   self.state.search_open = not self.state.search_open
   toggle_frame_action_button(self.refs.search_button, "utility/search", self.state.search_open)
@@ -334,8 +371,16 @@ end
 --- @param player_table PlayerTable
 --- @return Gui
 function gui.new(player, player_table)
+  --- @type table<string, boolean>
+  local science_pack_filters = table.map(
+    game.get_filtered_item_prototypes({ { filter = "type", type = "tool" } }),
+    function()
+      return true
+    end
+  )
+
   --- @type GuiRefs
-  local refs = libgui.build(player.gui.screen, { gui.templates.base() })
+  local refs = libgui.build(player.gui.screen, { gui.templates.base(science_pack_filters) })
 
   refs.titlebar_flow.drag_target = refs.window
   refs.window.force_auto_center()
@@ -353,6 +398,7 @@ function gui.new(player, player_table)
       pinned = false,
       search_open = false,
       search_query = "",
+      science_pack_filters = science_pack_filters,
       --- @type string?
       selected = nil,
     },

@@ -5,8 +5,25 @@ local util = require("__UltimateResearchQueue__.util")
 
 local templates = {}
 
+--- @param science_pack_filters table<string, boolean>
 --- @return GuiBuildStructure
-function templates.base()
+function templates.base(science_pack_filters)
+  local techs_table_header = {
+    { type = "label", style = "subheader_caption_label", caption = { "gui-technologies-list.title" } },
+    { type = "empty-widget", style = "flib_horizontal_pusher" },
+  }
+  for name, enabled in pairs(science_pack_filters) do
+    table.insert(techs_table_header, {
+      type = "sprite-button",
+      style = enabled and "flib_selected_tool_button" or "tool_button",
+      style_mods = { padding = 0 },
+      sprite = "item/" .. name,
+      tooltip = game.item_prototypes[name].localised_name,
+      actions = {
+        on_click = { action = "toggle_science_pack_filter", science_pack = name },
+      },
+    })
+  end
   return {
     type = "frame",
     name = "urq-window",
@@ -165,7 +182,7 @@ function templates.base()
           type = "frame",
           style = "subheader_frame",
           style_mods = { horizontally_stretchable = true },
-          { type = "label", style = "subheader_caption_label", caption = { "gui-technologies-list.title" } },
+          children = techs_table_header,
         },
         {
           type = "scroll-pane",

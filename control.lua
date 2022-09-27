@@ -12,23 +12,14 @@ local util = require("__UltimateResearchQueue__.util")
 
 local function build_dictionaries()
   dictionary.init()
-
-  -- Each technology will be searchable by its name, and the names of the recipes it unlocks
-  -- What could possibly go wrong here?
-  local dict = dictionary.new("technology_search")
+  -- Each technology should be searchable by its name and the names of recipes it unlocks
+  local recipes = dictionary.new("recipe")
+  for name, recipe in pairs(game.recipe_prototypes) do
+    recipes:add(name, recipe.localised_name)
+  end
+  local techs = dictionary.new("technology")
   for name, technology in pairs(game.technology_prototypes) do
-    local ref = { "", technology.localised_name, " " }
-    local str = { "", ref }
-    for _, effect in pairs(technology.effects) do
-      -- TODO: Search by all effects
-      -- TODO: Prevent absurd amounts of nesting somehow
-      if effect.type == "unlock-recipe" then
-        local name = { "", game.recipe_prototypes[effect.recipe].localised_name, " " }
-        table.insert(ref, name)
-        ref = name
-      end
-    end
-    dict:add(name, str)
+    techs:add(name, technology.localised_name)
   end
 end
 
@@ -240,7 +231,6 @@ event.on_string_translated(function(e)
       local player_table = global.players[player_index]
       if player_table then
         player_table.dictionaries = result.dictionaries
-        -- TODO: Assemble search strings for each tech
       end
     end
   end
