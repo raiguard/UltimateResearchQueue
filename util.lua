@@ -2,20 +2,9 @@ local event = require("__flib__.event")
 local gui = require("__flib__.gui")
 local table = require("__flib__.table")
 
-local util = {}
+local sort_techs = require("__UltimateResearchQueue__.sort-techs")
 
---- @param tech LuaTechnology
---- @param queue Queue?
-function util.are_prereqs_satisfied(tech, queue)
-  for name, prereq in pairs(tech.prerequisites) do
-    if not prereq.researched then
-      if not queue or not table.find(queue.queue, name) then
-        return false
-      end
-    end
-  end
-  return true
-end
+local util = {}
 
 --- Ensure that the vanilla research queue is disabled
 --- @param force LuaForce
@@ -242,25 +231,6 @@ function util.get_research_progress(tech)
   end
 end
 
---- @param force_table ForceTable
---- @param tech LuaTechnology
---- @return ResearchState
-function util.get_research_state(force_table, tech)
-  if tech.researched then
-    return util.research_state.researched
-  end
-  if not tech.enabled then
-    return util.research_state.disabled
-  end
-  if util.are_prereqs_satisfied(tech) then
-    return util.research_state.available
-  end
-  if util.are_prereqs_satisfied(tech, force_table.queue) then
-    return util.research_state.conditionally_available
-  end
-  return util.research_state.not_available
-end
-
 --- @param tech LuaTechnology
 --- @return double
 function util.get_research_unit_count(tech)
@@ -288,27 +258,6 @@ function util.is_double_click(elem)
 end
 
 util.research_queue_updated_event = event.generate_id()
-
---- @enum ResearchState
-util.research_state = {
-  available = 0,
-  conditionally_available = 1,
-  not_available = 2,
-  researched = 3,
-  disabled = 4,
-}
-
---- @param force LuaForce
---- @param force_table ForceTable
-function util.sort_techs(force, force_table)
-  local techs = {}
-  for name, tech in pairs(force.technologies) do
-    local research_state = util.get_research_state(force_table, tech)
-    -- Factorio Lua preserves the insertion order of technologies
-    techs[name] = { state = research_state, tech = tech }
-  end
-  force_table.technologies = techs
-end
 
 --- @class FirstPrototypeData
 --- @field type string
@@ -343,10 +292,11 @@ function util.get_unresearched_prerequisites(force_table, tech)
   local to_research = { tech.name }
   local to_iterate = { tech }
   local i, next_tech = next(to_iterate)
+  local force_technologies = force_table.technologies
   while next_tech do
     for prereq_name, prereq in pairs(next_tech.prerequisites) do
-      local research_state = util.get_research_state(force_table, prereq)
-      if research_state ~= util.research_state.researched then
+      local research_state = force_technologies[prereq_name].state
+      if research_state ~= sort_techs.research_state.researched then
         if added[prereq_name] then
           table.remove(to_research, table.find(to_research, prereq_name))
         else
@@ -359,10 +309,6 @@ function util.get_unresearched_prerequisites(force_table, tech)
   end
   return to_research
 end
-
---- @class ToShow
---- @field tech LuaTechnology
---- @field state ResearchState
 
 --- The overlay constant for a given TechnologyModifier type
 util.overlay_constant = {

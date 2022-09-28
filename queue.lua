@@ -2,6 +2,7 @@ local event = require("__flib__.event")
 local misc = require("__flib__.misc")
 local table = require("__flib__.table")
 
+local sort_techs = require("__UltimateResearchQueue__.sort-techs")
 local util = require("__UltimateResearchQueue__.util")
 
 --- @class Queue
@@ -45,7 +46,7 @@ function queue:update()
       break
     end
     local tech_data = self.force_table.technologies[tech_name]
-    if util.are_prereqs_satisfied(tech_data.tech, self) and tech_data.state ~= util.research_state.researched then
+    if sort_techs.are_prereqs_satisfied(tech_data.tech, self) and tech_data.state ~= sort_techs.research_state.researched then
       i = next(self.queue, i)
     else
       table.remove(self.queue, i)

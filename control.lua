@@ -8,6 +8,7 @@ local on_tick_n = require("__flib__.on-tick-n")
 
 local gui = require("__UltimateResearchQueue__.gui.index")
 local queue = require("__UltimateResearchQueue__.queue")
+local sort_techs = require("__UltimateResearchQueue__.sort-techs")
 local util = require("__UltimateResearchQueue__.util")
 
 local function build_dictionaries()
@@ -30,7 +31,7 @@ local function init_force(force)
   local force_table = {
     --- @type ProgressSample[]
     research_progress_samples = {},
-    --- @type table<string, ToShow>
+    --- @type table<string, TechnologyWithResearchState>
     technologies = {},
   }
   force_table.queue = queue.new(force, force_table)
@@ -45,7 +46,7 @@ local function migrate_force(force)
   end
   util.ensure_queue_disabled(force)
   force_table.queue:verify_integrity()
-  util.sort_techs(force, force_table)
+  sort_techs.refresh(force)
 end
 
 --- @param player_index uint
@@ -126,15 +127,11 @@ end)
 
 event.on_player_created(function(e)
   init_player(e.player_index)
-  migrate_player(
-    game.get_player(e.player_index) --[[@as LuaPlayer]]
-  )
+  migrate_player(game.get_player(e.player_index) --[[@as LuaPlayer]])
 end)
 
 event.on_player_joined_game(function(e)
-  dictionary.translate(
-    game.get_player(e.player_index) --[[@as LuaPlayer]]
-  )
+  dictionary.translate(game.get_player(e.player_index) --[[@as LuaPlayer]])
 end)
 
 event.on_player_left_game(function(e)
@@ -209,7 +206,7 @@ event.register({
   if force_table then
     if game.tick_paused then
       -- TODO: This doesn't perform any of the other logic
-      util.sort_techs(force, force_table)
+      sort_techs.refresh(force)
     else
       -- Always use the newest version of events
       if force_table.sort_techs_job then
@@ -246,7 +243,7 @@ event.on_tick(function(e)
       if force_table then
         local completed_research = job.completed_research
         force_table.sort_techs_job = nil
-        util.sort_techs(force, force_table)
+        sort_techs.refresh(force)
         if completed_research then
           force_table.queue:update()
         end
