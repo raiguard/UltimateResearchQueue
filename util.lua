@@ -6,15 +6,6 @@ local sort_techs = require("__UltimateResearchQueue__.sort-techs")
 
 local util = {}
 
---- Ensure that the vanilla research queue is disabled
---- @param force LuaForce
-function util.ensure_queue_disabled(force)
-  if force.research_queue_enabled then
-    force.print({ "message.urq-vanilla-queue-disabled" })
-    force.research_queue_enabled = false
-  end
-end
-
 local function first_entity_prototype(type)
   --- LuaCustomTable does not work with next() and is keyed by name, so we must use pairs()
   for name in pairs(game.get_filtered_entity_prototypes({ { filter = "type", type = type } })) do
@@ -148,6 +139,15 @@ util.effect_display_type = {
   ["worker-robot-storage"] = "unsigned",
 }
 
+--- Ensure that the vanilla research queue is disabled
+--- @param force LuaForce
+function util.ensure_queue_disabled(force)
+  if force.research_queue_enabled then
+    force.print({ "message.urq-vanilla-queue-disabled" })
+    force.research_queue_enabled = false
+  end
+end
+
 --- @param player LuaPlayer
 --- @param text LocalisedString
 --- @param options FlyingTextOptions?
@@ -243,45 +243,6 @@ function util.get_research_unit_count(tech)
   end
 end
 
---- @param elem LuaGuiElement
-function util.is_double_click(elem)
-  local tags = gui.get_tags(elem)
-  local last_click_tick = tags.last_click_tick or 0
-  local is_double_click = game.ticks_played - last_click_tick < 12
-  if is_double_click then
-    tags.last_click_tick = nil
-  else
-    tags.last_click_tick = game.ticks_played
-  end
-  gui.set_tags(elem, tags)
-  return is_double_click
-end
-
-util.research_queue_updated_event = event.generate_id()
-
---- @class FirstPrototypeData
---- @field type string
---- @field subtype string
---- @field matcher function?
---- @field match string?
-
---- @param effect TechnologyModifier
---- @param data FirstPrototypeData
---- @return SpritePath?
-function util.get_first_prototype_icon(effect, data)
-  for _, data in pairs(data) do
-    log(data.type .. " " .. data.subtype)
-    for _, prototype in
-      pairs(game["get_filtered_" .. data.type .. "_prototypes"]({ { filter = "type", type = data.subtype } }))
-    do
-      log(prototype.name)
-      if not data.matcher or data.matcher(prototype, effect[data.match]) then
-        return data.type .. "/" .. prototype.name
-      end
-    end
-  end
-end
-
 --- Get all unreearched prerequisites. Note that the table is returned in reverse order and must be iterated in
 --- reverse.
 --- @param force_table ForceTable
@@ -308,6 +269,20 @@ function util.get_unresearched_prerequisites(force_table, tech)
     i, next_tech = next(to_iterate, i)
   end
   return to_research
+end
+
+--- @param elem LuaGuiElement
+function util.is_double_click(elem)
+  local tags = gui.get_tags(elem)
+  local last_click_tick = tags.last_click_tick or 0
+  local is_double_click = game.ticks_played - last_click_tick < 12
+  if is_double_click then
+    tags.last_click_tick = nil
+  else
+    tags.last_click_tick = game.ticks_played
+  end
+  gui.set_tags(elem, tags)
+  return is_double_click
 end
 
 --- The overlay constant for a given TechnologyModifier type
@@ -349,5 +324,7 @@ util.overlay_constant = {
   ["zoom-to-world-selection-tool-enabled"] = "utility/zoom_to_world_selection_tool_enabled_modifier_constant",
   ["zoom-to-world-upgrade-planner-enabled"] = "utility/zoom_to_world_upgrade_planner_enabled_modifier_constant",
 }
+
+util.research_queue_updated_event = event.generate_id()
 
 return util
