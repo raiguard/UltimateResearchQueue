@@ -8,7 +8,6 @@ local on_tick_n = require("__flib__.on-tick-n")
 
 local gui = require("__UltimateResearchQueue__.gui.index")
 local queue = require("__UltimateResearchQueue__.queue")
-local sort_techs = require("__UltimateResearchQueue__.sort-techs")
 local util = require("__UltimateResearchQueue__.util")
 
 local function build_dictionaries()
@@ -46,7 +45,7 @@ local function migrate_force(force)
   end
   util.ensure_queue_disabled(force)
   force_table.queue:verify_integrity()
-  sort_techs.refresh(force)
+  util.sort_techs(force)
 end
 
 --- @param player_index uint
@@ -206,7 +205,7 @@ event.register({
   if force_table then
     if game.tick_paused then
       -- TODO: This doesn't perform any of the other logic
-      sort_techs.refresh(force)
+      util.sort_techs(force)
     else
       -- Always use the newest version of events
       if force_table.sort_techs_job then
@@ -243,7 +242,7 @@ event.on_tick(function(e)
       if force_table then
         local completed_research = job.completed_research
         force_table.sort_techs_job = nil
-        sort_techs.refresh(force)
+        util.sort_techs(force)
         if completed_research then
           force_table.queue:update()
         end

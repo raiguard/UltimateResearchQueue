@@ -3,7 +3,6 @@ local math = require("__flib__.math")
 local on_tick_n = require("__flib__.on-tick-n")
 local table = require("__flib__.table")
 
-local sort_techs = require("__UltimateResearchQueue__.sort-techs")
 local util = require("__UltimateResearchQueue__.util")
 
 --- @param elem LuaGuiElement
@@ -49,11 +48,11 @@ gui.templates = require("__UltimateResearchQueue__.gui.templates")
 --- @param position integer?
 function gui:add_to_queue(tech_name, position)
   local tech_data = self.force_table.technologies[tech_name]
-  if tech_data.state == sort_techs.research_state.researched then
+  if tech_data.state == util.research_state.researched then
     util.flying_text(self.player, { "message.urq-already-researched" })
     return
   end
-  if tech_data.state == sort_techs.research_state.not_available then
+  if tech_data.state == util.research_state.not_available then
     -- Add all prerequisites to research this tech ASAP
     local to_research = util.get_unresearched_prerequisites(self.force_table, tech_data.tech)
     for i = #to_research, 1, -1 do
@@ -193,7 +192,7 @@ function gui:refresh()
   --- @type LuaGuiElement[]
   local buttons = {}
   for _, tech in pairs(force_technologies) do
-    if tech.state ~= sort_techs.research_state.disabled or tech.tech.visible_when_disabled then
+    if tech.state ~= util.research_state.disabled or tech.tech.visible_when_disabled then
       table.insert(buttons, self.templates.tech_button(tech, selected_technology))
     end
   end

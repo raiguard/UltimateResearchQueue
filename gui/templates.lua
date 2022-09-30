@@ -1,7 +1,6 @@
 local math = require("__flib__.math")
 local table = require("__flib__.table")
 
-local sort_techs = require("__UltimateResearchQueue__.sort-techs")
 local util = require("__UltimateResearchQueue__.util")
 
 local templates = {}
@@ -316,7 +315,7 @@ end
 --- @param ignored_by_interaction boolean?
 --- @return GuiBuildStructure
 function templates.tech_button(tech, selected_name, ignored_by_interaction)
-  local state = table.find(sort_techs.research_state, tech.state)
+  local state = table.find(util.research_state, tech.state)
   local selected = selected_name == tech.tech.name
   local leveled = tech.tech.upgrade or tech.tech.level > 1
 
