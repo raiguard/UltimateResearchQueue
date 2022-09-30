@@ -47,14 +47,14 @@ gui.templates = require("__UltimateResearchQueue__.gui.templates")
 --- @param tech_name string
 --- @param position integer?
 function gui:add_to_queue(tech_name, position)
-  local tech_data = self.force_table.technologies[tech_name]
-  if tech_data.state == util.research_state.researched then
+  local research_state = self.force_table.research_states[tech_name]
+  if research_state == util.research_state.researched then
     util.flying_text(self.player, { "message.urq-already-researched" })
     return
   end
-  if tech_data.state == util.research_state.not_available then
+  if research_state == util.research_state.not_available then
     -- Add all prerequisites to research this tech ASAP
-    local to_research = util.get_unresearched_prerequisites(self.force_table, tech_data.tech)
+    local to_research = util.get_unresearched_prerequisites(self.force_table, self.force.technologies[tech_name])
     for i = #to_research, 1, -1 do
       self.force_table.queue:add(to_research[i])
     end
@@ -95,14 +95,14 @@ function gui:filter_tech_list()
   local science_pack_filters = self.state.science_pack_filters
   local query = self.state.search_query
   local dictionaries = self.player_table.dictionaries
-  local technologies = self.force_table.technologies
-  for _, button in pairs(self.refs.techs_table.children) do
+  local technologies = global.technologies
+  for i, button in pairs(self.refs.techs_table.children) do
+    local technology = technologies[i]
     local tech_name = button.name
-    local tech_data = technologies[tech_name]
     local science_packs_matched = true
     local search_matched = #query == 0
     -- Science pack filters
-    for _, ingredient in pairs(tech_data.tech.research_unit_ingredients) do
+    for _, ingredient in pairs(technology.research_unit_ingredients) do
       if not science_pack_filters[ingredient.name] then
         science_packs_matched = false
         break
@@ -113,7 +113,7 @@ function gui:filter_tech_list()
       local to_search = {}
       if dictionaries then
         table.insert(to_search, dictionaries.technology[tech_name])
-        for _, effect in pairs(tech_data.tech.effects) do
+        for _, effect in pairs(technology.effects) do
           if effect.type == "unlock-recipe" then
             table.insert(to_search, dictionaries.recipe[effect.recipe])
           end
@@ -177,13 +177,17 @@ function gui:open_in_graph()
 end
 
 function gui:refresh()
-  local force_technologies = self.force_table.technologies
+  local technologies = self.force.technologies
+  local research_states = self.force_table.research_states
   local selected_technology = self.state.selected
   -- Queue
   --- @type LuaGuiElement[]
   local queue_buttons = {}
   for _, tech_name in pairs(self.force_table.queue.queue) do
-    table.insert(queue_buttons, self.templates.tech_button(force_technologies[tech_name], selected_technology))
+    table.insert(
+      queue_buttons,
+      self.templates.tech_button(technologies[tech_name], research_states[tech_name], selected_technology)
+    )
   end
   local queue_table = self.refs.queue_table
   queue_table.clear()
@@ -191,9 +195,11 @@ function gui:refresh()
   -- Tech list
   --- @type LuaGuiElement[]
   local buttons = {}
-  for _, tech in pairs(force_technologies) do
-    if tech.state ~= util.research_state.disabled or tech.tech.visible_when_disabled then
-      table.insert(buttons, self.templates.tech_button(tech, selected_technology))
+  for _, prototype in pairs(global.technologies) do
+    local tech_name = prototype.name
+    local research_state = research_states[prototype.name]
+    if research_state ~= util.research_state.disabled or prototype.visible_when_disabled then
+      table.insert(buttons, self.templates.tech_button(technologies[tech_name], research_state, selected_technology))
     end
   end
   local techs_table = self.refs.techs_table
@@ -229,20 +235,21 @@ function gui:select_tech(tech_name)
 
   -- Tech information
 
-  local tech_data = self.force_table.technologies[tech_name]
+  local technology = self.force.technologies[tech_name]
+  local research_state = self.force_table.research_states[tech_name]
   -- Slot
   local main_slot_frame = self.refs.tech_info.main_slot_frame
   main_slot_frame.clear() -- The best thing to do is clear it, otherwise we'd need to diff all the sub-elements
   if tech_name then
-    libgui.add(main_slot_frame, self.templates.tech_button(tech_data, nil, true))
+    libgui.add(main_slot_frame, self.templates.tech_button(technology, research_state, nil, true))
   end
   -- Name and description
-  self.refs.tech_info.name_label.caption = tech_data.tech.localised_name
-  self.refs.tech_info.description_label.caption = tech_data.tech.localised_description
+  self.refs.tech_info.name_label.caption = technology.localised_name
+  self.refs.tech_info.description_label.caption = technology.localised_description
   -- Ingredients
   local ingredients_table = self.refs.tech_info.ingredients_table
   ingredients_table.clear()
-  local ingredients_children = table.map(tech_data.tech.research_unit_ingredients, function(ingredient)
+  local ingredients_children = table.map(technology.research_unit_ingredients, function(ingredient)
     return {
       type = "sprite-button",
       style = "transparent_slot",
@@ -253,13 +260,12 @@ function gui:select_tech(tech_name)
   end)
   libgui.build(ingredients_table, ingredients_children)
   self.refs.tech_info.ingredients_time_label.caption = "[img=quantity-time] "
-    .. math.round(tech_data.tech.research_unit_energy / 60, 0.1)
-  self.refs.tech_info.ingredients_count_label.caption = "[img=quantity-multiplier] "
-    .. tech_data.tech.research_unit_count
+    .. math.round(technology.research_unit_energy / 60, 0.1)
+  self.refs.tech_info.ingredients_count_label.caption = "[img=quantity-multiplier] " .. technology.research_unit_count
   -- Effects
   local effects_table = self.refs.tech_info.effects_table
   effects_table.clear()
-  libgui.build(effects_table, table.map(tech_data.tech.effects, self.templates.effect_button))
+  libgui.build(effects_table, table.map(technology.effects, self.templates.effect_button))
 end
 
 --- @param select_tech string?

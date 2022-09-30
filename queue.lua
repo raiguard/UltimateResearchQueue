@@ -14,6 +14,7 @@ function queue:add(tech_name, position)
     position = position or #self.queue + 1
     table.insert(self.queue, position, tech_name)
     self:update()
+    event.raise(util.research_queue_updated_event, { force = self.force, research = tech_name })
     return position
   end
 end
@@ -27,6 +28,7 @@ function queue:move(tech_name, position)
   end
   self:add(tech_name, position)
   self:update()
+  event.raise(util.research_queue_updated_event, { force = self.force, research = tech_name })
 end
 
 --- @param tech_name string
@@ -34,21 +36,27 @@ function queue:remove(tech_name)
   local index = table.find(self.queue, tech_name)
   table.remove(self.queue, index)
   self:update()
+  event.raise(util.research_queue_updated_event, { force = self.force, research = tech_name })
   return index
 end
 
 function queue:update()
+  local technologies = self.force.technologies
+  local research_states = self.force_table.research_states
   local i = next(self.queue)
   while i do
     local tech_name = self.queue[i]
     if not tech_name then
       break
     end
-    local tech_data = self.force_table.technologies[tech_name]
-    if util.are_prereqs_satisfied(tech_data.tech, self) and tech_data.state ~= util.research_state.researched then
+    if
+      research_states[tech_name] ~= util.research_state.researched
+      and util.are_prereqs_satisfied(technologies[tech_name], self)
+    then
       i = next(self.queue, i)
     else
       table.remove(self.queue, i)
+      event.raise(util.research_queue_updated_event, { force = self.force, research = tech_name })
     end
   end
 
@@ -58,8 +66,6 @@ function queue:update()
   else
     self.force.cancel_current_research()
   end
-
-  event.raise(util.research_queue_updated_event, { force = self.force })
 end
 
 --- @param speed number

@@ -310,25 +310,26 @@ function templates.frame_action_button(sprite, action, tooltip, ref)
   }
 end
 
---- @param tech TechnologyWithResearchState
+--- @param technology LuaTechnology
+--- @param research_state ResearchState
 --- @param selected_name string?
 --- @param ignored_by_interaction boolean?
 --- @return GuiBuildStructure
-function templates.tech_button(tech, selected_name, ignored_by_interaction)
-  local state = table.find(util.research_state, tech.state)
-  local selected = selected_name == tech.tech.name
-  local leveled = tech.tech.upgrade or tech.tech.level > 1
+function templates.tech_button(technology, research_state, selected_name, ignored_by_interaction)
+  local state = table.find(util.research_state, research_state)
+  local selected = selected_name == technology.name
+  local leveled = technology.upgrade or technology.level > 1
 
-  local max_level = tech.tech.prototype.max_level
-  local ranged = tech.tech.prototype.level ~= max_level
+  local max_level = technology.prototype.max_level
+  local ranged = technology.prototype.level ~= max_level
   local leveled = leveled or ranged
   local max_level_str = max_level == math.max_uint and "[img=infinity]" or tostring(max_level)
 
-  local progress = util.get_research_progress(tech.tech)
+  local progress = util.get_research_progress(technology)
 
   local ingredients = {}
   local ingredients_len = 0
-  for i, ingredient in pairs(tech.tech.research_unit_ingredients) do
+  for i, ingredient in pairs(technology.research_unit_ingredients) do
     ingredients_len = i
     table.insert(ingredients, {
       type = "sprite",
@@ -343,9 +344,9 @@ function templates.tech_button(tech, selected_name, ignored_by_interaction)
 
   return {
     type = "sprite-button",
-    name = tech.tech.name,
+    name = technology.name,
     style = "urq_technology_slot_" .. (selected and "selected_" or "") .. (leveled and "leveled_" or "") .. state,
-    tooltip = tech.tech.localised_name,
+    tooltip = technology.localised_name,
     ignored_by_interaction = ignored_by_interaction,
     actions = {
       on_click = "handle_tech_click",
@@ -357,19 +358,19 @@ function templates.tech_button(tech, selected_name, ignored_by_interaction)
       {
         type = "sprite",
         style = "urq_technology_slot_sprite",
-        sprite = "technology/" .. tech.tech.name,
+        sprite = "technology/" .. technology.name,
       },
     },
     leveled and {
       type = "label",
       style = "urq_technology_slot_level_label_" .. state,
-      caption = tech.tech.level,
+      caption = technology.level,
       ignored_by_interaction = true,
     } or {},
     ranged and {
       type = "label",
       style = "urq_technology_slot_level_range_label_" .. state,
-      caption = tech.tech.prototype.level .. " - " .. max_level_str,
+      caption = technology.prototype.level .. " - " .. max_level_str,
       ignored_by_interaction = true,
     } or {},
     {

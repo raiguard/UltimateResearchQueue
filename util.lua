@@ -110,6 +110,109 @@ function util.build_effect_icons()
   global.effect_icons = icons
 end
 
+--- @param force LuaForce
+function util.build_research_states(force)
+  local states = {}
+  local force_table = global.forces[force.index]
+  for name, technology in pairs(force.technologies) do
+    states[name] = util.get_research_state(force_table, technology)
+  end
+  force_table.research_states = states
+end
+
+function util.build_technology_list()
+  -- game.technology_prototypes is a LuaCustomTable, so we need to convert it to an array
+  --- @type LuaTechnologyPrototype[]
+  local technologies = {}
+  for _, prototype in pairs(game.technology_prototypes) do
+    table.insert(technologies, prototype)
+  end
+  -- Sort the technologies array
+  local prototypes = {
+    fluid = game.fluid_prototypes,
+    item = game.item_prototypes,
+  }
+  table.sort(technologies, function(tech_a, tech_b)
+    local ingredients_a = tech_a.research_unit_ingredients
+    local ingredients_b = tech_b.research_unit_ingredients
+    local len_a = #ingredients_a
+    local len_b = #ingredients_b
+    -- Always put technologies with zero ingredients at the front
+    if (len_a == 0) ~= (len_b == 0) then
+      return len_a == 0
+    end
+    if #ingredients_a > 0 then
+      -- Compare ingredient order strings
+      -- Check the most expensive packs first, and sort based on the first difference
+      for i = 0, math.min(len_a, len_b) - 1 do
+        local ingredient_a = ingredients_a[len_a - i]
+        local ingredient_b = ingredients_b[len_b - i]
+        local order_a = prototypes[ingredient_a.type][ingredient_a.name].order
+        local order_b = prototypes[ingredient_b.type][ingredient_b.name].order
+        -- Cheaper pack goes in front
+        if order_a ~= order_b then
+          return order_a < order_b
+        end
+      end
+      -- Sort the tech with fewer ingredients in front
+      if len_a ~= len_b then
+        return len_a < len_b
+      end
+    end
+    -- Compare technology order strings
+    local order_a = tech_a.order
+    local order_b = tech_b.order
+    if order_a ~= order_b then
+      return order_a < order_b
+    end
+    -- Compare prototype names
+    return tech_a.name < tech_b.name
+  end)
+  -- Create lookup for the order of a given technology
+  --- @type table<string, number>
+  local order = {}
+  for i, prototype in pairs(technologies) do
+    order[prototype.name] = i
+  end
+  -- Build all prerequisites and direct requisites for all technologies
+  --- @type table<string, LuaTechnologyPrototype[]>
+  local prerequisites = {}
+  --- @type table<string, LuaTechnologyPrototype[]>
+  local requisites = {}
+  for _, prototype in pairs(technologies) do
+    if not requisites[prototype.name] then
+      requisites[prototype.name] = {}
+    end
+    -- TODO: Recursively assemble prerequisites for queueing
+    local prereqs = {}
+    for _, prerequisite in pairs(prototype.prerequisites) do
+      prereqs[#prereqs + 1] = prerequisite
+      local reqs = requisites[prerequisite.name]
+      if not reqs then
+        requisites[prerequisite.name] = { prototype }
+      else
+        reqs[#reqs + 1] = prototype
+      end
+    end
+    -- Sort prerequisites table
+    table.sort(prereqs, function(tech_a, tech_b)
+      return order[tech_a.name] < order[tech_b.name]
+    end)
+    prerequisites[prototype.name] = prereqs
+  end
+  -- Sort requisite tables
+  for _, requisites in pairs(requisites) do
+    table.sort(requisites, function(tech_a, tech_b)
+      return order[tech_a.name] < order[tech_b.name]
+    end)
+  end
+
+  global.technologies = technologies
+  global.technology_order = order
+  global.technology_prerequisites = prerequisites
+  global.technology_requisites = requisites
+end
+
 --- @alias EffectDisplayType
 --- | "float"
 --- | "float_percent"
@@ -282,10 +385,10 @@ function util.get_unresearched_prerequisites(force_table, tech)
   local to_research = { tech.name }
   local to_iterate = { tech }
   local i, next_tech = next(to_iterate)
-  local force_technologies = force_table.technologies
+  local research_states = force_table.research_states
   while next_tech do
     for prereq_name, prereq in pairs(next_tech.prerequisites) do
-      local research_state = force_technologies[prereq_name].state
+      local research_state = research_states[prereq_name]
       if research_state ~= util.research_state.researched then
         if added[prereq_name] then
           table.remove(to_research, table.find(to_research, prereq_name))
@@ -364,77 +467,5 @@ util.research_state = {
   researched = 3,
   disabled = 4,
 }
-
---- Rebuild the techs list from scratch - slow!
---- @param force LuaForce
-function util.sort_techs(force)
-  local force_table = global.forces[force.index]
-
-  --- @type TechnologyWithResearchState[]
-  local to_show = {}
-  for _, technology in pairs(force.technologies) do
-    if not technology.prototype.hidden then
-      table.insert(to_show, { tech = technology, state = util.get_research_state(force_table, technology) })
-    end
-  end
-
-  local prototypes = {
-    fluid = game.fluid_prototypes,
-    item = game.item_prototypes,
-  }
-  table.sort(to_show, function(tech_a, tech_b)
-    -- Compare researche state
-    if tech_a.state ~= tech_b.state then
-      return tech_a.state < tech_b.state
-    end
-    local ingredients_a = tech_a.tech.research_unit_ingredients
-    local ingredients_b = tech_b.tech.research_unit_ingredients
-    local len_a = #ingredients_a
-    local len_b = #ingredients_b
-    -- Always put technologies with zero ingredients at the front
-    if (len_a == 0) ~= (len_b == 0) then
-      return len_a == 0
-    end
-    if #ingredients_a > 0 then
-      -- Compare ingredient order strings
-      -- Check the most expensive packs first, and sort based on the first difference
-      for i = 0, math.min(len_a, len_b) - 1 do
-        local ingredient_a = ingredients_a[len_a - i]
-        local ingredient_b = ingredients_b[len_b - i]
-        local order_a = prototypes[ingredient_a.type][ingredient_a.name].order
-        local order_b = prototypes[ingredient_b.type][ingredient_b.name].order
-        -- Cheaper pack goes in front
-        if order_a ~= order_b then
-          return order_a < order_b
-        end
-      end
-      -- Sort the tech with fewer ingredients in front
-      if len_a ~= len_b then
-        return len_a < len_b
-      end
-    end
-    -- Compare technology order strings
-    local order_a = tech_a.tech.order
-    local order_b = tech_b.tech.order
-    if order_a ~= order_b then
-      return order_a < order_b
-    end
-    -- Compare prototype names
-    return tech_a.tech.name < tech_b.tech.name
-  end)
-
-  -- Create an indexable table
-  -- Factorio Lua preserves the insertion order of tables
-  local output = {}
-  for _, tech_data in pairs(to_show) do
-    output[tech_data.tech.name] = tech_data
-  end
-
-  force_table.technologies = output
-end
-
---- @class TechnologyWithResearchState
---- @field tech LuaTechnology
---- @field state ResearchState
 
 return util

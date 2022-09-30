@@ -30,8 +30,7 @@ local function init_force(force)
   local force_table = {
     --- @type ProgressSample[]
     research_progress_samples = {},
-    --- @type table<string, TechnologyWithResearchState>
-    technologies = {},
+    research_states = {},
   }
   force_table.queue = queue.new(force, force_table)
   global.forces[force.index] = force_table
@@ -43,9 +42,9 @@ local function migrate_force(force)
   if not force_table then
     return
   end
+  util.build_research_states(force)
   util.ensure_queue_disabled(force)
   force_table.queue:verify_integrity()
-  util.sort_techs(force)
 end
 
 --- @param player_index uint
@@ -76,6 +75,7 @@ end
 event.on_init(function()
   build_dictionaries()
   util.build_effect_icons()
+  util.build_technology_list()
   on_tick_n.init()
 
   --- @type table<uint, ForceTable>
@@ -110,6 +110,7 @@ event.on_configuration_changed(function(e)
   if migration.on_config_changed({}, e) then
     build_dictionaries()
     util.build_effect_icons()
+    util.build_technology_list()
     for _, force in pairs(game.forces) do
       migrate_force(force)
     end
@@ -194,28 +195,40 @@ event.register({
   defines.events.on_research_reversed,
   util.research_queue_updated_event,
 }, function(e)
-  local force
-  if e.name == defines.events.on_research_cancelled or e.name == util.research_queue_updated_event then
+  local force, technology
+  if e.name == defines.events.on_research_cancelled then
     force = e.force
+    technology = force.technologies[next(e.research)]
+  elseif e.name == util.research_queue_updated_event then
+    force = e.force
+    technology = force.technologies[e.research]
   else
-    force = e.research.force
+    technology = e.research
+    force = technology.force
   end
   util.ensure_queue_disabled(force)
   local force_table = global.forces[force.index]
   if force_table then
-    if game.tick_paused then
-      -- TODO: This doesn't perform any of the other logic
-      util.sort_techs(force)
-    else
-      -- Always use the newest version of events
-      if force_table.sort_techs_job then
-        on_tick_n.remove(force_table.sort_techs_job)
+    -- Update research state
+    if technology then
+      force_table.research_states[technology.name] = util.get_research_state(force_table, technology)
+      for _, requisite_prototype in pairs(global.technology_requisites[technology.name]) do
+        force_table.research_states[requisite_prototype.name] =
+          util.get_research_state(force_table, force.technologies[requisite_prototype.name])
       end
-      force_table.sort_techs_job = on_tick_n.add(game.tick + 1, {
-        id = "sort_techs",
-        force = force.index,
-        completed_research = e.name == defines.events.on_research_finished and e.research.name or nil,
-      })
+    end
+    if e.name == defines.events.on_research_finished or e.name == defines.events.on_research_reversed then
+      -- Update queue
+      force_table.queue:update()
+    else
+      -- Update GUI
+      -- TODO: Dynamically update instead of refreshing
+      for _, player in pairs(force.players) do
+        local gui = util.get_gui(player)
+        if gui then
+          gui:refresh()
+        end
+      end
     end
   end
 end)
@@ -235,29 +248,7 @@ end)
 event.on_tick(function(e)
   dictionary.check_skipped()
   for _, job in pairs(on_tick_n.retrieve(e.tick) or {}) do
-    if job.id == "sort_techs" then
-      --- @type LuaForce
-      local force = game.forces[job.force]
-      local force_table = global.forces[job.force]
-      if force_table then
-        local completed_research = job.completed_research
-        force_table.sort_techs_job = nil
-        util.sort_techs(force)
-        if completed_research then
-          force_table.queue:update()
-        end
-
-        for _, player in pairs(force.players) do
-          local gui = util.get_gui(player)
-          if gui and gui.refs.window.visible then
-            gui:refresh()
-          end
-          if completed_research and player.mod_settings["urq-print-completed-message"].value then
-            player.print({ "message.urq-research-completed", completed_research })
-          end
-        end
-      end
-    elseif job.id == "gui" then
+    if job.id == "gui" then
       local gui = util.get_gui(job.player_index)
       if gui then
         gui:dispatch(job, e)
