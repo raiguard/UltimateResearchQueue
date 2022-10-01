@@ -431,6 +431,6 @@ if DEBUG then
     },
   }
 
-  data.raw["technology"]["automation-2"].enabled = false
-  data.raw["technology"]["automation-2"].visible_when_disabled = true
+  data.raw["technology"]["gun-turret"].enabled = false
+  data.raw["technology"]["gun-turret"].visible_when_disabled = true
 end

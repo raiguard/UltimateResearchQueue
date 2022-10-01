@@ -212,15 +212,13 @@ event.register({
   util.ensure_queue_disabled(force)
   local force_table = global.forces[force.index]
   if force_table then
-    local should_update_gui = e.name ~= defines.events.on_research_finished
-      and e.name ~= defines.events.on_research_reversed
     local techs_to_check = { technology.name }
     for _, requisite_prototype in pairs(global.technology_requisites[technology.name]) do
       table.insert(techs_to_check, requisite_prototype.name)
     end
     for _, tech_name in pairs(techs_to_check) do
       local technology = force.technologies[tech_name]
-      if util.update_research_state(force_table, technology) and should_update_gui then
+      if util.update_research_state(force_table, technology) then
         for _, player in pairs(force.players) do
           local gui = util.get_gui(player)
           if gui then
@@ -229,14 +227,13 @@ event.register({
         end
       end
     end
-    if should_update_gui then
-      for _, player in pairs(force.players) do
-        local gui = util.get_gui(player)
-        if gui then
-          gui:refresh_queue()
-        end
+    for _, player in pairs(force.players) do
+      local gui = util.get_gui(player)
+      if gui then
+        gui:refresh_queue()
       end
-    else
+    end
+    if e.name == defines.events.on_research_finished or e.name == defines.events.on_research_reversed then
       force_table.queue:update()
     end
   end
