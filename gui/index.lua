@@ -177,25 +177,32 @@ function gui:open_in_graph()
 end
 
 function gui:refresh()
+  self:refresh_queue()
+  -- Tech list
   local technologies = self.force.technologies
   local research_states = self.force_table.research_states
   local selected_technology = self.state.selected
-  -- Queue
-  --- @type LuaGuiElement[]
-  local queue_buttons = {}
-  for _, tech_name in pairs(self.force_table.queue.queue) do
-    table.insert(
-      queue_buttons,
-      self.templates.tech_button(technologies[tech_name], research_states[tech_name], selected_technology)
-    )
+  local groups_by_state = {
+    [util.research_state.available] = {},
+    [util.research_state.conditionally_available] = {},
+    [util.research_state.not_available] = {},
+    [util.research_state.researched] = {},
+    [util.research_state.disabled] = {},
+  }
+  for _, prototype in pairs(global.technologies) do
+    local research_state = research_states[prototype.name]
+    table.insert(groups_by_state[research_state], prototype)
+    self.state.research_state_counts[research_state] = (self.state.research_state_counts[research_state] or 0) + 1
   end
-  local queue_table = self.refs.queue_table
-  queue_table.clear()
-  libgui.build(queue_table, queue_buttons)
-  -- Tech list
+  local ordered = {}
+  for _, techs in pairs(groups_by_state) do
+    for _, tech in pairs(techs) do
+      ordered[#ordered + 1] = tech
+    end
+  end
   --- @type LuaGuiElement[]
   local buttons = {}
-  for _, prototype in pairs(global.technologies) do
+  for _, prototype in pairs(ordered) do
     local tech_name = prototype.name
     local research_state = research_states[prototype.name]
     if research_state ~= util.research_state.disabled or prototype.visible_when_disabled then
@@ -208,6 +215,23 @@ function gui:refresh()
 
   self:update_durations_and_progress()
   self:filter_tech_list()
+end
+
+function gui:refresh_queue()
+  local technologies = self.force.technologies
+  local research_states = self.force_table.research_states
+  local selected_technology = self.state.selected
+  --- @type LuaGuiElement[]
+  local queue_buttons = {}
+  for _, tech_name in pairs(self.force_table.queue.queue) do
+    table.insert(
+      queue_buttons,
+      self.templates.tech_button(technologies[tech_name], research_states[tech_name], selected_technology)
+    )
+  end
+  local queue_table = self.refs.queue_table
+  queue_table.clear()
+  libgui.build(queue_table, queue_buttons)
 end
 
 --- @param tech_name string
@@ -372,6 +396,56 @@ function gui:update_search_query()
   end
 end
 
+--- @param technology LuaTechnology
+function gui:update_tech_slot(technology)
+  local button = self.refs.techs_table[technology.name]
+  if not button then
+    gui:refresh()
+    return
+  end
+  -- Style
+  local research_state = self.force_table.research_states[technology.name]
+  -- TODO: Make this a util function
+  local state = table.find(util.research_state, research_state)
+  local selected = self.state.selected == technology.name
+  local leveled = technology.upgrade or technology.level > 1
+  local max_level = technology.prototype.max_level
+  local ranged = technology.prototype.level ~= max_level
+  local leveled = leveled or ranged
+  button.style = "urq_technology_slot_" .. (selected and "selected_" or "") .. (leveled and "leveled_" or "") .. state
+  if leveled then
+    button.level_label.style = "urq_technology_slot_level_label_" .. state
+  end
+  if ranged then
+    button.level_range_label.style = "urq_technology_slot_level_range_label_" .. state
+  end
+  -- Position
+  local techs_table = self.refs.techs_table
+  local order = global.technology_order[technology.name]
+  local index = 1
+  local group_count = 0
+  for state, count in pairs(self.force_table.research_state_counts) do
+    if state < research_state then
+      index = index + count
+    else
+      group_count = count
+      break
+    end
+  end
+  util.move_to(button, techs_table, #techs_table.children_names + 1)
+  local children_names = techs_table.children_names
+  for i = index, index + group_count - 1 do
+    local tech_name = children_names[i]
+    if i == index + group_count - 1 then
+      util.move_to(button, techs_table, i)
+      break
+    elseif order < global.technology_order[tech_name] then
+      util.move_to(button, techs_table, i)
+      break
+    end
+  end
+end
+
 --- @param player LuaPlayer
 --- @param player_table PlayerTable
 --- @return Gui
@@ -401,6 +475,7 @@ function gui.new(player, player_table)
     refs = refs,
     state = {
       pinned = false,
+      research_state_counts = {},
       search_open = false,
       search_query = "",
       science_pack_filters = science_pack_filters,

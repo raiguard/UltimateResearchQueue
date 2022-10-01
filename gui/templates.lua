@@ -342,11 +342,16 @@ function templates.tech_button(technology, research_state, selected_name, ignore
   -- TODO: Add remainder to always fill available space
   local ingredients_spacing = math.clamp((68 - 16) / (ingredients_len - 1) - 16, -15, -5)
 
+  local tooltip = technology.localised_name
+  if DEBUG then
+    tooltip = { "", tooltip, "\norder=" .. global.technology_order[technology.name] }
+  end
+
   return {
     type = "sprite-button",
     name = technology.name,
     style = "urq_technology_slot_" .. (selected and "selected_" or "") .. (leveled and "leveled_" or "") .. state,
-    tooltip = technology.localised_name,
+    tooltip = tooltip,
     ignored_by_interaction = ignored_by_interaction,
     actions = {
       on_click = "handle_tech_click",
@@ -363,12 +368,14 @@ function templates.tech_button(technology, research_state, selected_name, ignore
     },
     leveled and {
       type = "label",
+      name = "level_label",
       style = "urq_technology_slot_level_label_" .. state,
       caption = technology.level,
       ignored_by_interaction = true,
     } or {},
     ranged and {
       type = "label",
+      name = "level_range_label",
       style = "urq_technology_slot_level_range_label_" .. state,
       caption = technology.prototype.level .. " - " .. max_level_str,
       ignored_by_interaction = true,

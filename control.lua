@@ -30,6 +30,9 @@ local function init_force(force)
   local force_table = {
     --- @type ProgressSample[]
     research_progress_samples = {},
+    --- @type table<ResearchState, number>
+    research_state_counts = {},
+    --- @type table<string, ResearchState>
     research_states = {},
   }
   force_table.queue = queue.new(force, force_table)
@@ -209,26 +212,32 @@ event.register({
   util.ensure_queue_disabled(force)
   local force_table = global.forces[force.index]
   if force_table then
-    -- Update research state
-    if technology then
-      force_table.research_states[technology.name] = util.get_research_state(force_table, technology)
-      for _, requisite_prototype in pairs(global.technology_requisites[technology.name]) do
-        force_table.research_states[requisite_prototype.name] =
-          util.get_research_state(force_table, force.technologies[requisite_prototype.name])
+    local should_update_gui = e.name ~= defines.events.on_research_finished
+      and e.name ~= defines.events.on_research_reversed
+    local techs_to_check = { technology.name }
+    for _, requisite_prototype in pairs(global.technology_requisites[technology.name]) do
+      table.insert(techs_to_check, requisite_prototype.name)
+    end
+    for _, tech_name in pairs(techs_to_check) do
+      local technology = force.technologies[tech_name]
+      if util.update_research_state(force_table, technology) and should_update_gui then
+        for _, player in pairs(force.players) do
+          local gui = util.get_gui(player)
+          if gui then
+            gui:update_tech_slot(technology)
+          end
+        end
       end
     end
-    if e.name == defines.events.on_research_finished or e.name == defines.events.on_research_reversed then
-      -- Update queue
-      force_table.queue:update()
-    else
-      -- Update GUI
-      -- TODO: Dynamically update instead of refreshing
+    if should_update_gui then
       for _, player in pairs(force.players) do
         local gui = util.get_gui(player)
         if gui then
-          gui:refresh()
+          gui:refresh_queue()
         end
       end
+    else
+      force_table.queue:update()
     end
   end
 end)

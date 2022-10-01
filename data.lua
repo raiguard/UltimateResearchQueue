@@ -430,4 +430,7 @@ if DEBUG then
       modifier = true,
     },
   }
+
+  data.raw["technology"]["automation-2"].enabled = false
+  data.raw["technology"]["automation-2"].visible_when_disabled = true
 end

@@ -112,11 +112,18 @@ end
 
 --- @param force LuaForce
 function util.build_research_states(force)
-  local states = {}
   local force_table = global.forces[force.index]
-  for name, technology in pairs(force.technologies) do
-    states[name] = util.get_research_state(force_table, technology)
+  local counts = {}
+  local states = {}
+  for _, research_state in pairs(util.research_state) do
+    counts[research_state] = 0
   end
+  for name, technology in pairs(force.technologies) do
+    local state = util.get_research_state(force_table, technology)
+    states[name] = state
+    counts[state] = (counts[state] or 0) + 1
+  end
+  force_table.research_state_counts = counts
   force_table.research_states = states
 end
 
@@ -417,6 +424,16 @@ function util.is_double_click(elem)
   return is_double_click
 end
 
+--- @param element LuaGuiElement
+--- @param parent LuaGuiElement
+--- @param index number
+function util.move_to(element, parent, index)
+  --- @cast index uint
+  local dummy = parent.add({ type = "empty-widget", index = index })
+  parent.swap_children(element.get_index_in_parent(), index)
+  dummy.destroy()
+end
+
 --- The overlay constant for a given TechnologyModifier type
 util.overlay_constant = {
   ["ammo-damage"] = "utility/ammo_damage_modifier_constant",
@@ -461,11 +478,25 @@ util.research_queue_updated_event = event.generate_id()
 
 --- @enum ResearchState
 util.research_state = {
-  available = 0,
-  conditionally_available = 1,
-  not_available = 2,
-  researched = 3,
-  disabled = 4,
+  available = 1,
+  conditionally_available = 2,
+  not_available = 3,
+  researched = 4,
+  disabled = 5,
 }
+
+--- @param force_table ForceTable
+--- @param technology LuaTechnology
+--- @return boolean? updated
+function util.update_research_state(force_table, technology)
+  local previous_state = force_table.research_states[technology.name]
+  local new_state = util.get_research_state(force_table, technology)
+  if new_state ~= previous_state then
+    force_table.research_state_counts[previous_state] = force_table.research_state_counts[previous_state] - 1
+    force_table.research_state_counts[new_state] = force_table.research_state_counts[new_state] + 1
+    force_table.research_states[technology.name] = new_state
+    return true
+  end
+end
 
 return util
