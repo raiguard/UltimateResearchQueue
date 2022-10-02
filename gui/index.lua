@@ -405,21 +405,15 @@ function gui:update_tech_slot(technology)
     gui:refresh()
     return
   end
-  -- Style
   local research_state = self.force_table.research_states[technology.name]
-  -- TODO: Make this a util function
-  local state = table.find(util.research_state, research_state)
-  local selected = self.state.selected == technology.name
-  local leveled = technology.upgrade or technology.level > 1
-  local max_level = technology.prototype.max_level
-  local ranged = technology.prototype.level ~= max_level
-  local leveled = leveled or ranged
-  button.style = "urq_technology_slot_" .. (selected and "selected_" or "") .. (leveled and "leveled_" or "") .. state
-  if leveled then
-    button.level_label.style = "urq_technology_slot_level_label_" .. state
+  -- Style
+  local properties = util.get_technology_slot_properties(technology, research_state, self.state.selected)
+  button.style = properties.style
+  if properties.leveled then
+    button.level_label.style = "urq_technology_slot_level_label_" .. properties.research_state_str
   end
-  if ranged then
-    button.level_range_label.style = "urq_technology_slot_level_range_label_" .. state
+  if properties.ranged then
+    button.level_range_label.style = "urq_technology_slot_level_range_label_" .. properties.research_state_str
   end
   -- Position
   local techs_table = self.refs.techs_table

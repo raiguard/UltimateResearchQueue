@@ -316,14 +316,7 @@ end
 --- @param ignored_by_interaction boolean?
 --- @return GuiBuildStructure
 function templates.tech_button(technology, research_state, selected_name, ignored_by_interaction)
-  local state = table.find(util.research_state, research_state)
-  local selected = selected_name == technology.name
-  local leveled = technology.upgrade or technology.level > 1
-
-  local max_level = technology.prototype.max_level
-  local ranged = technology.prototype.level ~= max_level
-  local leveled = leveled or ranged
-  local max_level_str = max_level == math.max_uint and "[img=infinity]" or tostring(max_level)
+  local properties = util.get_technology_slot_properties(technology, research_state, selected_name)
 
   local progress = util.get_research_progress(technology)
 
@@ -350,7 +343,7 @@ function templates.tech_button(technology, research_state, selected_name, ignore
   return {
     type = "sprite-button",
     name = technology.name,
-    style = "urq_technology_slot_" .. (selected and "selected_" or "") .. (leveled and "leveled_" or "") .. state,
+    style = properties.style,
     tooltip = tooltip,
     ignored_by_interaction = ignored_by_interaction,
     actions = {
@@ -366,18 +359,18 @@ function templates.tech_button(technology, research_state, selected_name, ignore
         sprite = "technology/" .. technology.name,
       },
     },
-    leveled and {
+    properties.leveled and {
       type = "label",
       name = "level_label",
-      style = "urq_technology_slot_level_label_" .. state,
+      style = "urq_technology_slot_level_label_" .. properties.research_state_str,
       caption = technology.level,
       ignored_by_interaction = true,
     } or {},
-    ranged and {
+    properties.ranged and {
       type = "label",
       name = "level_range_label",
-      style = "urq_technology_slot_level_range_label_" .. state,
-      caption = technology.prototype.level .. " - " .. max_level_str,
+      style = "urq_technology_slot_level_range_label_" .. properties.research_state_str,
+      caption = technology.prototype.level .. " - " .. properties.max_level_str,
       ignored_by_interaction = true,
     } or {},
     {

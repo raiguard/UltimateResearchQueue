@@ -1,5 +1,6 @@
 local event = require("__flib__.event")
 local gui = require("__flib__.gui")
+local math = require("__flib__.math")
 local table = require("__flib__.table")
 
 local util = {}
@@ -380,6 +381,32 @@ function util.get_research_unit_count(tech)
   else
     return tech.research_unit_count --[[@as double]]
   end
+end
+
+--- @param technology LuaTechnology
+--- @param research_state ResearchState
+--- @param selected_name string?
+function util.get_technology_slot_properties(technology, research_state, selected_name)
+  local selected = selected_name == technology.name
+  local max_level = technology.prototype.max_level
+  local ranged = technology.prototype.level ~= max_level
+  local leveled = technology.upgrade or technology.level > 1 or ranged
+
+  local research_state_str = table.find(util.research_state, research_state)
+  local max_level_str = max_level == math.max_uint and "[img=infinity]" or tostring(max_level)
+  local style = "urq_technology_slot_"
+    .. (selected and "selected_" or "")
+    .. (leveled and "leveled_" or "")
+    .. research_state_str
+
+  return {
+    leveled = leveled,
+    max_level = max_level,
+    max_level_str = max_level_str,
+    research_state_str = research_state_str,
+    selected = selected,
+    style = style,
+  }
 end
 
 --- Get all unreearched prerequisites. Note that the table is returned in reverse order and must be iterated in
