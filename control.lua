@@ -130,11 +130,15 @@ end)
 
 event.on_player_created(function(e)
   init_player(e.player_index)
-  migrate_player(game.get_player(e.player_index) --[[@as LuaPlayer]])
+  migrate_player(
+    game.get_player(e.player_index) --[[@as LuaPlayer]]
+  )
 end)
 
 event.on_player_joined_game(function(e)
-  dictionary.translate(game.get_player(e.player_index) --[[@as LuaPlayer]])
+  dictionary.translate(
+    game.get_player(e.player_index) --[[@as LuaPlayer]]
+  )
 end)
 
 event.on_player_left_game(function(e)
@@ -156,7 +160,7 @@ if not DEBUG then
     local player = game.get_player(e.player_index) --[[@as LuaPlayer]]
     if player.opened_gui_type == defines.gui_type.research then
       local gui = util.get_gui(player)
-      if gui then
+      if gui and not gui.state.opening_graph then
         local opened = player.opened --[[@as LuaTechnology?]]
         player.opened = nil
         gui:show(opened and opened.name or nil)

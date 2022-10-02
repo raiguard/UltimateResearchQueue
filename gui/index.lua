@@ -172,7 +172,9 @@ end
 function gui:open_in_graph()
   local selected_technology = self.state.selected
   if selected_technology then
+    self.state.opening_graph = true
     self.player.open_technology_gui(selected_technology)
+    self.state.opening_graph = false
   end
 end
 
@@ -474,6 +476,7 @@ function gui.new(player, player_table)
     player_table = player_table,
     refs = refs,
     state = {
+      opening_graph = false,
       pinned = false,
       research_state_counts = {},
       search_open = false,
