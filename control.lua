@@ -231,6 +231,7 @@ event.register({
         end
       end
     end
+    -- TODO: Dynamically update queue
     for _, player in pairs(force.players) do
       local gui = util.get_gui(player)
       if gui then

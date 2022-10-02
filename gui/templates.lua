@@ -313,9 +313,9 @@ end
 --- @param technology LuaTechnology
 --- @param research_state ResearchState
 --- @param selected_name string?
---- @param ignored_by_interaction boolean?
+--- @param is_tech_info boolean?
 --- @return GuiBuildStructure
-function templates.tech_button(technology, research_state, selected_name, ignored_by_interaction)
+function templates.tech_button(technology, research_state, selected_name, is_tech_info)
   local properties = util.get_technology_slot_properties(technology, research_state, selected_name)
 
   local progress = util.get_research_progress(technology)
@@ -345,7 +345,7 @@ function templates.tech_button(technology, research_state, selected_name, ignore
     name = technology.name,
     style = properties.style,
     tooltip = tooltip,
-    ignored_by_interaction = ignored_by_interaction,
+    ignored_by_interaction = is_tech_info,
     actions = {
       on_click = "handle_tech_click",
     },
@@ -391,7 +391,7 @@ function templates.tech_button(technology, research_state, selected_name, ignore
       name = "progressbar",
       style = "urq_technology_slot_progressbar",
       value = progress,
-      visible = progress > 0,
+      visible = not is_tech_info and progress > 0,
       ignored_by_interaction = true,
     },
   }

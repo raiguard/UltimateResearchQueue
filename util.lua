@@ -398,6 +398,7 @@ function util.get_technology_slot_properties(technology, research_state, selecte
     .. (selected and "selected_" or "")
     .. (leveled and "leveled_" or "")
     .. research_state_str
+  local unselected_style = "urq_technology_slot_" .. (leveled and "leveled_" or "") .. research_state_str
 
   return {
     leveled = leveled,
@@ -406,6 +407,7 @@ function util.get_technology_slot_properties(technology, research_state, selecte
     research_state_str = research_state_str,
     selected = selected,
     style = style,
+    unselected_style = unselected_style,
   }
 end
 

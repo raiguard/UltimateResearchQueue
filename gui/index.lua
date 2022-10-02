@@ -440,6 +440,10 @@ function gui:update_tech_slot(technology)
       break
     end
   end
+  -- Selected
+  if self.state.selected == technology.name then
+    self.refs.tech_info.main_slot_frame[technology.name].style = properties.unselected_style
+  end
 end
 
 --- @param player LuaPlayer

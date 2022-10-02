@@ -7,7 +7,6 @@ data:extend({
     key_sequence = "",
     linked_game_control = "focus-search",
   },
-  -- TODO: Make this optional
   {
     type = "custom-input",
     name = "urq-toggle-gui",
