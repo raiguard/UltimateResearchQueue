@@ -95,10 +95,10 @@ function gui:filter_tech_list()
   local science_pack_filters = self.state.science_pack_filters
   local query = self.state.search_query
   local dictionaries = self.player_table.dictionaries
-  local technologies = global.technologies
-  for i, button in pairs(self.refs.techs_table.children) do
-    local technology = technologies[i]
+  local technologies = game.technology_prototypes
+  for _, button in pairs(self.refs.techs_table.children) do
     local tech_name = button.name
+    local technology = technologies[tech_name]
     local science_packs_matched = true
     local search_matched = #query == 0
     -- Science pack filters
