@@ -135,6 +135,7 @@ function util.build_technology_list()
   for _, prototype in pairs(game.technology_prototypes) do
     table.insert(technologies, prototype)
   end
+
   -- Sort the technologies array
   local prototypes = {
     fluid = game.fluid_prototypes,
@@ -176,43 +177,80 @@ function util.build_technology_list()
     -- Compare prototype names
     return tech_a.name < tech_b.name
   end)
+
   -- Create lookup for the order of a given technology
   --- @type table<string, number>
   local order = {}
   for i, prototype in pairs(technologies) do
     order[prototype.name] = i
   end
-  -- Build all prerequisites and direct requisites for all technologies
-  --- @type table<string, LuaTechnologyPrototype[]>
+
+  local profiler = game.create_profiler()
+  -- Build all prerequisites and direct requisites of each technology
+  --- @type table<string, table<string, LuaTechnologyPrototype>>
   local prerequisites = {}
-  --- @type table<string, LuaTechnologyPrototype[]>
+  --- @type table<string, table<string, LuaTechnologyPrototype>>
   local requisites = {}
+  --- @type LuaTechnologyPrototype[]
+  local base_techs = {}
+  -- Step 1: Assemble requisites for each tech and determine base technologies
   for _, prototype in pairs(technologies) do
-    if not requisites[prototype.name] then
-      requisites[prototype.name] = {}
+    local prerequisites = prototype.prerequisites
+    if next(prerequisites) then
+      for prerequisite_name in pairs(prerequisites) do
+        if not requisites[prerequisite_name] then
+          requisites[prerequisite_name] = {}
+        end
+        requisites[prerequisite_name][prototype.name] = prototype
+      end
+    else
+      table.insert(base_techs, prototype)
     end
-    -- TODO: Recursively assemble prerequisites for queueing
-    local prereqs = {}
-    for _, prerequisite in pairs(prototype.prerequisites) do
-      prereqs[#prereqs + 1] = prerequisite
-      local reqs = requisites[prerequisite.name]
-      if not reqs then
-        requisites[prerequisite.name] = { prototype }
-      else
-        reqs[#reqs + 1] = prototype
+  end
+  -- Step 2: Recursively assemble prerequisites for each tech
+  local checked = {}
+  --- @param technology LuaTechnologyPrototype
+  local function propagate(technology)
+    -- If not all of the prerequisites have been checked, then the list would be incomplete
+    for prerequisite_name in pairs(technology.prerequisites) do
+      if not checked[prerequisite_name] then
+        return
       end
     end
-    -- Sort prerequisites table
-    table.sort(prereqs, function(tech_a, tech_b)
-      return order[tech_a.name] < order[tech_b.name]
-    end)
-    prerequisites[prototype.name] = prereqs
+    local technology_name = technology.name
+    local technology_prerequisites = prerequisites[technology_name]
+    local requisites = requisites[technology_name]
+    if requisites then
+      for _, requisite in pairs(requisites) do
+        local requisite_name = requisite.name
+        -- Create the requisite's prerequisite table
+        local requisite_prerequisites = prerequisites[requisite_name]
+        if not requisite_prerequisites then
+          requisite_prerequisites = {}
+          prerequisites[requisite_name] = requisite_prerequisites
+        end
+        -- Add all of this technology's prerequisites to the requisite's prerequisites
+        if technology_prerequisites then
+          for _, prerequisite in pairs(technology_prerequisites) do
+            requisite_prerequisites[prerequisite.name] = prerequisite
+          end
+        end
+        -- Add this technology to the requisite's prerequisites
+        requisite_prerequisites[technology_name] = technology
+      end
+      checked[technology_name] = true
+      for _, requisite in pairs(requisites) do
+        propagate(requisite)
+      end
+    end
   end
-  -- Sort requisite tables
-  for _, requisites in pairs(requisites) do
-    table.sort(requisites, function(tech_a, tech_b)
-      return order[tech_a.name] < order[tech_b.name]
-    end)
+  for _, technology in pairs(base_techs) do
+    propagate(technology)
+  end
+  -- Profiling
+  profiler.stop()
+  if DEBUG then
+    log({ "", "Prerequisite Generation ", profiler })
   end
 
   global.technologies = technologies
@@ -417,25 +455,14 @@ end
 --- @param tech LuaTechnology
 --- @return string[]
 function util.get_unresearched_prerequisites(force_table, tech)
-  local added = {}
-  local to_research = { tech.name }
-  local to_iterate = { tech }
-  local i, next_tech = next(to_iterate)
   local research_states = force_table.research_states
-  while next_tech do
-    for prereq_name, prereq in pairs(next_tech.prerequisites) do
-      local research_state = research_states[prereq_name]
-      if research_state ~= util.research_state.researched then
-        if added[prereq_name] then
-          table.remove(to_research, table.find(to_research, prereq_name))
-        else
-          table.insert(to_iterate, prereq)
-        end
-        table.insert(to_research, prereq_name)
-      end
+  local to_research = {}
+  for _, prerequisite in pairs(global.technology_prerequisites[tech.name]) do
+    if research_states[prerequisite.name] ~= util.research_state.researched then
+      table.insert(to_research, prerequisite.name)
     end
-    i, next_tech = next(to_iterate, i)
   end
+  table.insert(to_research, tech.name)
   return to_research
 end
 

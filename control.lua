@@ -130,15 +130,11 @@ end)
 
 event.on_player_created(function(e)
   init_player(e.player_index)
-  migrate_player(
-    game.get_player(e.player_index) --[[@as LuaPlayer]]
-  )
+  migrate_player(game.get_player(e.player_index) --[[@as LuaPlayer]])
 end)
 
 event.on_player_joined_game(function(e)
-  dictionary.translate(
-    game.get_player(e.player_index) --[[@as LuaPlayer]]
-  )
+  dictionary.translate(game.get_player(e.player_index) --[[@as LuaPlayer]])
 end)
 
 event.on_player_left_game(function(e)
@@ -217,8 +213,11 @@ event.register({
   local force_table = global.forces[force.index]
   if force_table then
     local techs_to_check = { technology.name }
-    for _, requisite_prototype in pairs(global.technology_requisites[technology.name]) do
-      table.insert(techs_to_check, requisite_prototype.name)
+    local requisites = global.technology_requisites[technology.name]
+    if requisites then
+      for _, requisite_prototype in pairs(requisites) do
+        table.insert(techs_to_check, requisite_prototype.name)
+      end
     end
     for _, tech_name in pairs(techs_to_check) do
       local technology = force.technologies[tech_name]

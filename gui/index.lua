@@ -55,7 +55,7 @@ function gui:add_to_queue(tech_name, position)
   if research_state == util.research_state.not_available then
     -- Add all prerequisites to research this tech ASAP
     local to_research = util.get_unresearched_prerequisites(self.force_table, self.force.technologies[tech_name])
-    for i = #to_research, 1, -1 do
+    for i = 1, #to_research do
       self.force_table.queue:add(to_research[i])
     end
     return
@@ -440,7 +440,7 @@ function gui:update_tech_slot(technology)
       break
     end
   end
-  -- Selected
+  -- Selected style
   if self.state.selected == technology.name then
     self.refs.tech_info.main_slot_frame[technology.name].style = properties.unselected_style
   end

@@ -251,7 +251,8 @@ styles.urq_invalid_search_textfield = {
 }
 
 if DEBUG then
-  data.raw["technology"]["automation"].effects = {
+  data.raw["technology"]["gun-turret"].effects = {
+    { type = "unlock-recipe", recipe = "gun-turret" },
     {
       type = "ammo-damage",
       ammo_category = "bullet",
@@ -383,14 +384,6 @@ if DEBUG then
       type = "turret-attack",
       turret_id = "gun-turret",
       modifier = 100,
-    },
-    {
-      type = "unlock-recipe",
-      recipe = "assembling-machine-1",
-    },
-    {
-      type = "unlock-recipe",
-      recipe = "long-handed-inserter",
     },
     {
       type = "worker-robot-battery",
