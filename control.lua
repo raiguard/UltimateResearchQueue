@@ -237,6 +237,9 @@ event.register({
       if gui then
         gui:refresh_queue()
       end
+      if e.name == defines.events.on_research_finished and player.mod_settings["urq-print-completed-message"] then
+        player.print({ "message.urq-research-completed", technology.name })
+      end
     end
     if e.name == defines.events.on_research_finished or e.name == defines.events.on_research_reversed then
       force_table.queue:update()
