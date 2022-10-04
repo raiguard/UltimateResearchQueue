@@ -68,8 +68,7 @@ local function migrate_player(player)
     player_table.gui:destroy()
   end
   player_table.dictionaries = nil
-  local gui = gui.new(player, player_table)
-  gui:refresh()
+  gui.new(player, player_table)
   if player.connected then
     dictionary.translate(player)
   end

@@ -174,64 +174,6 @@ function gui:open_in_graph()
   end
 end
 
-function gui:refresh()
-  self:refresh_queue()
-  -- Tech list
-  local technologies = self.force.technologies
-  local research_states = self.force_table.research_states
-  local selected_technology = self.state.selected
-  local groups_by_state = {
-    [util.research_state.available] = {},
-    [util.research_state.conditionally_available] = {},
-    [util.research_state.not_available] = {},
-    [util.research_state.researched] = {},
-    [util.research_state.disabled] = {},
-  }
-  for _, prototype in pairs(global.technologies) do
-    local research_state = research_states[prototype.name]
-    table.insert(groups_by_state[research_state], prototype)
-    self.state.research_state_counts[research_state] = (self.state.research_state_counts[research_state] or 0) + 1
-  end
-  local ordered = {}
-  for _, techs in pairs(groups_by_state) do
-    for _, tech in pairs(techs) do
-      ordered[#ordered + 1] = tech
-    end
-  end
-  --- @type LuaGuiElement[]
-  local buttons = {}
-  for _, prototype in pairs(ordered) do
-    local tech_name = prototype.name
-    local research_state = research_states[prototype.name]
-    if research_state ~= util.research_state.disabled or prototype.visible_when_disabled then
-      table.insert(buttons, self.templates.tech_button(technologies[tech_name], research_state, selected_technology))
-    end
-  end
-  local techs_table = self.refs.techs_table
-  techs_table.clear()
-  libgui.build(techs_table, buttons)
-
-  self:update_durations_and_progress()
-  self:filter_tech_list()
-end
-
-function gui:refresh_queue()
-  local technologies = self.force.technologies
-  local research_states = self.force_table.research_states
-  local selected_technology = self.state.selected
-  --- @type LuaGuiElement[]
-  local queue_buttons = {}
-  for tech_name in pairs(self.force_table.queue.queue) do
-    table.insert(
-      queue_buttons,
-      self.templates.tech_button(technologies[tech_name], research_states[tech_name], selected_technology)
-    )
-  end
-  local queue_table = self.refs.queue_table
-  queue_table.clear()
-  libgui.build(queue_table, queue_buttons)
-end
-
 --- @param tech_name string
 function gui:select_tech(tech_name)
   local former_selected = self.state.selected
@@ -500,7 +442,10 @@ function gui.new(player, player_table)
   gui.load(self)
   player_table.gui = self
 
-  self:refresh()
+  self:update_queue()
+  self:update_tech_list()
+  self:update_durations_and_progress()
+  self:filter_tech_list()
 
   return self
 end
