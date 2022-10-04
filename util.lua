@@ -10,7 +10,7 @@ local util = {}
 function util.are_prereqs_satisfied(tech, queue)
   for name, prereq in pairs(tech.prerequisites) do
     if not prereq.researched then
-      if not queue or not table.find(queue.queue, name) then
+      if not queue or not queue.queue[name] then
         return false
       end
     end
@@ -114,21 +114,24 @@ end
 --- @param force LuaForce
 function util.build_research_states(force)
   local force_table = global.forces[force.index]
-  local counts = {}
+  local groups = {}
   local states = {}
   for _, research_state in pairs(util.research_state) do
-    counts[research_state] = 0
+    groups[research_state] = {}
   end
+  local order = global.technology_order
   for name, technology in pairs(force.technologies) do
     local state = util.get_research_state(force_table, technology)
     states[name] = state
-    counts[state] = (counts[state] or 0) + 1
+    -- TODO: This will not iterate in order if there are more than 1024 technologies
+    groups[state][order[name]] = technology
   end
-  force_table.research_state_counts = counts
+  force_table.grouped_technologies = groups
   force_table.research_states = states
 end
 
 function util.build_technology_list()
+  local profiler = game.create_profiler()
   -- game.technology_prototypes is a LuaCustomTable, so we need to convert it to an array
   --- @type LuaTechnologyPrototype[]
   local technologies = {}
@@ -183,6 +186,10 @@ function util.build_technology_list()
   local order = {}
   for i, prototype in pairs(technologies) do
     order[prototype.name] = i
+  end
+  profiler.stop()
+  if DEBUG then
+    log({ "", "Tech Sorting ", profiler })
   end
 
   local profiler = game.create_profiler()
@@ -457,9 +464,9 @@ end
 function util.get_unresearched_prerequisites(force_table, tech)
   local research_states = force_table.research_states
   local to_research = {}
-  for _, prerequisite in pairs(global.technology_prerequisites[tech.name]) do
+  for prerequisite_name, prerequisite in pairs(global.technology_prerequisites[tech.name]) do
     if research_states[prerequisite.name] ~= util.research_state.researched then
-      table.insert(to_research, prerequisite.name)
+      table.insert(to_research, prerequisite_name)
     end
   end
   table.insert(to_research, tech.name)
@@ -530,7 +537,9 @@ util.overlay_constant = {
   ["zoom-to-world-upgrade-planner-enabled"] = "utility/zoom_to_world_upgrade_planner_enabled_modifier_constant",
 }
 
-util.research_queue_updated_event = event.generate_id()
+util.on_research_queue_updated = event.generate_id()
+--- @class EventData.on_research_queue_updated: EventData
+--- @field force LuaForce
 
 --- @enum ResearchState
 util.research_state = {
@@ -545,13 +554,29 @@ util.research_state = {
 --- @param technology LuaTechnology
 --- @return boolean? updated
 function util.update_research_state(force_table, technology)
+  -- TODO: Techs are remaining as conditionally available when they should be available
+  local order = global.technology_order[technology.name]
+  local grouped_techs = force_table.grouped_technologies
   local previous_state = force_table.research_states[technology.name]
   local new_state = util.get_research_state(force_table, technology)
   if new_state ~= previous_state then
-    force_table.research_state_counts[previous_state] = force_table.research_state_counts[previous_state] - 1
-    force_table.research_state_counts[new_state] = force_table.research_state_counts[new_state] + 1
+    grouped_techs[previous_state][order] = nil
+    grouped_techs[new_state][order] = technology
     force_table.research_states[technology.name] = new_state
     return true
+  end
+end
+
+--- @param force_table ForceTable
+--- @param technology LuaTechnology
+function util.update_research_state_reqs(force_table, technology)
+  util.update_research_state(force_table, technology)
+  local requisites = global.technology_requisites[technology.name]
+  if requisites then
+    local technologies = technology.force.technologies
+    for requisite_name in pairs(requisites) do
+      util.update_research_state(force_table, technologies[requisite_name])
+    end
   end
 end
 

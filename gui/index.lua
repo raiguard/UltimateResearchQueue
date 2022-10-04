@@ -44,28 +44,6 @@ end
 local gui = {}
 gui.templates = require("__UltimateResearchQueue__.gui.templates")
 
---- @param tech_name string
---- @param position integer?
-function gui:add_to_queue(tech_name, position)
-  local research_state = self.force_table.research_states[tech_name]
-  if research_state == util.research_state.researched then
-    util.flying_text(self.player, { "message.urq-already-researched" })
-    return
-  end
-  if research_state == util.research_state.not_available then
-    -- Add all prerequisites to research this tech ASAP
-    local to_research = util.get_unresearched_prerequisites(self.force_table, self.force.technologies[tech_name])
-    for i = 1, #to_research do
-      self.force_table.queue:add(to_research[i])
-    end
-    return
-  end
-  if not self.force_table.queue:add(tech_name, position) then
-    util.flying_text(self.player, { "message.urq-already-in-queue" })
-    return
-  end
-end
-
 function gui:cancel_research(_, e)
   local tech_name = e.element.name
   self.force_table.queue:remove(tech_name)
@@ -133,13 +111,31 @@ function gui:filter_tech_list()
 end
 
 function gui:handle_tech_click(_, e)
+  if DEBUG then
+    log("tech clicked: " .. e.element.name)
+  end
   local tech_name = e.element.name
   if e.button == defines.mouse_button_type.right then
     self.force_table.queue:remove(tech_name)
     return
   end
   if util.is_double_click(e.element) then
-    self:add_to_queue(tech_name)
+    -- Push to queue
+    local research_state = self.force_table.research_states[tech_name]
+    if research_state == util.research_state.researched then
+      util.flying_text(self.player, { "message.urq-already-researched" })
+      return
+    end
+    if research_state == util.research_state.not_available then
+      -- Add all prerequisites to research this tech ASAP
+      local to_research = util.get_unresearched_prerequisites(self.force_table, self.force.technologies[tech_name])
+      self.force_table.queue:push(to_research)
+      return
+    end
+    if not self.force_table.queue:push({ tech_name }) then
+      -- TODO:
+      -- util.flying_text(self.player, { "message.urq-already-in-queue" })
+    end
     return
   end
   self:select_tech(tech_name)
@@ -225,7 +221,7 @@ function gui:refresh_queue()
   local selected_technology = self.state.selected
   --- @type LuaGuiElement[]
   local queue_buttons = {}
-  for _, tech_name in pairs(self.force_table.queue.queue) do
+  for tech_name in pairs(self.force_table.queue.queue) do
     table.insert(
       queue_buttons,
       self.templates.tech_button(technologies[tech_name], research_states[tech_name], selected_technology)
@@ -358,28 +354,51 @@ end
 function gui:update_durations_and_progress()
   local queue_table = self.refs.queue_table
   local techs_table = self.refs.techs_table
-  for _, tech_name in pairs(self.force_table.queue.queue) do
+  for tech_name, duration in pairs(self.force_table.queue.queue) do
     local queue_button = queue_table[tech_name]
     local techs_button = techs_table[tech_name]
     if not queue_button or not techs_button then
       goto continue
     end
-
-    local duration = self.force_table.queue.durations[tech_name] or "[img=infinity]"
-    if queue_button then
-      queue_button.duration_label.caption = duration
-    end
+    queue_button.duration_label.caption = duration
     techs_button.duration_label.caption = duration
 
     local progress = util.get_research_progress(self.force.technologies[tech_name])
-    if queue_button then
-      queue_button.progressbar.value = progress
-      queue_button.progressbar.visible = progress > 0
-    end
+    queue_button.progressbar.value = progress
+    queue_button.progressbar.visible = progress > 0
     techs_button.progressbar.value = progress
     techs_button.progressbar.visible = progress > 0
+    ::continue::
   end
-  ::continue::
+end
+
+function gui:update_queue()
+  local profiler = game.create_profiler()
+  local queue = self.force_table.queue.queue
+  local queue_table = self.refs.queue_table
+  local research_states = self.force_table.research_states
+  local technologies = self.force.technologies
+  local i = 0
+  for tech_name in pairs(queue) do
+    i = i + 1
+    local button = queue_table[tech_name]
+    if button then
+      util.move_to(button, queue_table, i)
+    else
+      local button_template =
+        self.templates.tech_button(technologies[tech_name], research_states[tech_name], self.state.selected)
+      button_template.index = i
+      libgui.add(queue_table, button_template)
+    end
+  end
+  local children = queue_table.children
+  for i = i + 1, #children do
+    children[i].destroy()
+  end
+  profiler.stop()
+  if DEBUG then
+    log({ "", "update_queue ", profiler })
+  end
 end
 
 function gui:update_search_query()
@@ -398,51 +417,45 @@ function gui:update_search_query()
   end
 end
 
---- @param technology LuaTechnology
-function gui:update_tech_slot(technology)
-  local button = self.refs.techs_table[technology.name]
-  if not button then
-    gui:refresh()
-    return
-  end
-  local research_state = self.force_table.research_states[technology.name]
-  -- Style
-  local properties = util.get_technology_slot_properties(technology, research_state, self.state.selected)
-  button.style = properties.style
-  if properties.leveled then
-    button.level_label.style = "urq_technology_slot_level_label_" .. properties.research_state_str
-  end
-  if properties.ranged then
-    button.level_range_label.style = "urq_technology_slot_level_range_label_" .. properties.research_state_str
-  end
-  -- Position
+function gui:update_tech_list()
+  local profiler = game.create_profiler()
   local techs_table = self.refs.techs_table
-  local order = global.technology_order[technology.name]
-  local index = 1
-  local group_count = 0
-  for state, count in pairs(self.force_table.research_state_counts) do
-    if state < research_state then
-      index = index + count
-    else
-      group_count = count
-      break
+  local research_states = self.force_table.research_states
+  local i = 0
+  for group_state, group in pairs(self.force_table.grouped_technologies) do
+    for _, technology in pairs(group) do
+      i = i + 1
+      local button = techs_table[technology.name]
+      if button then
+        util.move_to(button, techs_table, i)
+        local tags = libgui.get_tags(button)
+        if tags.research_state ~= group_state then
+          local properties = util.get_technology_slot_properties(technology, group_state, self.state.selected)
+          button.style = properties.style
+          if properties.leveled then
+            button.level_label.style = "urq_technology_slot_level_label_" .. properties.research_state_str
+          end
+          if properties.ranged then
+            button.level_range_label.style = "urq_technology_slot_level_range_label_" .. properties.research_state_str
+          end
+          tags.research_state = group_state
+          libgui.set_tags(button, tags)
+        end
+      else
+        local button_template =
+          self.templates.tech_button(technology, research_states[technology.name], self.state.selected)
+        button_template.index = i
+        libgui.add(techs_table, button_template)
+      end
     end
   end
-  util.move_to(button, techs_table, #techs_table.children_names + 1)
-  local children_names = techs_table.children_names
-  for i = index, index + group_count - 1 do
-    local tech_name = children_names[i]
-    if i == index + group_count - 1 then
-      util.move_to(button, techs_table, i)
-      break
-    elseif order < global.technology_order[tech_name] then
-      util.move_to(button, techs_table, i)
-      break
-    end
+  local children = techs_table.children
+  for i = i + 1, #children do
+    children[i].destroy()
   end
-  -- Selected style
-  if self.state.selected == technology.name then
-    self.refs.tech_info.main_slot_frame[technology.name].style = properties.unselected_style
+  profiler.stop()
+  if DEBUG then
+    log({ "", "update_tech_list ", profiler })
   end
 end
 

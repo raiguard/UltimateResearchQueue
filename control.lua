@@ -28,10 +28,10 @@ local function init_force(force)
   --- @class ForceTable
   --- @field queue Queue
   local force_table = {
+    --- @type table<ResearchState, LuaTechnology[]>
+    grouped_technologies = {},
     --- @type ProgressSample[]
     research_progress_samples = {},
-    --- @type table<ResearchState, number>
-    research_state_counts = {},
     --- @type table<string, ResearchState>
     research_states = {},
   }
@@ -191,57 +191,57 @@ event.on_lua_shortcut(function(e)
   end
 end)
 
-event.register({
-  defines.events.on_research_started,
-  defines.events.on_research_cancelled,
-  defines.events.on_research_finished,
-  defines.events.on_research_reversed,
-  util.research_queue_updated_event,
-}, function(e)
-  local force, technology
-  if e.name == defines.events.on_research_cancelled then
-    force = e.force
-    technology = force.technologies[next(e.research)]
-  elseif e.name == util.research_queue_updated_event then
-    force = e.force
-    technology = force.technologies[e.research]
-  else
-    technology = e.research
-    force = technology.force
+event.on_research_started(function(e)
+  local technology = e.research
+  local force = technology.force
+  local force_table = global.forces[force.index]
+  if not force_table then
+    return
   end
   util.ensure_queue_disabled(force)
+
+  local queue = force_table.queue
+  if next(queue.queue) ~= technology.name then
+    queue:push_front({ technology.name })
+  end
+end)
+
+event.on_research_cancelled(function(e)
+  local force = e.force
   local force_table = global.forces[force.index]
-  if force_table then
-    local techs_to_check = { technology.name }
-    local requisites = global.technology_requisites[technology.name]
-    if requisites then
-      for _, requisite_prototype in pairs(requisites) do
-        table.insert(techs_to_check, requisite_prototype.name)
-      end
-    end
-    for _, tech_name in pairs(techs_to_check) do
-      local technology = force.technologies[tech_name]
-      if util.update_research_state(force_table, technology) then
-        for _, player in pairs(force.players) do
-          local gui = util.get_gui(player)
-          if gui then
-            gui:update_tech_slot(technology)
-          end
-        end
-      end
-    end
-    -- TODO: Dynamically update queue
-    for _, player in pairs(force.players) do
-      local gui = util.get_gui(player)
-      if gui then
-        gui:refresh_queue()
-      end
-      if e.name == defines.events.on_research_finished and player.mod_settings["urq-print-completed-message"] then
-        player.print({ "message.urq-research-completed", technology.name })
-      end
-    end
-    if e.name == defines.events.on_research_finished or e.name == defines.events.on_research_reversed then
-      force_table.queue:update()
+  if not force_table then
+    return
+  end
+  util.ensure_queue_disabled(force)
+
+  local queue = force_table.queue
+  for tech_name in pairs(e.research) do
+    queue:remove(tech_name)
+  end
+end)
+
+event.on_research_finished(function(e)
+  local technology = e.research
+  local force = technology.force
+  local force_table = global.forces[force.index]
+  if not force_table then
+    return
+  end
+  util.ensure_queue_disabled(force)
+  force_table.queue:remove(technology.name)
+end)
+
+event.on_research_reversed(function(e)
+  -- TODO:
+end)
+
+event.register(util.on_research_queue_updated, function(e)
+  local force = e.force
+  for _, player in pairs(force.players) do
+    local gui = util.get_gui(player)
+    if gui then
+      gui:update_queue()
+      gui:update_tech_list()
     end
   end
 end)

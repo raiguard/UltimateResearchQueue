@@ -317,7 +317,6 @@ end
 --- @return GuiBuildStructure
 function templates.tech_button(technology, research_state, selected_name, is_tech_info)
   local properties = util.get_technology_slot_properties(technology, research_state, selected_name)
-
   local progress = util.get_research_progress(technology)
 
   local ingredients = {}
@@ -346,6 +345,9 @@ function templates.tech_button(technology, research_state, selected_name, is_tec
     style = properties.style,
     tooltip = tooltip,
     ignored_by_interaction = is_tech_info,
+    tags = {
+      research_state = research_state,
+    },
     actions = {
       on_click = "handle_tech_click",
     },
