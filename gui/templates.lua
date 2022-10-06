@@ -187,13 +187,6 @@ function templates.base(science_pack_filters)
           style = "subheader_frame",
           style_mods = { horizontally_stretchable = true, height = 0 },
           direction = "vertical",
-          multi_row_header and {
-            type = "flow",
-            science_pack_table,
-            { type = "line", direction = "vertical" },
-            { type = "sprite-button", style = "tool_button" },
-          } or {},
-          multi_row_header and { type = "line", style = "flib_subheader_horizontal_line" } or {},
           {
             type = "flow",
             style = "centering_horizontal_flow",
@@ -204,6 +197,13 @@ function templates.base(science_pack_filters)
             { type = "sprite-button", style = "tool_button" },
             { type = "sprite-button", style = "flib_tool_button_light_green" },
           },
+          multi_row_header and { type = "line", style = "flib_subheader_horizontal_line" } or {},
+          multi_row_header and {
+            type = "flow",
+            science_pack_table,
+            { type = "line", direction = "vertical" },
+            { type = "sprite-button", style = "tool_button" },
+          } or {},
         },
         {
           type = "scroll-pane",
