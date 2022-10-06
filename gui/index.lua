@@ -126,15 +126,22 @@ function gui:handle_tech_click(_, e)
       util.flying_text(self.player, { "message.urq-already-researched" })
       return
     end
+    local to_research
     if research_state == util.research_state.not_available then
       -- Add all prerequisites to research this tech ASAP
-      local to_research = util.get_unresearched_prerequisites(self.force_table, self.force.technologies[tech_name])
-      self.force_table.queue:push(to_research)
-      return
+      to_research = util.get_unresearched_prerequisites(self.force_table, self.force.technologies[tech_name])
+    else
+      to_research = {tech_name}
     end
-    if not self.force_table.queue:push({ tech_name }) then
-      -- TODO:
-      -- util.flying_text(self.player, { "message.urq-already-in-queue" })
+    local push_error = self.force_table.queue:push(to_research)
+    if push_error == util.queue_push_error.already_in_queue then
+      util.flying_text(self.player, { "message.urq-already-in-queue" })
+    elseif push_error == util.queue_push_error.queue_full then
+      util.flying_text(self.player, {"message.urq-queue-is-full"})
+    elseif push_error == util.queue_push_error.too_many_prerequisites then
+      util.flying_text(self.player, {"message.urq-too-many-unresearched-prerequisites"})
+    elseif push_error == util.queue_push_error.too_many_prerequisites_queue_full then
+      util.flying_text(self.player, {"message.urq-too-many-prerequisites-queue-full"})
     end
     return
   end
@@ -188,6 +195,7 @@ function gui:select_tech(tech_name)
       local former_slot = table[former_selected]
       if former_slot then
         former_slot.style = string.gsub(former_slot.style.name, "selected_", "")
+        table.parent.scroll_to_element(former_slot)
       end
     end
     local new_slot = table[tech_name]

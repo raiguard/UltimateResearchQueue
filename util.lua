@@ -541,6 +541,16 @@ util.on_research_queue_updated = event.generate_id()
 --- @class EventData.on_research_queue_updated: EventData
 --- @field force LuaForce
 
+util.queue_limit = 7 * 7
+
+--- @enum QueuePushError
+util.queue_push_error = {
+  already_in_queue = 1,
+  queue_full = 2,
+  too_many_prerequisites = 3,
+  too_many_prerequisites_queue_full = 4,
+}
+
 --- @enum ResearchState
 util.research_state = {
   available = 1,

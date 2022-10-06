@@ -6,11 +6,34 @@ local util = require("__UltimateResearchQueue__.util")
 --- @class Queue
 local queue = {}
 
+--- @param tech_name string
+--- @return boolean
+function queue:contains(tech_name)
+  return self.queue[tech_name] and true or false
+end
+
 --- Add one or more technologies to the back of the queue
 --- @param tech_names string[]
+--- @return QueuePushError?
 function queue:push(tech_names)
   local technologies = self.force.technologies
   local first_added
+  local num_techs = #tech_names
+  if num_techs > util.queue_limit then
+    return util.queue_push_error.too_many_prerequisites
+  else
+    local queue_len = table_size(self.queue)
+    -- It shouldn't ever be greater... right?
+    if queue_len >= util.queue_limit then
+      return util.queue_push_error.queue_full
+    elseif queue_len + num_techs > util.queue_limit then
+      return util.queue_push_error.too_many_prerequisites_queue_full
+    end
+  end
+  local last = tech_names[#tech_names]
+  if self:contains(last) then
+    return util.queue_push_error.already_in_queue
+  end
   for _, tech_name in pairs(tech_names) do
     if not self.queue[tech_name] then
       if not first_added then
