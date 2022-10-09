@@ -1,6 +1,7 @@
 local event = require("__flib__.event")
 local gui = require("__flib__.gui")
 local math = require("__flib__.math")
+local on_tick_n = require("__flib__.on-tick-n")
 local table = require("__flib__.table")
 
 local util = {}
@@ -428,6 +429,15 @@ function util.get_research_unit_count(tech)
   end
 end
 
+--- @param force_table ForceTable
+function util.schedule_gui_update(force_table)
+  if game.tick_paused then
+    util.update_force_guis(force_table.force)
+  elseif not force_table.update_gui_task then
+    force_table.update_gui_task = on_tick_n.add(game.tick + 1, { id = "update_guis", force = force_table.force.index })
+  end
+end
+
 --- @param technology LuaTechnology
 --- @param research_state ResearchState
 --- @param selected_name string?
@@ -564,6 +574,18 @@ util.research_state = {
   researched = 4,
   disabled = 5,
 }
+
+--- @param force LuaForce
+function util.update_force_guis(force)
+  for _, player in pairs(force.players) do
+    local gui = util.get_gui(player)
+    if gui then
+      gui:update_queue()
+      gui:update_tech_info_footer()
+      gui:update_tech_list()
+    end
+  end
+end
 
 --- @param force_table ForceTable
 --- @param technology LuaTechnology

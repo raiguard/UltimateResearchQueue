@@ -28,12 +28,14 @@ local function init_force(force)
   --- @class ForceTable
   --- @field queue Queue
   local force_table = {
+    force = force,
     --- @type table<ResearchState, LuaTechnology[]>
     grouped_technologies = {},
     --- @type ProgressSample[]
     research_progress_samples = {},
     --- @type table<string, ResearchState>
     research_states = {},
+    update_gui_task = nil,
   }
   force_table.queue = queue.new(force, force_table)
   global.forces[force.index] = force_table
@@ -247,13 +249,7 @@ event.on_research_finished(function(e)
   else
     -- This was insta-researched
     util.update_research_state_reqs(force_table, technology)
-    for _, player in pairs(force.players) do
-      local gui = util.get_gui(player)
-      if gui then
-        gui:update_tech_list()
-        gui:update_tech_info_footer()
-      end
-    end
+    util.schedule_gui_update(force_table)
   end
   for _, player in pairs(force.players) do
     if player.mod_settings["urq-print-completed-message"].value then
@@ -271,26 +267,11 @@ event.on_research_reversed(function(e)
   end
   util.ensure_queue_disabled(force)
   util.update_research_state_reqs(force_table, e.research)
-  -- TODO: Batch these in case we get multiple in one tick
-  for _, player in pairs(force.players) do
-    local gui = util.get_gui(player)
-    if gui then
-      gui:update_tech_list()
-      gui:update_tech_info_footer()
-    end
-  end
+  util.schedule_gui_update(force_table)
 end)
 
 event.register(util.on_research_queue_updated, function(e)
-  local force = e.force
-  for _, player in pairs(force.players) do
-    local gui = util.get_gui(player)
-    if gui then
-      gui:update_queue()
-      gui:update_tech_list()
-      gui:update_tech_info_footer()
-    end
-  end
+  util.schedule_gui_update(global.forces[e.force.index])
 end)
 
 event.on_string_translated(function(e)
@@ -308,7 +289,12 @@ end)
 event.on_tick(function(e)
   dictionary.check_skipped()
   for _, job in pairs(on_tick_n.retrieve(e.tick) or {}) do
-    if job.id == "gui" then
+    if job.id == "update_guis" then
+      -- TODO: Update each player's GUI on a separate tick?
+      local force_table = global.forces[job.force]
+      force_table.update_gui_task = nil
+      util.update_force_guis(force_table.force)
+    elseif job.id == "gui" then
       local gui = util.get_gui(job.player_index)
       if gui then
         gui:dispatch(job, e)
