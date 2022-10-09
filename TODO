@@ -1,0 +1,12 @@
+Keep URQ open when opening graph
+Fix queue ordering with >1024 techs
+Technology list header buttons
+Properly group and split infinite researches in techs list
+Auto-research features for infinite techs
+Show prerequisites, requisites, and level chain in tech info area
+Proper tooltips
+Recipe Book integration
+Welcome / tutorial screen
+Optimization pass
+Playtesting
+Release!
