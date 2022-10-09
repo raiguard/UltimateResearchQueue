@@ -590,4 +590,24 @@ function util.update_research_state_reqs(force_table, technology)
   end
 end
 
+--- @param button LuaGuiElement
+--- @param technology LuaTechnology
+--- @param research_state ResearchState
+--- @param selected_tech string?
+function util.update_tech_slot_style(button, technology, research_state, selected_tech)
+  local tags = gui.get_tags(button)
+  if tags.research_state ~= research_state then
+    local properties = util.get_technology_slot_properties(technology, research_state, selected_tech)
+    button.style = properties.style
+    if properties.leveled then
+      button.level_label.style = "urq_technology_slot_level_label_" .. properties.research_state_str
+    end
+    if properties.ranged then
+      button.level_range_label.style = "urq_technology_slot_level_range_label_" .. properties.research_state_str
+    end
+    tags.research_state = research_state
+    gui.set_tags(button, tags)
+  end
+end
+
 return util

@@ -77,16 +77,16 @@ function queue:remove(tech_name, is_recursive)
   end
   self.queue[tech_name] = nil
   local technologies = self.force.technologies
+  local force_table = self.force_table
+  local research_states = force_table.research_states
   util.update_research_state(self.force_table, technologies[tech_name])
   -- Remove any now-invalid researches from the queue
-  if self.force_table.research_states[tech_name] ~= util.research_state.researched then
-    local requisites = global.technology_requisites[tech_name]
-    if requisites then
-      for requisite_name in pairs(requisites) do
-        if self.queue[requisite_name] then
-          self:remove(requisite_name, true)
-        end
-        util.update_research_state(self.force_table, technologies[requisite_name])
+  local requisites = global.technology_requisites[tech_name]
+  if requisites then
+    for requisite_name in pairs(requisites) do
+      util.update_research_state(force_table, technologies[requisite_name])
+      if self.queue[requisite_name] and research_states[requisite_name] == util.research_state.not_available then
+        self:remove(requisite_name, true)
       end
     end
   end

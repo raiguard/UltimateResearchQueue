@@ -131,17 +131,17 @@ function gui:handle_tech_click(_, e)
       -- Add all prerequisites to research this tech ASAP
       to_research = util.get_unresearched_prerequisites(self.force_table, self.force.technologies[tech_name])
     else
-      to_research = {tech_name}
+      to_research = { tech_name }
     end
     local push_error = self.force_table.queue:push(to_research)
     if push_error == util.queue_push_error.already_in_queue then
       util.flying_text(self.player, { "message.urq-already-in-queue" })
     elseif push_error == util.queue_push_error.queue_full then
-      util.flying_text(self.player, {"message.urq-queue-is-full"})
+      util.flying_text(self.player, { "message.urq-queue-is-full" })
     elseif push_error == util.queue_push_error.too_many_prerequisites then
-      util.flying_text(self.player, {"message.urq-too-many-unresearched-prerequisites"})
+      util.flying_text(self.player, { "message.urq-too-many-unresearched-prerequisites" })
     elseif push_error == util.queue_push_error.too_many_prerequisites_queue_full then
-      util.flying_text(self.player, {"message.urq-too-many-prerequisites-queue-full"})
+      util.flying_text(self.player, { "message.urq-too-many-prerequisites-queue-full" })
     end
     return
   end
@@ -334,6 +334,7 @@ function gui:update_queue()
     local button = queue_table[tech_name]
     if button then
       util.move_to(button, queue_table, i)
+      util.update_tech_slot_style(button, technologies[tech_name], research_states[tech_name], self.state.selected)
     else
       local button_template =
         self.templates.tech_button(technologies[tech_name], research_states[tech_name], self.state.selected)
@@ -378,19 +379,7 @@ function gui:update_tech_list()
       local button = techs_table[technology.name]
       if button then
         util.move_to(button, techs_table, i)
-        local tags = libgui.get_tags(button)
-        if tags.research_state ~= group_state then
-          local properties = util.get_technology_slot_properties(technology, group_state, self.state.selected)
-          button.style = properties.style
-          if properties.leveled then
-            button.level_label.style = "urq_technology_slot_level_label_" .. properties.research_state_str
-          end
-          if properties.ranged then
-            button.level_range_label.style = "urq_technology_slot_level_range_label_" .. properties.research_state_str
-          end
-          tags.research_state = group_state
-          libgui.set_tags(button, tags)
-        end
+        util.update_tech_slot_style(button, technology, group_state, self.state.selected)
       else
         local button_template =
           self.templates.tech_button(technology, research_states[technology.name], self.state.selected)
