@@ -564,7 +564,6 @@ util.research_state = {
 --- @param technology LuaTechnology
 --- @return boolean? updated
 function util.update_research_state(force_table, technology)
-  -- TODO: Techs are remaining as conditionally available when they should be available
   local order = global.technology_order[technology.name]
   local grouped_techs = force_table.grouped_technologies
   local previous_state = force_table.research_states[technology.name]

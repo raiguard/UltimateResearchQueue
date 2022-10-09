@@ -228,6 +228,11 @@ event.on_research_finished(function(e)
   end
   util.ensure_queue_disabled(force)
   force_table.queue:remove(technology.name)
+  for _, player in pairs(force.players) do
+    if player.mod_settings["urq-print-completed-message"].value then
+      player.print({ "message.urq-research-completed", technology.name })
+    end
+  end
 end)
 
 event.on_research_reversed(function(e)
