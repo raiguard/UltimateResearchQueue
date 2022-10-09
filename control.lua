@@ -231,7 +231,21 @@ event.on_research_finished(function(e)
 end)
 
 event.on_research_reversed(function(e)
-  -- TODO:
+  local technology = e.research
+  local force = technology.force
+  local force_table = global.forces[force.index]
+  if not force_table then
+    return
+  end
+  util.ensure_queue_disabled(force)
+  util.update_research_state(force_table, e.research)
+  -- TODO: Batch these in case we get multiple in one tick
+  for _, player in pairs(force.players) do
+    local gui = util.get_gui(player)
+    if gui then
+      gui:update_tech_list()
+    end
+  end
 end)
 
 event.register(util.on_research_queue_updated, function(e)
