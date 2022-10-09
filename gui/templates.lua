@@ -136,7 +136,13 @@ function templates.base(science_pack_filters)
               ref = { "tech_info", "name_label" },
             },
             { type = "empty-widget", style = "flib_horizontal_pusher" },
-            { type = "button", style = "tool_button", actions = { on_click = "open_in_graph" } },
+            {
+              type = "sprite-button",
+              style = "tool_button",
+              sprite = "urq_open_in_graph",
+              tooltip = { "gui.urq-open-in-graph" },
+              actions = { on_click = "open_in_graph" },
+            },
           },
           {
             type = "scroll-pane",

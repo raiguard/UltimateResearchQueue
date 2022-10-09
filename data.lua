@@ -22,6 +22,14 @@ data:extend({
     border_color = {},
     size = 13,
   },
+  {
+    type = "sprite",
+    name = "urq_open_in_graph",
+    filename = "__UltimateResearchQueue__/graphics/graph.png",
+    size = 32,
+    mipmap_count = 2,
+    flags = { "gui-icon" },
+  },
 })
 
 local styles = data.raw["gui-style"].default
