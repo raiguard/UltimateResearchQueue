@@ -176,6 +176,44 @@ function templates.base(science_pack_filters)
               ref = { "tech_info", "effects_table" },
             },
           },
+          {
+            type = "frame",
+            style = "subfooter_frame",
+            ref = { "tech_info_footer", "frame" },
+            {
+              type = "progressbar",
+              style = "production_progressbar",
+              style_mods = { horizontally_stretchable = true },
+              caption = { "format-percent", 0 },
+              ref = { "tech_info_footer", "progressbar" },
+            },
+            { type = "empty-widget", style = "flib_horizontal_pusher", ref = { "tech_info_footer", "pusher" } },
+            {
+              type = "button",
+              caption = { "gui-technology-preview.un-research" },
+              tooltip = { "gui-technology-preview.un-research-tooltip" },
+              visible = false,
+              ref = { "tech_info_footer", "unresearch_button" },
+              actions = { on_click = "unresearch" },
+            },
+            {
+              type = "button",
+              style = "red_button",
+              caption = { "gui.urq-cancel-research" },
+              tooltip = { "gui.urq-cancel-research" },
+              visible = false,
+              ref = { "tech_info_footer", "cancel_button" },
+              actions = { on_click = "cancel_research" },
+            },
+            {
+              type = "button",
+              style = "green_button",
+              caption = { "gui-technology-preview.start-research" },
+              tooltip = { "gui-technology-preview.start-research" },
+              ref = { "tech_info_footer", "start_button" },
+              actions = { on_click = "handle_start_research_click" },
+            },
+          },
         },
       },
       {
@@ -349,7 +387,7 @@ function templates.tech_button(technology, research_state, selected_name, is_tec
       research_state = research_state,
     },
     actions = {
-      on_click = "handle_tech_click",
+      on_click = "handle_tech_slot_click",
     },
     {
       type = "flow",

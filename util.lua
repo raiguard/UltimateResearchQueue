@@ -473,6 +473,11 @@ function util.get_unresearched_prerequisites(force_table, tech)
   return to_research
 end
 
+--- @param player LuaPlayer
+function util.is_cheating(player)
+  return player.cheat_mode or player.controller_type == defines.controllers.editor
+end
+
 --- @param elem LuaGuiElement
 function util.is_double_click(elem)
   local tags = gui.get_tags(elem)

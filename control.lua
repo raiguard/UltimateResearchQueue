@@ -140,6 +140,18 @@ event.on_player_left_game(function(e)
   dictionary.cancel_translation(e.player_index)
 end)
 
+event.register({
+  defines.events.on_player_toggled_map_editor,
+  defines.events.on_player_cheat_mode_enabled,
+  defines.events.on_player_cheat_mode_disabled,
+}, function(e)
+  local player = game.get_player(e.player_index) --[[@as LuaPlayer]]
+  local gui = util.get_gui(player)
+  if gui then
+    gui:update_tech_info_footer()
+  end
+end)
+
 libgui.hook_events(function(e)
   local action = libgui.read_action(e)
   if action then
@@ -227,7 +239,19 @@ event.on_research_finished(function(e)
     return
   end
   util.ensure_queue_disabled(force)
-  force_table.queue:remove(technology.name)
+  if force_table.queue:contains(technology.name) then
+    force_table.queue:remove(technology.name)
+  else
+    -- This was insta-researched
+    util.update_research_state_reqs(force_table, technology)
+    for _, player in pairs(force.players) do
+      local gui = util.get_gui(player)
+      if gui then
+        gui:update_tech_list()
+        gui:update_tech_info_footer()
+      end
+    end
+  end
   for _, player in pairs(force.players) do
     if player.mod_settings["urq-print-completed-message"].value then
       player.print({ "message.urq-research-completed", technology.name })
@@ -243,12 +267,13 @@ event.on_research_reversed(function(e)
     return
   end
   util.ensure_queue_disabled(force)
-  util.update_research_state(force_table, e.research)
+  util.update_research_state_reqs(force_table, e.research)
   -- TODO: Batch these in case we get multiple in one tick
   for _, player in pairs(force.players) do
     local gui = util.get_gui(player)
     if gui then
       gui:update_tech_list()
+      gui:update_tech_info_footer()
     end
   end
 end)
@@ -260,6 +285,7 @@ event.register(util.on_research_queue_updated, function(e)
     if gui then
       gui:update_queue()
       gui:update_tech_list()
+      gui:update_tech_info_footer()
     end
   end
 end)

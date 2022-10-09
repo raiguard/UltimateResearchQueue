@@ -30,6 +30,7 @@ end
 --- @field queue_scroll_pane LuaGuiElement
 --- @field queue_table LuaGuiElement
 --- @field tech_info TechInfoRefs
+--- @field tech_info_footer TechInfoFooterRefs
 --- @class TechInfoRefs
 --- @field tutorial_flow LuaGuiElement
 --- @field name_label LuaGuiElement
@@ -39,6 +40,13 @@ end
 --- @field ingredients_count_label LuaGuiElement
 --- @field ingredients_time_label LuaGuiElement
 --- @field effects_table LuaGuiElement
+--- @class TechInfoFooterRefs
+--- @field frame LuaGuiElement
+--- @field progressbar LuaGuiElement
+--- @field pusher LuaGuiElement
+--- @field cancel_button LuaGuiElement
+--- @field start_button LuaGuiElement
+--- @field unresearch_button LuaGuiElement
 
 --- @class Gui
 local gui = {}
@@ -47,6 +55,7 @@ gui.templates = require("__UltimateResearchQueue__.gui.templates")
 function gui:cancel_research(_, e)
   local tech_name = e.element.name
   self.force_table.queue:remove(tech_name)
+  self:update_tech_info_footer()
 end
 
 function gui:destroy()
@@ -110,7 +119,15 @@ function gui:filter_tech_list()
   end
 end
 
-function gui:handle_tech_click(_, e)
+function gui:handle_start_research_click(_, e)
+  local selected = self.state.selected
+  if not selected then
+    return
+  end
+  self:start_research(selected, e.shift and util.is_cheating(self.player))
+end
+
+function gui:handle_tech_slot_click(_, e)
   if DEBUG then
     log("tech clicked: " .. e.element.name)
   end
@@ -120,29 +137,7 @@ function gui:handle_tech_click(_, e)
     return
   end
   if util.is_double_click(e.element) then
-    -- Push to queue
-    local research_state = self.force_table.research_states[tech_name]
-    if research_state == util.research_state.researched then
-      util.flying_text(self.player, { "message.urq-already-researched" })
-      return
-    end
-    local to_research
-    if research_state == util.research_state.not_available then
-      -- Add all prerequisites to research this tech ASAP
-      to_research = util.get_unresearched_prerequisites(self.force_table, self.force.technologies[tech_name])
-    else
-      to_research = { tech_name }
-    end
-    local push_error = self.force_table.queue:push(to_research)
-    if push_error == util.queue_push_error.already_in_queue then
-      util.flying_text(self.player, { "message.urq-already-in-queue" })
-    elseif push_error == util.queue_push_error.queue_full then
-      util.flying_text(self.player, { "message.urq-queue-is-full" })
-    elseif push_error == util.queue_push_error.too_many_prerequisites then
-      util.flying_text(self.player, { "message.urq-too-many-unresearched-prerequisites" })
-    elseif push_error == util.queue_push_error.too_many_prerequisites_queue_full then
-      util.flying_text(self.player, { "message.urq-too-many-prerequisites-queue-full" })
-    end
+    self:start_research(tech_name)
     return
   end
   self:select_tech(tech_name)
@@ -238,6 +233,8 @@ function gui:select_tech(tech_name)
   local effects_table = self.refs.tech_info.effects_table
   effects_table.clear()
   libgui.build(effects_table, table.map(technology.effects, self.templates.effect_button))
+  -- Footer
+  self:update_tech_info_footer()
 end
 
 --- @param select_tech string?
@@ -250,6 +247,44 @@ function gui:show(select_tech)
   if not self.state.pinned then
     self.player.opened = self.refs.window
   end
+end
+
+--- @param tech_name string
+--- @param instant_research boolean?
+function gui:start_research(tech_name, instant_research)
+  local research_state = self.force_table.research_states[tech_name]
+  if research_state == util.research_state.researched then
+    util.flying_text(self.player, { "message.urq-already-researched" })
+    return
+  end
+  local to_research
+  if research_state == util.research_state.not_available then
+    -- Add all prerequisites to research this tech ASAP
+    to_research = util.get_unresearched_prerequisites(self.force_table, self.force.technologies[tech_name])
+  else
+    to_research = { tech_name }
+  end
+  if instant_research then
+    local technologies = self.force.technologies
+    for _, tech_name in pairs(to_research) do
+      local technology = technologies[tech_name]
+      if not technology.researched then
+        technology.researched = true
+      end
+    end
+  else
+    local push_error = self.force_table.queue:push(to_research)
+    if push_error == util.queue_push_error.already_in_queue then
+      util.flying_text(self.player, { "message.urq-already-in-queue" })
+    elseif push_error == util.queue_push_error.queue_full then
+      util.flying_text(self.player, { "message.urq-queue-is-full" })
+    elseif push_error == util.queue_push_error.too_many_prerequisites then
+      util.flying_text(self.player, { "message.urq-too-many-unresearched-prerequisites" })
+    elseif push_error == util.queue_push_error.too_many_prerequisites_queue_full then
+      util.flying_text(self.player, { "message.urq-too-many-prerequisites-queue-full" })
+    end
+  end
+  self:update_tech_info_footer()
 end
 
 function gui:toggle_pinned()
@@ -301,6 +336,28 @@ function gui:toggle_visible()
   end
 end
 
+function gui:unresearch()
+  local selected = self.state.selected
+  if not selected then
+    return
+  end
+
+  local function propagate(technologies, technology)
+    local requisites = global.technology_requisites[technology.name]
+    if requisites then
+      for requisite_name in pairs(requisites) do
+        local requisite = technologies[requisite_name]
+        if requisite.researched then
+          propagate(technologies, requisite)
+        end
+      end
+    end
+    technology.researched = false
+  end
+
+  propagate(self.force.technologies, self.force.technologies[selected])
+end
+
 function gui:update_durations_and_progress()
   local queue_table = self.refs.queue_table
   local techs_table = self.refs.techs_table
@@ -318,8 +375,10 @@ function gui:update_durations_and_progress()
     queue_button.progressbar.visible = progress > 0
     techs_button.progressbar.value = progress
     techs_button.progressbar.visible = progress > 0
+
     ::continue::
   end
+  self:update_tech_info_footer(true)
 end
 
 function gui:update_queue()
@@ -365,6 +424,39 @@ function gui:update_search_query()
   else
     self.state.update_job =
       on_tick_n.add(game.tick + 30, { id = "gui", player_index = self.player.index, action = "filter_tech_list" })
+  end
+end
+
+--- @param progress_only boolean?
+function gui:update_tech_info_footer(progress_only)
+  local selected = self.state.selected
+  if not selected then
+    return
+  end
+
+  local elems = self.refs.tech_info_footer
+  local research_state = self.force_table.research_states[selected]
+  local researched = research_state == util.research_state.researched
+  local in_queue = self.force_table.queue:contains(selected)
+  local progress = util.get_research_progress(self.force.technologies[selected])
+  local is_cheating = util.is_cheating(self.player)
+
+  elems.frame.visible = not (researched and not is_cheating)
+
+  local progressbar = elems.progressbar
+  progressbar.visible = progress > 0
+  elems.pusher.visible = progress == 0
+  if in_queue then
+    progressbar.value = progress
+    progressbar.caption =
+      { "", self.force_table.queue.queue[selected], " - ", { "format-percent", math.round(progress * 100) } }
+  end
+
+  if not progress_only then
+    elems.start_button.visible = not researched and not in_queue
+    elems.cancel_button.visible = not researched and in_queue
+    elems.cancel_button.name = selected
+    elems.unresearch_button.visible = researched and is_cheating
   end
 end
 
