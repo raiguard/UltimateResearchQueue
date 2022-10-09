@@ -27,6 +27,8 @@ end
 --- @field close_button LuaGuiElement
 --- @field techs_scroll_pane LuaGuiElement
 --- @field techs_table LuaGuiElement
+--- @field queue_pause_button LuaGuiElement
+--- @field queue_trash_button LuaGuiElement
 --- @field queue_scroll_pane LuaGuiElement
 --- @field queue_table LuaGuiElement
 --- @field tech_info TechInfoRefs
@@ -55,6 +57,16 @@ gui.templates = require("__UltimateResearchQueue__.gui.templates")
 function gui:cancel_research(_, e)
   local tech_name = e.element.name
   self.force_table.queue:remove(tech_name)
+  self:update_tech_info_footer()
+end
+
+function gui:clear_queue()
+  local queue = self.force_table.queue
+  local tech_name = next(queue.queue)
+  while tech_name do
+    queue:remove(tech_name)
+    tech_name = next(queue.queue)
+  end
   self:update_tech_info_footer()
 end
 
@@ -328,6 +340,10 @@ function gui:toggle_search()
   end
 end
 
+function gui:toggle_queue_paused()
+  self.force_table.queue:toggle_paused()
+end
+
 function gui:toggle_visible()
   if self.refs.window.visible then
     self:hide({})
@@ -383,6 +399,19 @@ end
 
 function gui:update_queue()
   local profiler = game.create_profiler()
+
+  local paused = self.force_table.queue.paused
+  local pause_button = self.refs.queue_pause_button
+  if paused then
+    pause_button.style = "flib_selected_tool_button"
+    pause_button.tooltip = { "gui.urq-resume-queue" }
+  else
+    pause_button.style = "tool_button"
+    pause_button.tooltip = { "gui.urq-pause-queue" }
+  end
+
+  self.refs.queue_trash_button.enabled = next(self.force_table.queue.queue) and true or false
+
   local queue = self.force_table.queue.queue
   local queue_table = self.refs.queue_table
   local research_states = self.force_table.research_states

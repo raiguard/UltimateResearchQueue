@@ -226,6 +226,9 @@ event.on_research_cancelled(function(e)
   util.ensure_queue_disabled(force)
 
   local queue = force_table.queue
+  if queue.paused then
+    return
+  end
   for tech_name in pairs(e.research) do
     queue:remove(tech_name)
   end

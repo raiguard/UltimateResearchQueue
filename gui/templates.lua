@@ -84,6 +84,28 @@ function templates.base(science_pack_filters)
             style = "subheader_frame",
             style_mods = { horizontally_stretchable = true },
             { type = "label", style = "subheader_caption_label", caption = { "gui-technology-queue.title" } },
+            { type = "empty-widget", style = "flib_horizontal_pusher" },
+            {
+              type = "sprite-button",
+              style = "tool_button",
+              sprite = "utility/pause",
+              tooltip = { "gui.urq-pause-queue" },
+              ref = { "queue_pause_button" },
+              actions = {
+                on_click = "toggle_queue_paused",
+              },
+            },
+            {
+              type = "sprite-button",
+              style = "tool_button_red",
+              sprite = "utility/trash",
+              tooltip = { "gui.urq-clear-queue" },
+              enabled = false,
+              ref = { "queue_trash_button" },
+              actions = {
+                on_click = "clear_queue",
+              },
+            },
           },
           {
             type = "scroll-pane",

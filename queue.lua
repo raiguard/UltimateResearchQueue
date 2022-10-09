@@ -96,9 +96,15 @@ function queue:remove(tech_name, is_recursive)
   end
 end
 
+function queue:toggle_paused()
+  self.paused = not self.paused
+  self:update_active_research()
+  event.raise(util.on_research_queue_updated, { force = self.force })
+end
+
 function queue:update_active_research()
   local first = next(self.queue)
-  if first then
+  if not self.paused and first then
     local current_research = self.force.current_research
     if not current_research or first ~= current_research.name then
       self.force.add_research(first)
@@ -141,6 +147,7 @@ function queue.new(force, force_table)
   local self = {
     force = force,
     force_table = force_table,
+    paused = false,
     --- @type table<string, string>
     queue = {},
   }
