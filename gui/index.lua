@@ -3,6 +3,7 @@ local math = require("__flib__.math")
 local on_tick_n = require("__flib__.on-tick-n")
 local table = require("__flib__.table")
 
+local constants = require("__UltimateResearchQueue__.constants")
 local util = require("__UltimateResearchQueue__.util")
 
 --- @param elem LuaGuiElement
@@ -27,7 +28,7 @@ end
 --- @field close_button LuaGuiElement
 --- @field techs_scroll_pane LuaGuiElement
 --- @field techs_table LuaGuiElement
---- @field queue_popuLuaGuiElement LuaGuiElement
+--- @field queue_population_label LuaGuiElement
 --- @field queue_pause_button LuaGuiElement
 --- @field queue_trash_button LuaGuiElement
 --- @field queue_scroll_pane LuaGuiElement
@@ -266,12 +267,12 @@ end
 --- @param instant_research boolean?
 function gui:start_research(tech_name, instant_research)
   local research_state = self.force_table.research_states[tech_name]
-  if research_state == util.research_state.researched then
+  if research_state == constants.research_state.researched then
     util.flying_text(self.player, { "message.urq-already-researched" })
     return
   end
   local to_research
-  if research_state == util.research_state.not_available then
+  if research_state == constants.research_state.not_available then
     -- Add all prerequisites to research this tech ASAP
     to_research = util.get_unresearched_prerequisites(self.force_table, self.force.technologies[tech_name])
   else
@@ -287,13 +288,13 @@ function gui:start_research(tech_name, instant_research)
     end
   else
     local push_error = self.force_table.queue:push(to_research)
-    if push_error == util.queue_push_error.already_in_queue then
+    if push_error == constants.queue_push_error.already_in_queue then
       util.flying_text(self.player, { "message.urq-already-in-queue" })
-    elseif push_error == util.queue_push_error.queue_full then
+    elseif push_error == constants.queue_push_error.queue_full then
       util.flying_text(self.player, { "message.urq-queue-is-full" })
-    elseif push_error == util.queue_push_error.too_many_prerequisites then
+    elseif push_error == constants.queue_push_error.too_many_prerequisites then
       util.flying_text(self.player, { "message.urq-too-many-unresearched-prerequisites" })
-    elseif push_error == util.queue_push_error.too_many_prerequisites_queue_full then
+    elseif push_error == constants.queue_push_error.too_many_prerequisites_queue_full then
       util.flying_text(self.player, { "message.urq-too-many-prerequisites-queue-full" })
     end
   end
@@ -414,7 +415,7 @@ function gui:update_queue()
   self.refs.queue_trash_button.enabled = next(self.force_table.queue.queue) and true or false
 
   self.refs.queue_population_label.caption =
-    { "gui.urq-queue-population", self.force_table.queue.len, util.queue_limit }
+    { "gui.urq-queue-population", self.force_table.queue.len, constants.queue_limit }
 
   local queue = self.force_table.queue.queue
   local queue_table = self.refs.queue_table
@@ -469,7 +470,7 @@ function gui:update_tech_info_footer(progress_only)
 
   local elems = self.refs.tech_info_footer
   local research_state = self.force_table.research_states[selected]
-  local researched = research_state == util.research_state.researched
+  local researched = research_state == constants.research_state.researched
   local in_queue = self.force_table.queue:contains(selected)
   local progress = util.get_research_progress(self.force.technologies[selected])
   local is_cheating = util.is_cheating(self.player)

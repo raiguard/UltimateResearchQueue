@@ -1,6 +1,7 @@
 local math = require("__flib__.math")
 local table = require("__flib__.table")
 
+local constants = require("__UltimateResearchQueue__.constants")
 local util = require("__UltimateResearchQueue__.util")
 
 local templates = {}
@@ -87,7 +88,7 @@ function templates.base(science_pack_filters)
             { type = "empty-widget", style = "flib_horizontal_pusher" },
             {
               type = "label",
-              caption = { "gui.urq-queue-population", 0, util.queue_limit },
+              caption = { "gui.urq-queue-population", 0, constants.queue_limit },
               ref = { "queue_population_label" },
             },
             { type = "line", direction = "vertical" },
@@ -323,7 +324,7 @@ function templates.effect_button(effect)
     local modifier = effect.modifier
     --- @type LocalisedString
     local formatted = tostring(modifier)
-    local format = util.effect_display_type[effect.type]
+    local format = constants.effect_display_type[effect.type]
     if format then
       if format == "float" then
         formatted = tostring(math.round(modifier, 0.01))
@@ -339,7 +340,7 @@ function templates.effect_button(effect)
   end
 
   --- @type string|GuiBuildStructure
-  local overlay_constant = util.overlay_constant[effect.type]
+  local overlay_constant = constants.overlay_constant[effect.type]
   if overlay_constant then
     overlay_constant =
       { type = "sprite-button", style = "transparent_slot", sprite = overlay_constant, ignored_by_interaction = true }

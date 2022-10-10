@@ -6,7 +6,10 @@ local libgui = require("__flib__.gui")
 local migration = require("__flib__.migration")
 local on_tick_n = require("__flib__.on-tick-n")
 
+local constants = require("__UltimateResearchQueue__.constants")
+local cache = require("__UltimateResearchQueue__.cache")
 local gui = require("__UltimateResearchQueue__.gui.index")
+local migrations = require("__UltimateResearchQueue__.migrations")
 local queue = require("__UltimateResearchQueue__.queue")
 local util = require("__UltimateResearchQueue__.util")
 
@@ -23,63 +26,10 @@ local function build_dictionaries()
   end
 end
 
---- @param force LuaForce
-local function init_force(force)
-  --- @class ForceTable
-  --- @field queue Queue
-  local force_table = {
-    force = force,
-    --- @type table<ResearchState, LuaTechnology[]>
-    grouped_technologies = {},
-    --- @type ProgressSample[]
-    research_progress_samples = {},
-    --- @type table<string, ResearchState>
-    research_states = {},
-    update_gui_task = nil,
-  }
-  force_table.queue = queue.new(force, force_table)
-  global.forces[force.index] = force_table
-end
-
---- @param force LuaForce
-local function migrate_force(force)
-  local force_table = global.forces[force.index]
-  if not force_table then
-    return
-  end
-  util.build_research_states(force)
-  util.ensure_queue_disabled(force)
-  force_table.queue:verify_integrity()
-end
-
---- @param player_index uint
-local function init_player(player_index)
-  --- @class PlayerTable
-  --- @field gui Gui?
-  --- @field dictionaries table<string, table<string, string>>?
-  global.players[player_index] = {}
-end
-
---- @param player LuaPlayer
-local function migrate_player(player)
-  local player_table = global.players[player.index]
-  if not player_table then
-    return
-  end
-  if player_table.gui then
-    player_table.gui:destroy()
-  end
-  player_table.dictionaries = nil
-  gui.new(player, player_table)
-  if player.connected then
-    dictionary.translate(player)
-  end
-end
-
 event.on_init(function()
   build_dictionaries()
-  util.build_effect_icons()
-  util.build_technology_list()
+  cache.build_effect_icons()
+  cache.build_technology_list()
   on_tick_n.init()
 
   --- @type table<uint, ForceTable>
@@ -89,12 +39,12 @@ event.on_init(function()
 
   -- game.forces is apparently keyed by name, not index
   for _, force in pairs(game.forces) do
-    init_force(force)
-    migrate_force(force)
+    migrations.init_force(force)
+    migrations.migrate_force(force)
   end
   for _, player in pairs(game.players) do
-    init_player(player.index)
-    migrate_player(player)
+    migrations.init_player(player.index)
+    migrations.migrate_player(player)
   end
 end)
 
@@ -111,27 +61,27 @@ event.on_load(function()
 end)
 
 event.on_configuration_changed(function(e)
-  if migration.on_config_changed({}, e) then
+  if migration.on_config_changed(migrations.by_version, e) then
     build_dictionaries()
-    util.build_effect_icons()
-    util.build_technology_list()
+    cache.build_effect_icons()
+    cache.build_technology_list()
     for _, force in pairs(game.forces) do
-      migrate_force(force)
+      migrations.migrate_force(force)
     end
     for _, player in pairs(game.players) do
-      migrate_player(player)
+      migrations.migrate_player(player)
     end
   end
 end)
 
 event.on_force_created(function(e)
-  init_force(e.force)
-  migrate_force(e.force)
+  migrations.init_force(e.force)
+  migrations.migrate_force(e.force)
 end)
 
 event.on_player_created(function(e)
-  init_player(e.player_index)
-  migrate_player(game.get_player(e.player_index) --[[@as LuaPlayer]])
+  migrations.init_player(e.player_index)
+  migrations.migrate_player(game.get_player(e.player_index) --[[@as LuaPlayer]])
 end)
 
 event.on_player_joined_game(function(e)
@@ -270,7 +220,7 @@ event.on_research_reversed(function(e)
   util.schedule_gui_update(force_table)
 end)
 
-event.register(util.on_research_queue_updated, function(e)
+event.register(constants.on_research_queue_updated, function(e)
   util.schedule_gui_update(global.forces[e.force.index])
 end)
 

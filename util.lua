@@ -1,8 +1,9 @@
-local event = require("__flib__.event")
 local gui = require("__flib__.gui")
 local math = require("__flib__.math")
 local on_tick_n = require("__flib__.on-tick-n")
 local table = require("__flib__.table")
+
+local constants = require("__UltimateResearchQueue__.constants")
 
 local util = {}
 
@@ -18,293 +19,6 @@ function util.are_prereqs_satisfied(tech, queue)
   end
   return true
 end
-
-local function first_entity_prototype(type)
-  --- LuaCustomTable does not work with next() and is keyed by name, so we must use pairs()
-  for name in pairs(game.get_filtered_entity_prototypes({ { filter = "type", type = type } })) do
-    return "entity/" .. name
-  end
-end
-function util.build_effect_icons()
-  --- Effect icons for dynamic effects. Key is either an effect type or an ammo category name
-  --- @type table<string, string>
-  local icons = {
-    ["follower-robot-lifetime"] = first_entity_prototype("combat-robot"),
-    ["laboratory-productivity"] = first_entity_prototype("lab"),
-    ["laboratory-speed"] = first_entity_prototype("lab"),
-    ["train-braking-force-bonus"] = first_entity_prototype("locomotive"),
-    ["worker-robot-battery"] = first_entity_prototype("logistic-robot"),
-    ["worker-robot-speed"] = first_entity_prototype("logistic-robot"),
-    ["worker-robot-storage"] = first_entity_prototype("logistic-robot"),
-  }
-
-  for _, prototype in pairs(game.get_filtered_item_prototypes({ { filter = "type", type = "ammo" } })) do
-    if not prototype.has_flag("hide-from-bonus-gui") then
-      local category = prototype.get_ammo_type().category
-      if not icons[category] then
-        icons[category] = "item/" .. prototype.name
-      end
-    end
-  end
-
-  for _, prototype in pairs(game.get_filtered_item_prototypes({ { filter = "type", type = "capsule" } })) do
-    if not prototype.has_flag("hide-from-bonus-gui") then
-      local attack_parameters = prototype.capsule_action.attack_parameters
-      if attack_parameters then
-        for _, category in pairs(attack_parameters.ammo_categories or { attack_parameters.ammo_type.category }) do
-          if not icons[category] then
-            icons[category] = "item/" .. prototype.name
-          end
-        end
-      end
-    end
-  end
-
-  for _, prototype in
-    pairs(game.get_filtered_equipment_prototypes({ { filter = "type", type = "active-defense-equipment" } }))
-  do
-    local attack_parameters = prototype.attack_parameters --[[@as AttackParameters]]
-    for _, category in pairs(attack_parameters.ammo_categories or { attack_parameters.ammo_type.category }) do
-      if not icons[category] then
-        icons[category] = "equipment/" .. prototype.name
-      end
-    end
-  end
-
-  for _, turret_type in pairs({ "electric-turret", "ammo-turret", "artillery-turret", "fluid-turret" }) do
-    for _, prototype in pairs(game.get_filtered_entity_prototypes({ { filter = "type", type = turret_type } })) do
-      local attack_parameters = prototype.attack_parameters
-      if attack_parameters then
-        for _, category in pairs(attack_parameters.ammo_categories or { attack_parameters.ammo_type.category }) do
-          if not icons[category] then
-            icons[category] = "entity/" .. prototype.name
-          end
-        end
-      end
-    end
-  end
-
-  for _, prototype in pairs(game.get_filtered_entity_prototypes({ { filter = "type", type = "combat-robot" } })) do
-    local attack_parameters = prototype.attack_parameters --[[@as AttackParameters]]
-    for _, category in pairs(attack_parameters.ammo_categories or { attack_parameters.ammo_type.category }) do
-      if not icons[category] then
-        icons[category] = "entity/" .. prototype.name
-      end
-    end
-  end
-
-  -- XXX: It is currently impossible to get a land mine's ammo category at runtime
-  -- for _, prototype in pairs(game.get_filtered_entity_prototypes({ { filter = "type", type = "land-mine" } })) do
-  --   if not icons[prototype.ammo_category] then
-  --     icons[prototype.ammo_category] = "entity/" .. prototype.name
-  --   end
-  -- end
-
-  for _, prototype in pairs(game.get_filtered_entity_prototypes({ { filter = "type", type = "unit" } })) do
-    local attack_parameters = prototype.attack_parameters --[[@as AttackParameters]]
-    for _, category in pairs(attack_parameters.ammo_categories or { attack_parameters.ammo_type.category }) do
-      if not icons[category] then
-        icons[category] = "entity/" .. prototype.name
-      end
-    end
-  end
-
-  global.effect_icons = icons
-end
-
---- @param force LuaForce
-function util.build_research_states(force)
-  local force_table = global.forces[force.index]
-  local groups = {}
-  local states = {}
-  for _, research_state in pairs(util.research_state) do
-    groups[research_state] = {}
-  end
-  local order = global.technology_order
-  for name, technology in pairs(force.technologies) do
-    local state = util.get_research_state(force_table, technology)
-    states[name] = state
-    -- TODO: This will not iterate in order if there are more than 1024 technologies
-    groups[state][order[name]] = technology
-  end
-  force_table.grouped_technologies = groups
-  force_table.research_states = states
-end
-
-function util.build_technology_list()
-  local profiler = game.create_profiler()
-  -- game.technology_prototypes is a LuaCustomTable, so we need to convert it to an array
-  --- @type LuaTechnologyPrototype[]
-  local technologies = {}
-  for _, prototype in pairs(game.technology_prototypes) do
-    table.insert(technologies, prototype)
-  end
-
-  -- Sort the technologies array
-  local prototypes = {
-    fluid = game.fluid_prototypes,
-    item = game.item_prototypes,
-  }
-  table.sort(technologies, function(tech_a, tech_b)
-    local ingredients_a = tech_a.research_unit_ingredients
-    local ingredients_b = tech_b.research_unit_ingredients
-    local len_a = #ingredients_a
-    local len_b = #ingredients_b
-    -- Always put technologies with zero ingredients at the front
-    if (len_a == 0) ~= (len_b == 0) then
-      return len_a == 0
-    end
-    if #ingredients_a > 0 then
-      -- Compare ingredient order strings
-      -- Check the most expensive packs first, and sort based on the first difference
-      for i = 0, math.min(len_a, len_b) - 1 do
-        local ingredient_a = ingredients_a[len_a - i]
-        local ingredient_b = ingredients_b[len_b - i]
-        local order_a = prototypes[ingredient_a.type][ingredient_a.name].order
-        local order_b = prototypes[ingredient_b.type][ingredient_b.name].order
-        -- Cheaper pack goes in front
-        if order_a ~= order_b then
-          return order_a < order_b
-        end
-      end
-      -- Sort the tech with fewer ingredients in front
-      if len_a ~= len_b then
-        return len_a < len_b
-      end
-    end
-    -- Compare technology order strings
-    local order_a = tech_a.order
-    local order_b = tech_b.order
-    if order_a ~= order_b then
-      return order_a < order_b
-    end
-    -- Compare prototype names
-    return tech_a.name < tech_b.name
-  end)
-
-  -- Create lookup for the order of a given technology
-  --- @type table<string, number>
-  local order = {}
-  for i, prototype in pairs(technologies) do
-    order[prototype.name] = i
-  end
-  profiler.stop()
-  if DEBUG then
-    log({ "", "Tech Sorting ", profiler })
-  end
-
-  local profiler = game.create_profiler()
-  -- Build all prerequisites and direct requisites of each technology
-  --- @type table<string, table<string, LuaTechnologyPrototype>>
-  local prerequisites = {}
-  --- @type table<string, table<string, LuaTechnologyPrototype>>
-  local requisites = {}
-  --- @type LuaTechnologyPrototype[]
-  local base_techs = {}
-  -- Step 1: Assemble requisites for each tech and determine base technologies
-  for _, prototype in pairs(technologies) do
-    local prerequisites = prototype.prerequisites
-    if next(prerequisites) then
-      for prerequisite_name in pairs(prerequisites) do
-        if not requisites[prerequisite_name] then
-          requisites[prerequisite_name] = {}
-        end
-        requisites[prerequisite_name][prototype.name] = prototype
-      end
-    else
-      table.insert(base_techs, prototype)
-    end
-  end
-  -- Step 2: Recursively assemble prerequisites for each tech
-  local checked = {}
-  --- @param technology LuaTechnologyPrototype
-  local function propagate(technology)
-    -- If not all of the prerequisites have been checked, then the list would be incomplete
-    for prerequisite_name in pairs(technology.prerequisites) do
-      if not checked[prerequisite_name] then
-        return
-      end
-    end
-    local technology_name = technology.name
-    local technology_prerequisites = prerequisites[technology_name]
-    local requisites = requisites[technology_name]
-    if requisites then
-      for _, requisite in pairs(requisites) do
-        local requisite_name = requisite.name
-        -- Create the requisite's prerequisite table
-        local requisite_prerequisites = prerequisites[requisite_name]
-        if not requisite_prerequisites then
-          requisite_prerequisites = {}
-          prerequisites[requisite_name] = requisite_prerequisites
-        end
-        -- Add all of this technology's prerequisites to the requisite's prerequisites
-        if technology_prerequisites then
-          for _, prerequisite in pairs(technology_prerequisites) do
-            requisite_prerequisites[prerequisite.name] = prerequisite
-          end
-        end
-        -- Add this technology to the requisite's prerequisites
-        requisite_prerequisites[technology_name] = technology
-      end
-      checked[technology_name] = true
-      for _, requisite in pairs(requisites) do
-        propagate(requisite)
-      end
-    end
-  end
-  for _, technology in pairs(base_techs) do
-    propagate(technology)
-  end
-  -- Profiling
-  profiler.stop()
-  if DEBUG then
-    log({ "", "Prerequisite Generation ", profiler })
-  end
-
-  global.technologies = technologies
-  global.technology_order = order
-  global.technology_prerequisites = prerequisites
-  global.technology_requisites = requisites
-end
-
---- @alias EffectDisplayType
---- | "float"
---- | "float_percent"
---- | "signed"
---- | "unsigned"
---- | "ticks"
---- @type table<string, EffectDisplayType>
-util.effect_display_type = {
-  ["artillery-range"] = "float_percent",
-  ["character-build-distance"] = "float",
-  ["character-crafting-speed"] = "float_percent",
-  ["character-health-bonus"] = "float",
-  ["character-inventory-slots-bonus"] = "signed",
-  ["character-item-drop-distance"] = "float",
-  ["character-item-pickup-distance"] = "float",
-  ["character-logistic-trash-slots"] = "unsigned",
-  ["character-loot-pickup-distance"] = "float",
-  ["character-mining-speed"] = "float_percent",
-  ["character-reach-distance"] = "float",
-  ["character-resource-reach-distance"] = "float",
-  ["character-running-speed"] = "float_percent",
-  ["deconstruction-time-to-live"] = "ticks",
-  ["dummy-character-logistic-slots"] = "unsigned",
-  ["following-robots-lifetime"] = "float_percent",
-  ["ghost-time-to-live"] = "ticks",
-  ["inserter-stack-size-bonus"] = "unsigned",
-  ["laboratory-productivity"] = "float_percent",
-  ["laboratory-speed"] = "float_percent",
-  ["max-failed-attempts-per-tick-per-construction-queue"] = "float_percent",
-  ["maximum-following-robots-count"] = "unsigned",
-  ["max-successful-attemps-per-tick-per-construction-queue"] = "float_percent",
-  ["mining-drill-productivity-bonus"] = "float_percent",
-  ["stack-inserter-capacity-bonus"] = "unsigned",
-  ["train-braking-force-bonus"] = "float_percent",
-  ["worker-robot-battery"] = "float_percent",
-  ["worker-robot-speed"] = "float_percent",
-  ["worker-robot-storage"] = "unsigned",
-}
 
 --- Ensure that the vanilla research queue is disabled
 --- @param force LuaForce
@@ -403,18 +117,18 @@ end
 --- @return ResearchState
 function util.get_research_state(force_table, tech)
   if tech.researched then
-    return util.research_state.researched
+    return constants.research_state.researched
   end
   if not tech.enabled then
-    return util.research_state.disabled
+    return constants.research_state.disabled
   end
   if util.are_prereqs_satisfied(tech) then
-    return util.research_state.available
+    return constants.research_state.available
   end
   if util.are_prereqs_satisfied(tech, force_table.queue) then
-    return util.research_state.conditionally_available
+    return constants.research_state.conditionally_available
   end
-  return util.research_state.not_available
+  return constants.research_state.not_available
 end
 
 --- @param tech LuaTechnology
@@ -447,7 +161,7 @@ function util.get_technology_slot_properties(technology, research_state, selecte
   local ranged = technology.prototype.level ~= max_level
   local leveled = technology.upgrade or technology.level > 1 or ranged
 
-  local research_state_str = table.find(util.research_state, research_state)
+  local research_state_str = table.find(constants.research_state, research_state)
   local max_level_str = max_level == math.max_uint and "[img=infinity]" or tostring(max_level)
   local style = "urq_technology_slot_"
     .. (selected and "selected_" or "")
@@ -476,7 +190,8 @@ function util.get_unresearched_prerequisites(force_table, tech)
   local to_research = {}
   for prerequisite_name, prerequisite in pairs(global.technology_prerequisites[tech.name]) do
     if
-      research_states[prerequisite.name] ~= util.research_state.researched and not force_table.queue[prerequisite_name]
+      research_states[prerequisite.name] ~= constants.research_state.researched
+      and not force_table.queue[prerequisite_name]
     then
       table.insert(to_research, prerequisite_name)
     end
@@ -513,69 +228,6 @@ function util.move_to(element, parent, index)
   parent.swap_children(element.get_index_in_parent(), index)
   dummy.destroy()
 end
-
---- The overlay constant for a given TechnologyModifier type
-util.overlay_constant = {
-  ["ammo-damage"] = "utility/ammo_damage_modifier_constant",
-  ["artillery-range"] = "utility/artillery_range_modifier_constant",
-  ["character-build-distance"] = "utility/character_build_distance_modifier_constant",
-  ["character-crafting-speed"] = "utility/character_crafting_speed_modifier_constant",
-  ["character-health-bonus"] = "utility/character_health_bonus_modifier_constant",
-  ["character-inventory-slots-bonus"] = "utility/character_inventory_slots_bonus_modifier_constant",
-  ["character-item-drop-distance"] = "utility/character_item_drop_distance_modifier_constant",
-  ["character-item-pickup-distance"] = "utility/character_item_pickup_distance_modifier_constant",
-  ["character-logistic-trash-slots"] = "utility/character_logistic_trash_slots_modifier_constant",
-  ["character-loot-pickup-distance"] = "utility/character_loot_pickup_distance_modifier_constant",
-  ["character-mining-speed"] = "utility/character_mining_speed_modifier_constant",
-  ["character-reach-distance"] = "utility/character_reach_distance_modifier_constant",
-  ["character-resource-reach-distance"] = "utility/character_resource_reach_distance_modifier_constant",
-  ["character-running-speed"] = "utility/character_running_speed_modifier_constant",
-  ["deconstruction-time-to-live"] = "utility/deconstruction_time_to_live_modifier_constant",
-  ["follower-robot-lifetime"] = "utility/follower_robot_lifetime_modifier_constant",
-  ["ghost-time-to-live"] = "utility/ghost_time_to_live_modifier_constant",
-  ["gun-speed"] = "utility/gun_speed_modifier_constant",
-  ["inserter-stack-size-bonus"] = "utility/inserter_stack_size_bonus_modifier_constant",
-  ["laboratory-productivity"] = "utility/laboratory_productivity_modifier_constant",
-  ["laboratory-speed"] = "utility/laboratory_speed_modifier_constant",
-  ["max-failed-attempts-per-tick-per-construction-queue"] = "utility/max_failed_attempts_per_tick_per_construction_queue_modifier_constant",
-  ["maximum-following-robots-count"] = "utility/maximum_following_robots_count_modifier_constant",
-  ["max-successful-attempts-per-tick-per-construction-queue"] = "utility/max_successful_attempts_per_tick_per_construction_queue_modifier_constant",
-  ["mining-drill-productivity-bonus"] = "utility/mining_drill_productivity_bonus_modifier_constant",
-  ["stack-inserter-capacity-bonus"] = "utility/stack_inserter_capacity_bonus_modifier_constant",
-  ["train-braking-force-bonus"] = "utility/train_braking_force_bonus_modifier_constant",
-  ["turret-attack"] = "utility/turret_attack_modifier_constant",
-  ["worker-robot-battery"] = "utility/worker_robot_battery_modifier_constant",
-  ["worker-robot-speed"] = "utility/worker_robot_speed_modifier_constant",
-  ["worker-robot-storage"] = "utility/worker_robot_storage_modifier_constant",
-  ["zoom-to-world-blueprint-enabled"] = "utility/zoom_to_world_blueprint_enabled_modifier_constant",
-  ["zoom-to-world-deconstruction-planner-enabled"] = "utility/zoom_to_world_deconstruction_planner_enabled_modifier_constant",
-  ["zoom-to-world-ghost-building-enabled"] = "utility/zoom_to_world_ghost_building_enabled_modifier_constant",
-  ["zoom-to-world-selection-tool-enabled"] = "utility/zoom_to_world_selection_tool_enabled_modifier_constant",
-  ["zoom-to-world-upgrade-planner-enabled"] = "utility/zoom_to_world_upgrade_planner_enabled_modifier_constant",
-}
-
-util.on_research_queue_updated = event.generate_id()
---- @class EventData.on_research_queue_updated: EventData
---- @field force LuaForce
-
-util.queue_limit = 7 * 7
-
---- @enum QueuePushError
-util.queue_push_error = {
-  already_in_queue = 1,
-  queue_full = 2,
-  too_many_prerequisites = 3,
-  too_many_prerequisites_queue_full = 4,
-}
-
---- @enum ResearchState
-util.research_state = {
-  available = 1,
-  conditionally_available = 2,
-  not_available = 3,
-  researched = 4,
-  disabled = 5,
-}
 
 --- @param force LuaForce
 function util.update_force_guis(force)
