@@ -293,7 +293,7 @@ function templates.base(science_pack_filters)
         style_mods = { height = 100 * 7 + 36 },
         {
           type = "scroll-pane",
-          style = "slot_button_deep_scroll_pane",
+          style = "flib_naked_scroll_pane_no_padding",
           { type = "table", style = "slot_table", column_count = 4, children = science_pack_buttons },
         },
       } or {},
