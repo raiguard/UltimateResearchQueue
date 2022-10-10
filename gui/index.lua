@@ -137,7 +137,7 @@ function gui:handle_start_research_click(_, e)
   if not selected then
     return
   end
-  self:start_research(selected, e.shift and util.is_cheating(self.player))
+  self:start_research(selected, e.control and util.is_cheating(self.player))
 end
 
 function gui:handle_tech_slot_click(_, e)
