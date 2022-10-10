@@ -475,7 +475,9 @@ function util.get_unresearched_prerequisites(force_table, tech)
   local research_states = force_table.research_states
   local to_research = {}
   for prerequisite_name, prerequisite in pairs(global.technology_prerequisites[tech.name]) do
-    if research_states[prerequisite.name] ~= util.research_state.researched then
+    if
+      research_states[prerequisite.name] ~= util.research_state.researched and not force_table.queue[prerequisite_name]
+    then
       table.insert(to_research, prerequisite_name)
     end
   end
