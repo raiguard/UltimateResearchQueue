@@ -86,6 +86,12 @@ function templates.base(science_pack_filters)
             { type = "label", style = "subheader_caption_label", caption = { "gui-technology-queue.title" } },
             { type = "empty-widget", style = "flib_horizontal_pusher" },
             {
+              type = "label",
+              caption = { "gui.urq-queue-population", 0, util.queue_limit },
+              ref = { "queue_population_label" },
+            },
+            { type = "line", direction = "vertical" },
+            {
               type = "sprite-button",
               style = "tool_button",
               sprite = "utility/pause",

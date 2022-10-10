@@ -22,11 +22,10 @@ function queue:push(tech_names)
   if num_techs > util.queue_limit then
     return util.queue_push_error.too_many_prerequisites
   else
-    local queue_len = table_size(self.queue)
     -- It shouldn't ever be greater... right?
-    if queue_len >= util.queue_limit then
+    if self.len >= util.queue_limit then
       return util.queue_push_error.queue_full
-    elseif queue_len + num_techs > util.queue_limit then
+    elseif self.len + num_techs > util.queue_limit then
       return util.queue_push_error.too_many_prerequisites_queue_full
     end
   end
@@ -40,6 +39,7 @@ function queue:push(tech_names)
         first_added = tech_name
       end
       self.queue[tech_name] = "[img=infinity]"
+      self.len = self.len + 1
       util.update_research_state_reqs(self.force_table, technologies[tech_name])
     end
   end
@@ -57,6 +57,7 @@ function queue:push_front(tech_names)
   local new = {}
   for _, tech_name in pairs(tech_names) do
     new[tech_name] = "[img=infinity]"
+    self.len = self.len + 1
     util.update_research_state_reqs(self.force_table, technologies[tech_name])
   end
   for name, duration in pairs(self.queue) do
@@ -76,6 +77,7 @@ function queue:remove(tech_name, is_recursive)
     return
   end
   self.queue[tech_name] = nil
+  self.len = self.len - 1
   local technologies = self.force.technologies
   local force_table = self.force_table
   local research_states = force_table.research_states
@@ -132,9 +134,11 @@ end
 function queue:verify_integrity()
   local old_queue = self.queue
   self.queue = {}
+  self.len = 0
   for tech_name in pairs(old_queue) do
     if self.force.technologies[tech_name] then
       self:push({ tech_name })
+      self.len = self.len + 1
     end
   end
 end
@@ -147,6 +151,7 @@ function queue.new(force, force_table)
   local self = {
     force = force,
     force_table = force_table,
+    len = 0,
     paused = false,
     --- @type table<string, string>
     queue = {},

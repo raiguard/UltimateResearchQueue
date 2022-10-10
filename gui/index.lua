@@ -27,6 +27,7 @@ end
 --- @field close_button LuaGuiElement
 --- @field techs_scroll_pane LuaGuiElement
 --- @field techs_table LuaGuiElement
+--- @field queue_popuLuaGuiElement LuaGuiElement
 --- @field queue_pause_button LuaGuiElement
 --- @field queue_trash_button LuaGuiElement
 --- @field queue_scroll_pane LuaGuiElement
@@ -411,6 +412,9 @@ function gui:update_queue()
   end
 
   self.refs.queue_trash_button.enabled = next(self.force_table.queue.queue) and true or false
+
+  self.refs.queue_population_label.caption =
+    { "gui.urq-queue-population", self.force_table.queue.len, util.queue_limit }
 
   local queue = self.force_table.queue.queue
   local queue_table = self.refs.queue_table
