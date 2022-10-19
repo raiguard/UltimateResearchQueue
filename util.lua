@@ -237,6 +237,7 @@ function util.update_force_guis(force)
       gui:update_queue()
       gui:update_tech_info_footer()
       gui:update_tech_list()
+      gui:filter_tech_list()
     end
   end
 end
