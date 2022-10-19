@@ -109,7 +109,6 @@ function cache.build_research_states(force)
   for name, technology in pairs(force.technologies) do
     local state = util.get_research_state(force_table, technology)
     states[name] = state
-    -- TODO: This will not iterate in order if there are more than 1024 technologies
     groups[state][order[name]] = technology
   end
   force_table.grouped_technologies = groups

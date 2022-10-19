@@ -503,6 +503,7 @@ function gui:update_tech_list()
   local research_states = self.force_table.research_states
   local i = 0
   for group_state, group in pairs(self.force_table.grouped_technologies) do
+    -- XXX: This will only iterate the first 1024 techs of a group in order. Oh well!
     for _, technology in pairs(group) do
       i = i + 1
       local button = techs_table[technology.name]
