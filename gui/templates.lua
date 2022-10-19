@@ -6,28 +6,8 @@ local util = require("__UltimateResearchQueue__.util")
 
 local templates = {}
 
---- @param science_pack_filters table<string, boolean>
 --- @return GuiBuildStructure
-function templates.base(science_pack_filters)
-  local science_pack_buttons = {}
-  for name, enabled in pairs(science_pack_filters) do
-    table.insert(science_pack_buttons, {
-      type = "sprite-button",
-      style = enabled and "flib_slot_button_green" or "flib_slot_button_default",
-      style_mods = { size = 28 },
-      sprite = "item/" .. name,
-      tooltip = game.item_prototypes[name].localised_name,
-      actions = {
-        on_click = { action = "toggle_science_pack_filter", science_pack = name },
-      },
-    })
-  end
-  local science_pack_mode = "inline"
-  if #science_pack_buttons > 51 then
-    science_pack_mode = "separate"
-  elseif #science_pack_buttons > 9 then
-    science_pack_mode = "multiline"
-  end
+function templates.base()
   return {
     type = "frame",
     name = "urq-window",
@@ -257,23 +237,8 @@ function templates.base(science_pack_filters)
         {
           type = "frame",
           style = "subheader_frame",
-          style_mods = { horizontally_stretchable = true, height = 0 },
-          direction = "vertical",
-          {
-            type = "flow",
-            style = "centering_horizontal_flow",
-            { type = "label", style = "subheader_caption_label", caption = { "gui-technologies-list.title" } },
-            { type = "empty-widget", style = "flib_horizontal_pusher" },
-            science_pack_mode == "inline" and { type = "table", column_count = 9, children = science_pack_buttons }
-              or {},
-          },
-          science_pack_mode == "multiline" and { type = "line", style = "flib_subheader_horizontal_line" } or {},
-          science_pack_mode == "multiline" and {
-            type = "flow",
-            { type = "table", column_count = 17, children = science_pack_buttons },
-            { type = "line", direction = "vertical" },
-            { type = "sprite-button", style = "tool_button" },
-          } or {},
+          style_mods = { horizontally_stretchable = true },
+          { type = "label", style = "subheader_caption_label", caption = { "gui-technologies-list.title" } },
         },
         {
           type = "scroll-pane",
@@ -284,16 +249,6 @@ function templates.base(science_pack_filters)
           { type = "table", style = "technology_slot_table", column_count = 8, ref = { "techs_table" } },
         },
       },
-      science_pack_mode == "separate" and {
-        type = "frame",
-        style = "inside_deep_frame",
-        style_mods = { height = 100 * 7 + 36 },
-        {
-          type = "scroll-pane",
-          style = "flib_naked_scroll_pane_no_padding",
-          { type = "table", style = "slot_table", column_count = 4, children = science_pack_buttons },
-        },
-      } or {},
     },
   }
 end
