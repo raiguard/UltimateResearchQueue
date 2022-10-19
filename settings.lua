@@ -5,4 +5,10 @@ data:extend({
     setting_type = "runtime-per-user",
     default_value = true,
   },
+  {
+    type = "bool-setting",
+    name = "urq-show-disabled-techs",
+    setting_type = "runtime-per-user",
+    default_value = false,
+  },
 })

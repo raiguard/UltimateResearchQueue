@@ -97,20 +97,30 @@ function gui:filter_tech_list()
   local query = self.state.search_query
   local dictionaries = self.player_table.dictionaries
   local technologies = game.technology_prototypes
+  local research_states = self.force_table.research_states
+  local show_disabled = self.player.mod_settings["urq-show-disabled-techs"].value
   for _, button in pairs(self.refs.techs_table.children) do
     local tech_name = button.name
     local technology = technologies[tech_name]
-    local science_packs_matched = true
-    local search_matched = #query == 0
+    -- Show/hide disabled
+    local research_state_matched = true
+    local research_state = research_states[tech_name]
+    if research_state == constants.research_state.disabled and not show_disabled then
+      research_state_matched = false
+    end
     -- Science pack filters
-    for _, ingredient in pairs(technology.research_unit_ingredients) do
-      if not science_pack_filters[ingredient.name] then
-        science_packs_matched = false
-        break
+    local science_packs_matched = true
+    if research_state_matched then
+      for _, ingredient in pairs(technology.research_unit_ingredients) do
+        if not science_pack_filters[ingredient.name] then
+          science_packs_matched = false
+          break
+        end
       end
     end
     -- Search query
-    if science_packs_matched and not search_matched then
+    local search_matched = #query == 0 -- Automatically pass search on empty query
+    if research_state_matched and science_packs_matched and not search_matched then
       local to_search = {}
       if dictionaries then
         table.insert(to_search, dictionaries.technology[tech_name])
@@ -129,7 +139,7 @@ function gui:filter_tech_list()
         end
       end
     end
-    button.visible = science_packs_matched and search_matched
+    button.visible = research_state_matched and science_packs_matched and search_matched
   end
 end
 

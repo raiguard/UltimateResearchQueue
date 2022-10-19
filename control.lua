@@ -92,6 +92,17 @@ event.on_player_left_game(function(e)
   dictionary.cancel_translation(e.player_index)
 end)
 
+event.on_runtime_mod_setting_changed(function(e)
+  if e.setting ~= "urq-show-disabled-techs" then
+    return
+  end
+  local player = game.get_player(e.player_index) --[[@as LuaPlayer]]
+  local gui = util.get_gui(player)
+  if gui then
+    gui:filter_tech_list()
+  end
+end)
+
 event.register({
   defines.events.on_player_toggled_map_editor,
   defines.events.on_player_cheat_mode_enabled,
