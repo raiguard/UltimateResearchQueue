@@ -128,6 +128,21 @@ if not DEBUG then
   end)
 end
 
+event.on_gui_closed(function(e)
+  local action = libgui.read_action(e)
+  if action then
+    local gui = util.get_gui(e.player_index)
+    if gui then
+      gui:dispatch(action, e)
+    end
+  elseif e.gui_type == defines.gui_type.research then
+    local gui = util.get_gui(e.player_index)
+    if gui and gui.refs.window.visible and not gui.state.pinned then
+      gui.player.opened = gui.refs.window
+    end
+  end
+end)
+
 event.register("urq-focus-search", function(e)
   local player = game.get_player(e.player_index) --[[@as LuaPlayer]]
   if player.opened_gui_type == defines.gui_type.custom and player.opened and player.opened.name == "urq-window" then

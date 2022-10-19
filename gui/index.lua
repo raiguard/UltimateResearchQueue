@@ -165,6 +165,9 @@ function gui:handle_titlebar_click(_, e)
 end
 
 function gui:hide(msg)
+  if self.state.opening_graph then
+    return
+  end
   if msg.by_closed_event then
     if self.state.pinned then
       return
