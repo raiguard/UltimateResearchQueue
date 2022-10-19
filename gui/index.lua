@@ -416,7 +416,13 @@ function gui:update_queue()
     local button = queue_table[tech_name]
     if button then
       util.move_to(button, queue_table, i)
-      util.update_tech_slot_style(button, technologies[tech_name], research_states[tech_name], self.state.selected)
+      util.update_tech_slot_style(
+        button,
+        technologies[tech_name],
+        research_states[tech_name],
+        self.state.selected,
+        true
+      )
     else
       local button_template =
         self.templates.tech_button(technologies[tech_name], research_states[tech_name], self.state.selected)
@@ -487,6 +493,7 @@ function gui:update_tech_list()
   local profiler = game.create_profiler()
   local techs_table = self.refs.techs_table
   local research_states = self.force_table.research_states
+  local queue = self.force_table.queue
   local i = 0
   for group_state, group in pairs(self.force_table.grouped_technologies) do
     -- XXX: This will only iterate the first 1024 techs of a group in order. Oh well!
@@ -495,7 +502,13 @@ function gui:update_tech_list()
       local button = techs_table[technology.name]
       if button then
         util.move_to(button, techs_table, i)
-        util.update_tech_slot_style(button, technology, group_state, self.state.selected)
+        util.update_tech_slot_style(
+          button,
+          technology,
+          group_state,
+          self.state.selected,
+          queue:contains(technology.name)
+        )
       else
         local button_template =
           self.templates.tech_button(technology, research_states[technology.name], self.state.selected)

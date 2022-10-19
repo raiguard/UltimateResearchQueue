@@ -275,11 +275,16 @@ end
 --- @param technology LuaTechnology
 --- @param research_state ResearchState
 --- @param selected_tech string?
-function util.update_tech_slot_style(button, technology, research_state, selected_tech)
+--- @param in_queue boolean
+function util.update_tech_slot_style(button, technology, research_state, selected_tech, in_queue)
   local tags = gui.get_tags(button)
   if tags.research_state ~= research_state then
     local properties = util.get_technology_slot_properties(technology, research_state, selected_tech)
     button.style = properties.style
+    if research_state == constants.research_state.researched then
+      button.progressbar.visible = false
+      button.progressbar.value = 0
+    end
     if properties.leveled then
       button.level_label.style = "urq_technology_slot_level_label_" .. properties.research_state_str
     end
@@ -288,6 +293,12 @@ function util.update_tech_slot_style(button, technology, research_state, selecte
     end
     tags.research_state = research_state
     gui.set_tags(button, tags)
+  end
+  local duration_label = button.duration_label --[[@as LuaGuiElement]]
+  if in_queue and not duration_label.visible then
+    duration_label.visible = true
+  elseif not in_queue and duration_label.visible then
+    duration_label.visible = false
   end
 end
 
