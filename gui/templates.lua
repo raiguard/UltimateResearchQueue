@@ -266,9 +266,6 @@ function templates.base(science_pack_filters)
             { type = "empty-widget", style = "flib_horizontal_pusher" },
             science_pack_mode == "inline" and { type = "table", column_count = 9, children = science_pack_buttons }
               or {},
-            science_pack_mode == "inline" and { type = "line", direction = "vertical" } or {},
-            { type = "sprite-button", style = "tool_button" },
-            { type = "sprite-button", style = "flib_tool_button_light_green" },
           },
           science_pack_mode == "multiline" and { type = "line", style = "flib_subheader_horizontal_line" } or {},
           science_pack_mode == "multiline" and {
