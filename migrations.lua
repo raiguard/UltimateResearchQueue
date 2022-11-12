@@ -1,7 +1,7 @@
 local dictionary = require("__flib__.dictionary")
 
 local cache = require("__UltimateResearchQueue__.cache")
-local gui = require("__UltimateResearchQueue__.gui.index")
+local gui = require("__UltimateResearchQueue__.gui")
 local queue = require("__UltimateResearchQueue__.queue")
 local util = require("__UltimateResearchQueue__.util")
 

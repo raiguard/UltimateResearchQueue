@@ -1,6 +1,5 @@
 local gui = require("__flib__.gui")
 local math = require("__flib__.math")
-local on_tick_n = require("__flib__.on-tick-n")
 local table = require("__flib__.table")
 
 local constants = require("__UltimateResearchQueue__.constants")
@@ -31,23 +30,12 @@ end
 
 --- @param player LuaPlayer
 --- @param text LocalisedString
---- @param options FlyingTextOptions?
-function util.flying_text(player, text, options)
-  options = options or {}
+function util.flying_text(player, text)
   player.create_local_flying_text({
     text = text,
-    create_at_cursor = not options.position,
-    position = options.position,
-    color = options.color,
+    create_at_cursor = true,
   })
-  -- Default sound
-  if options.sound == nil then
-    options.sound = "utility/cannot_build"
-  end
-  -- Will not play if sound is explicitly set to false
-  if options.sound then
-    player.play_sound({ path = options.sound })
-  end
+  player.play_sound({ path = "utility/cannot_build" })
 end
 
 --- @param ticks number
@@ -73,11 +61,6 @@ function util.format_time_short(ticks)
   return result
 end
 
---- @class FlyingTextOptions
---- @field position MapPosition?
---- @field color Color?
---- @field sound SoundPath|boolean?
-
 --- @param player LuaPlayer|uint
 --- @return Gui?
 function util.get_gui(player)
@@ -89,7 +72,7 @@ function util.get_gui(player)
   if player_table then
     local gui = player_table.gui
     if gui then
-      if not gui.refs.window.valid then
+      if not gui.elems.urq_window.valid then
         gui:destroy()
         gui = gui.new(gui.player, gui.player_table)
         gui.player.print({ "message.urq-recreated-gui" })
@@ -147,8 +130,8 @@ end
 function util.schedule_gui_update(force_table)
   if game.tick_paused then
     util.update_force_guis(force_table.force)
-  elseif not force_table.update_gui_task then
-    force_table.update_gui_task = on_tick_n.add(game.tick + 1, { id = "update_guis", force = force_table.force.index })
+  else
+    global.update_force_guis[force_table.force.index] = true
   end
 end
 

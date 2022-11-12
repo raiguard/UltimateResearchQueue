@@ -2,15 +2,12 @@ require("__UltimateResearchQueue__.debug")
 
 local dictionary = require("__flib__.dictionary")
 local event = require("__flib__.event")
-local libgui = require("__flib__.gui")
 local migration = require("__flib__.migration")
-local on_tick_n = require("__flib__.on-tick-n")
 
 local constants = require("__UltimateResearchQueue__.constants")
 local cache = require("__UltimateResearchQueue__.cache")
-local gui = require("__UltimateResearchQueue__.gui.index")
+local gui = require("__UltimateResearchQueue__.gui")
 local migrations = require("__UltimateResearchQueue__.migrations")
-local queue = require("__UltimateResearchQueue__.queue")
 local util = require("__UltimateResearchQueue__.util")
 
 local function build_dictionaries()
@@ -30,12 +27,15 @@ event.on_init(function()
   build_dictionaries()
   cache.build_effect_icons()
   cache.build_technology_list()
-  on_tick_n.init()
 
+  --- @type table<uint, integer>
+  global.filter_tech_list = {}
   --- @type table<uint, ForceTable>
   global.forces = {}
   --- @type table<uint, PlayerTable>
   global.players = {}
+  --- @type table<uint, boolean>
+  global.update_force_guis = {}
 
   -- game.forces is apparently keyed by name, not index
   for _, force in pairs(game.forces) do
@@ -48,17 +48,7 @@ event.on_init(function()
   end
 end)
 
-event.on_load(function()
-  dictionary.load()
-  for _, force_table in pairs(global.forces) do
-    queue.load(force_table.queue)
-  end
-  for _, player_table in pairs(global.players) do
-    if player_table.gui then
-      gui.load(player_table.gui)
-    end
-  end
-end)
+event.on_load(dictionary.load)
 
 event.on_configuration_changed(function(e)
   if migration.on_config_changed(migrations.by_version, e) then
@@ -115,15 +105,7 @@ event.register({
   end
 end)
 
-libgui.hook_events(function(e)
-  local action = libgui.read_action(e)
-  if action then
-    local gui = util.get_gui(e.player_index)
-    if gui then
-      gui:dispatch(action, e)
-    end
-  end
-end)
+gui.handle_events()
 
 if not DEBUG then
   event.on_gui_opened(function(e)
@@ -140,27 +122,19 @@ if not DEBUG then
 end
 
 event.on_gui_closed(function(e)
-  local action = libgui.read_action(e)
-  if action then
+  if not gui.dispatch(e) and e.gui_type == defines.gui_type.research then
     local gui = util.get_gui(e.player_index)
-    if gui then
-      gui:dispatch(action, e)
-    end
-  elseif e.gui_type == defines.gui_type.research then
-    local gui = util.get_gui(e.player_index)
-    if gui and gui.refs.window.visible and not gui.state.pinned then
-      gui.player.opened = gui.refs.window
+    if gui and gui.elems.urq_window.visible and not gui.state.pinned then
+      gui.player.opened = gui.elems.urq_window
     end
   end
 end)
 
 event.register("urq-focus-search", function(e)
   local player = game.get_player(e.player_index) --[[@as LuaPlayer]]
-  if player.opened_gui_type == defines.gui_type.custom and player.opened and player.opened.name == "urq-window" then
-    local gui = util.get_gui(player)
-    if gui then
-      gui:toggle_search()
-    end
+  local gui = util.get_gui(player)
+  if gui and player.opened == gui.elems.urq_window then
+    gui:toggle_search()
   end
 end)
 
@@ -264,17 +238,22 @@ end)
 
 event.on_tick(function(e)
   dictionary.check_skipped()
-  for _, job in pairs(on_tick_n.retrieve(e.tick) or {}) do
-    if job.id == "update_guis" then
+  if next(global.update_force_guis) then
+    for force_index in pairs(global.update_force_guis) do
       -- TODO: Update each player's GUI on a separate tick?
-      local force_table = global.forces[job.force]
-      force_table.update_gui_task = nil
-      util.update_force_guis(force_table.force)
-    elseif job.id == "gui" then
-      local gui = util.get_gui(job.player_index)
-      if gui then
-        gui:dispatch(job, e)
+      local force = game.forces[force_index]
+      util.update_force_guis(force)
+    end
+    global.update_force_guis = {}
+  end
+  for player_index, tick in pairs(global.filter_tech_list) do
+    if tick <= e.tick then
+      local player = game.get_player(player_index) --[[@as LuaPlayer]]
+      local gui = util.get_gui(player)
+      if gui and gui.elems.urq_window.visible then
+        gui:filter_tech_list()
       end
+      global.filter_tech_list[player_index] = nil
     end
   end
 end)

@@ -6,6 +6,8 @@ local util = require("__UltimateResearchQueue__.util")
 
 --- @class Queue
 local queue = {}
+local queue_mt = { __index = queue }
+script.register_metatable("UltimateResearchQueue_queue", queue_mt)
 
 --- @param tech_name string
 --- @return boolean
@@ -157,12 +159,8 @@ function queue.new(force, force_table)
     --- @type table<string, string>
     queue = {},
   }
-  queue.load(self)
+  setmetatable(self, queue_mt)
   return self
-end
-
-function queue.load(self)
-  setmetatable(self, { __index = queue })
 end
 
 return queue
