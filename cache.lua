@@ -245,6 +245,7 @@ function cache.build_technology_list()
     log({ "", "Prerequisite Generation ", profiler })
   end
 
+  global.num_technologies = #technologies
   global.technologies = technologies
   global.technology_order = order
   global.technology_prerequisites = prerequisites

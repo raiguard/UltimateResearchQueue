@@ -659,23 +659,25 @@ function root:update_tech_list()
   local queue = self.force_table.queue
   local i = 0
   for group_state, group in pairs(self.force_table.grouped_technologies) do
-    -- FIXME: This will only iterate the first 1024 techs of a group in order. Oh well!
-    for _, technology in pairs(group) do
-      i = i + 1
-      local button = techs_table[technology.name]
-      if button then
-        util.move_to(button, techs_table, i)
-        util.update_tech_slot_style(
-          button,
-          technology,
-          group_state,
-          self.state.selected,
-          queue:contains(technology.name)
-        )
-      else
-        local button_template = tech_button(technology, research_states[technology.name], self.state.selected)
-        button_template.index = i
-        gui.add(techs_table, { button_template })
+    for j = 1, global.num_technologies do
+      local technology = group[j]
+      if technology then
+        i = i + 1
+        local button = techs_table[technology.name]
+        if button then
+          util.move_to(button, techs_table, i)
+          util.update_tech_slot_style(
+            button,
+            technology,
+            group_state,
+            self.state.selected,
+            queue:contains(technology.name)
+          )
+        else
+          local button_template = tech_button(technology, research_states[technology.name], self.state.selected)
+          button_template.index = i
+          gui.add(techs_table, { button_template })
+        end
       end
     end
   end
