@@ -138,6 +138,7 @@ end
 --- @param technology LuaTechnology
 --- @param research_state ResearchState
 --- @param selected_name string?
+--- @return TechnologySlotProperties
 function util.get_technology_slot_properties(technology, research_state, selected_name)
   local selected = selected_name == technology.name
   local max_level = technology.prototype.max_level
@@ -152,15 +153,19 @@ function util.get_technology_slot_properties(technology, research_state, selecte
     .. research_state_str
   local unselected_style = "urq_technology_slot_" .. (leveled and "leveled_" or "") .. research_state_str
 
-  return {
+  --- @class TechnologySlotProperties
+  local res = {
     leveled = leveled,
     max_level = max_level,
     max_level_str = max_level_str,
+    ranged = ranged,
     research_state_str = research_state_str,
     selected = selected,
     style = style,
     unselected_style = unselected_style,
   }
+
+  return res
 end
 
 --- Get all unreearched prerequisites. Note that the table is returned in reverse order and must be iterated in
