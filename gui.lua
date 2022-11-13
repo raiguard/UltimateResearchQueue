@@ -262,6 +262,7 @@ function root:filter_tech_list()
   local dictionaries = self.player_table.dictionaries
   local technologies = game.technology_prototypes
   local research_states = self.force_table.research_states
+  local upgrade_states = self.force_table.upgrade_states
   local show_disabled = self.player.mod_settings["urq-show-disabled-techs"].value
   for _, button in pairs(self.elems.techs_table.children) do
     local tech_name = button.name
@@ -271,6 +272,12 @@ function root:filter_tech_list()
     local research_state = research_states[tech_name]
     if research_state == constants.research_state.disabled and not show_disabled then
       research_state_matched = false
+    end
+    -- Show/hide upgrade techs
+    local upgrade_matched = true
+    if technology.upgrade then
+      local base_name = string.gsub(technology.name, "%-%d*$", "")
+      upgrade_matched = (upgrade_states[base_name] or 0) + 1 >= technology.level
     end
     -- Search query
     local search_matched = #query == 0 -- Automatically pass search on empty query
@@ -293,7 +300,7 @@ function root:filter_tech_list()
         end
       end
     end
-    button.visible = research_state_matched and search_matched
+    button.visible = research_state_matched and upgrade_matched and search_matched
   end
 end
 
