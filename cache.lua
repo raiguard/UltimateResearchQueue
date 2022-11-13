@@ -78,12 +78,12 @@ function cache.build_effect_icons()
     end
   end
 
-  -- XXX: It is currently impossible to get a land mine's ammo category at runtime
-  -- for _, prototype in pairs(game.get_filtered_entity_prototypes({ { filter = "type", type = "land-mine" } })) do
-  --   if not icons[prototype.ammo_category] then
-  --     icons[prototype.ammo_category] = "entity/" .. prototype.name
-  --   end
-  -- end
+  for _, prototype in pairs(game.get_filtered_entity_prototypes({ { filter = "type", type = "land-mine" } })) do
+    local ammo_category = prototype.ammo_category
+    if ammo_category and not icons[ammo_category] then
+      icons[ammo_category] = "entity/" .. prototype.name
+    end
+  end
 
   for _, prototype in pairs(game.get_filtered_entity_prototypes({ { filter = "type", type = "unit" } })) do
     local attack_parameters = prototype.attack_parameters --[[@as AttackParameters]]
