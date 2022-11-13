@@ -22,7 +22,7 @@ end
 --- Ensure that the vanilla research queue is disabled
 --- @param force LuaForce
 function util.ensure_queue_disabled(force)
-  if force.research_queue_enabled then
+  if not DEBUG and force.research_queue_enabled then
     force.print({ "message.urq-vanilla-queue-disabled" })
     force.research_queue_enabled = false
   end

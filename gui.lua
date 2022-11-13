@@ -149,7 +149,7 @@ end
 --- @param selected_name string?
 --- @param is_tech_info boolean?
 --- @return GuiElemDef
-local function tech_button(technology, research_state, selected_name, is_tech_info)
+local function technology_slot(technology, research_state, selected_name, is_tech_info)
   local properties = util.get_technology_slot_properties(technology, research_state, selected_name)
   local progress = util.get_research_progress(technology)
 
@@ -233,7 +233,7 @@ end
 
 -- METHODS
 
-function root:cancel_research(_, e)
+function root:cancel_research(e)
   local tech_name = e.element.name
   self.force_table.queue:remove(tech_name)
   self:update_tech_info_footer()
@@ -400,7 +400,7 @@ function root:select_tech(tech_name)
   local main_slot_frame = self.elems.tech_info_main_slot_frame
   main_slot_frame.clear() -- The best thing to do is clear it, otherwise we'd need to diff all the sub-elements
   if tech_name then
-    gui.add(main_slot_frame, { tech_button(technology, research_state, nil, true) })
+    gui.add(main_slot_frame, { technology_slot(technology, research_state, nil, true) })
   end
   -- Name and description
   self.elems.tech_info_name_label.caption = technology.localised_name
@@ -600,7 +600,7 @@ function root:update_queue()
         true
       )
     else
-      local button_template = tech_button(technologies[tech_name], research_states[tech_name], self.state.selected)
+      local button_template = technology_slot(technologies[tech_name], research_states[tech_name], self.state.selected)
       button_template.index = i
       gui.add(queue_table, { button_template })
     end
@@ -681,7 +681,7 @@ function root:update_tech_list()
             queue:contains(technology.name)
           )
         else
-          local button_template = tech_button(technology, research_states[technology.name], self.state.selected)
+          local button_template = technology_slot(technology, research_states[technology.name], self.state.selected)
           button_template.index = i
           gui.add(techs_table, { button_template })
         end
