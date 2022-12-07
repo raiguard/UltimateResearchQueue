@@ -1,11 +1,21 @@
-local dictionary = require("__flib__/dictionary")
-
 local cache = require("__UltimateResearchQueue__/cache")
 local gui = require("__UltimateResearchQueue__/gui")
 local queue = require("__UltimateResearchQueue__/queue")
 local util = require("__UltimateResearchQueue__/util")
 
 local migrations = {}
+
+function migrations.generic()
+  cache.build_effect_icons()
+  cache.build_dictionaries()
+  cache.build_technology_list()
+  for _, force in pairs(game.forces) do
+    migrations.migrate_force(force)
+  end
+  for _, player in pairs(game.players) do
+    migrations.migrate_player(player)
+  end
+end
 
 --- @param force LuaForce
 function migrations.init_force(force)
@@ -56,9 +66,6 @@ function migrations.migrate_player(player)
   end
   player_table.dictionaries = nil
   gui.new(player, player_table)
-  if player.connected then
-    dictionary.translate(player)
-  end
 end
 
 migrations.by_version = {}

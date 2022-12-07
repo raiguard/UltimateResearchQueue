@@ -1,32 +1,16 @@
 require("__UltimateResearchQueue__/debug")
 
-local dictionary = require("__flib__/dictionary")
+local dictionary = require("__flib__/dictionary-lite")
 local migration = require("__flib__/migration")
 
 local constants = require("__UltimateResearchQueue__/constants")
-local cache = require("__UltimateResearchQueue__/cache")
 local gui = require("__UltimateResearchQueue__/gui")
 local migrations = require("__UltimateResearchQueue__/migrations")
 local util = require("__UltimateResearchQueue__/util")
 
-local function build_dictionaries()
-  dictionary.init()
-  -- Each technology should be searchable by its name and the names of recipes it unlocks
-  local recipes = dictionary.new("recipe")
-  for name, recipe in pairs(game.recipe_prototypes) do
-    recipes:add(name, recipe.localised_name)
-  end
-  local techs = dictionary.new("technology")
-  for name, technology in pairs(game.technology_prototypes) do
-    techs:add(name, technology.localised_name)
-  end
-end
+-- Bootstrap
 
 script.on_init(function()
-  build_dictionaries()
-  cache.build_effect_icons()
-  cache.build_technology_list()
-
   --- @type table<uint, integer>
   global.filter_tech_list = {}
   --- @type table<uint, ForceTable>
@@ -39,29 +23,27 @@ script.on_init(function()
   -- game.forces is apparently keyed by name, not index
   for _, force in pairs(game.forces) do
     migrations.init_force(force)
-    migrations.migrate_force(force)
   end
   for _, player in pairs(game.players) do
     migrations.init_player(player.index)
-    migrations.migrate_player(player)
+  end
+  migrations.generic()
+end)
+
+migration.handle_on_configuration_changed(nil, migrations.generic)
+
+-- Dictionaries
+
+dictionary.handle_events()
+
+script.on_event(dictionary.on_player_dictionaries_ready, function(e)
+  local player_table = global.players[e.player_index]
+  if player_table then
+    player_table.dictionaries = dictionary.get_all(e.player_index)
   end
 end)
 
-script.on_load(dictionary.load)
-
-script.on_configuration_changed(function(e)
-  if migration.on_config_changed(migrations.by_version, e) then
-    build_dictionaries()
-    cache.build_effect_icons()
-    cache.build_technology_list()
-    for _, force in pairs(game.forces) do
-      migrations.migrate_force(force)
-    end
-    for _, player in pairs(game.players) do
-      migrations.migrate_player(player)
-    end
-  end
-end)
+-- Force and Player
 
 script.on_event(defines.events.on_force_created, function(e)
   migrations.init_force(e.force)
@@ -71,25 +53,6 @@ end)
 script.on_event(defines.events.on_player_created, function(e)
   migrations.init_player(e.player_index)
   migrations.migrate_player(game.get_player(e.player_index) --[[@as LuaPlayer]])
-end)
-
-script.on_event(defines.events.on_player_joined_game, function(e)
-  dictionary.translate(game.get_player(e.player_index) --[[@as LuaPlayer]])
-end)
-
-script.on_event(defines.events.on_player_left_game, function(e)
-  dictionary.cancel_translation(e.player_index)
-end)
-
-script.on_event(defines.events.on_runtime_mod_setting_changed, function(e)
-  if e.setting ~= "urq-show-disabled-techs" then
-    return
-  end
-  local player = game.get_player(e.player_index) --[[@as LuaPlayer]]
-  local gui = util.get_gui(player)
-  if gui then
-    gui:filter_tech_list()
-  end
 end)
 
 script.on_event({
@@ -103,6 +66,8 @@ script.on_event({
     gui:update_tech_info_footer()
   end
 end)
+
+-- Gui
 
 gui.handle_events()
 
@@ -152,6 +117,8 @@ script.on_event(defines.events.on_lua_shortcut, function(e)
     end
   end
 end)
+
+-- Research
 
 script.on_event(defines.events.on_research_started, function(e)
   local technology = e.research
@@ -223,20 +190,23 @@ script.on_event(constants.on_research_queue_updated, function(e)
   util.schedule_gui_update(global.forces[e.force.index])
 end)
 
-script.on_event(defines.events.on_string_translated, function(e)
-  local result = dictionary.process_translation(e)
-  if result then
-    for _, player_index in pairs(result.players) do
-      local player_table = global.players[player_index]
-      if player_table then
-        player_table.dictionaries = result.dictionaries
-      end
-    end
+-- Settings
+
+script.on_event(defines.events.on_runtime_mod_setting_changed, function(e)
+  if e.setting ~= "urq-show-disabled-techs" then
+    return
+  end
+  local player = game.get_player(e.player_index) --[[@as LuaPlayer]]
+  local gui = util.get_gui(player)
+  if gui then
+    gui:filter_tech_list()
   end
 end)
 
+-- Tick
+
 script.on_event(defines.events.on_tick, function(e)
-  dictionary.check_skipped()
+  dictionary.on_tick()
   if next(global.update_force_guis) then
     for force_index in pairs(global.update_force_guis) do
       -- TODO: Update each player's GUI on a separate tick?

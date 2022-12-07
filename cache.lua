@@ -1,3 +1,5 @@
+local dictionary = require("__flib__/dictionary-lite")
+
 local constants = require("__UltimateResearchQueue__/constants")
 local util = require("__UltimateResearchQueue__/util")
 
@@ -95,6 +97,19 @@ function cache.build_effect_icons()
   end
 
   global.effect_icons = icons
+end
+
+function cache.build_dictionaries()
+  -- Build dictionaries
+  dictionary.on_init()
+  dictionary.new("recipe")
+  for name, recipe in pairs(game.recipe_prototypes) do
+    dictionary.add("recipe", name, { "?", recipe.localised_name, name })
+  end
+  dictionary.new("technology")
+  for name, technology in pairs(game.technology_prototypes) do
+    dictionary.add("technology", name, { "?", technology.localised_name, name })
+  end
 end
 
 --- @param force LuaForce
