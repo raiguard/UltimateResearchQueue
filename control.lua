@@ -1,7 +1,6 @@
 require("__UltimateResearchQueue__/debug")
 
 local dictionary = require("__flib__/dictionary")
-local event = require("__flib__/event")
 local migration = require("__flib__/migration")
 
 local constants = require("__UltimateResearchQueue__/constants")
@@ -23,7 +22,7 @@ local function build_dictionaries()
   end
 end
 
-event.on_init(function()
+script.on_init(function()
   build_dictionaries()
   cache.build_effect_icons()
   cache.build_technology_list()
@@ -48,9 +47,9 @@ event.on_init(function()
   end
 end)
 
-event.on_load(dictionary.load)
+script.on_load(dictionary.load)
 
-event.on_configuration_changed(function(e)
+script.on_configuration_changed(function(e)
   if migration.on_config_changed(migrations.by_version, e) then
     build_dictionaries()
     cache.build_effect_icons()
@@ -64,25 +63,25 @@ event.on_configuration_changed(function(e)
   end
 end)
 
-event.on_force_created(function(e)
+script.on_event(defines.events.on_force_created, function(e)
   migrations.init_force(e.force)
   migrations.migrate_force(e.force)
 end)
 
-event.on_player_created(function(e)
+script.on_event(defines.events.on_player_created, function(e)
   migrations.init_player(e.player_index)
   migrations.migrate_player(game.get_player(e.player_index) --[[@as LuaPlayer]])
 end)
 
-event.on_player_joined_game(function(e)
+script.on_event(defines.events.on_player_joined_game, function(e)
   dictionary.translate(game.get_player(e.player_index) --[[@as LuaPlayer]])
 end)
 
-event.on_player_left_game(function(e)
+script.on_event(defines.events.on_player_left_game, function(e)
   dictionary.cancel_translation(e.player_index)
 end)
 
-event.on_runtime_mod_setting_changed(function(e)
+script.on_event(defines.events.on_runtime_mod_setting_changed, function(e)
   if e.setting ~= "urq-show-disabled-techs" then
     return
   end
@@ -93,7 +92,7 @@ event.on_runtime_mod_setting_changed(function(e)
   end
 end)
 
-event.register({
+script.on_event({
   defines.events.on_player_toggled_map_editor,
   defines.events.on_player_cheat_mode_enabled,
   defines.events.on_player_cheat_mode_disabled,
@@ -108,7 +107,7 @@ end)
 gui.handle_events()
 
 if not DEBUG then
-  event.on_gui_opened(function(e)
+  script.on_event(defines.events.on_gui_opened, function(e)
     local player = game.get_player(e.player_index) --[[@as LuaPlayer]]
     if player.opened_gui_type == defines.gui_type.research then
       local gui = util.get_gui(player)
@@ -121,7 +120,7 @@ if not DEBUG then
   end)
 end
 
-event.on_gui_closed(function(e)
+script.on_event(defines.events.on_gui_closed, function(e)
   if not gui.dispatch(e) and e.gui_type == defines.gui_type.research then
     local gui = util.get_gui(e.player_index)
     if gui and gui.elems.urq_window.visible and not gui.state.pinned then
@@ -130,7 +129,7 @@ event.on_gui_closed(function(e)
   end
 end)
 
-event.register("urq-focus-search", function(e)
+script.on_event("urq-focus-search", function(e)
   local player = game.get_player(e.player_index) --[[@as LuaPlayer]]
   local gui = util.get_gui(player)
   if gui and player.opened == gui.elems.urq_window then
@@ -138,14 +137,14 @@ event.register("urq-focus-search", function(e)
   end
 end)
 
-event.register("urq-toggle-gui", function(e)
+script.on_event("urq-toggle-gui", function(e)
   local gui = util.get_gui(e.player_index)
   if gui then
     gui:toggle_visible()
   end
 end)
 
-event.on_lua_shortcut(function(e)
+script.on_event(defines.events.on_lua_shortcut, function(e)
   if e.prototype_name == "urq-toggle-gui" then
     local gui = util.get_gui(e.player_index)
     if gui then
@@ -154,7 +153,7 @@ event.on_lua_shortcut(function(e)
   end
 end)
 
-event.on_research_started(function(e)
+script.on_event(defines.events.on_research_started, function(e)
   local technology = e.research
   local force = technology.force
   local force_table = global.forces[force.index]
@@ -169,7 +168,7 @@ event.on_research_started(function(e)
   end
 end)
 
-event.on_research_cancelled(function(e)
+script.on_event(defines.events.on_research_cancelled, function(e)
   local force = e.force
   local force_table = global.forces[force.index]
   if not force_table then
@@ -186,7 +185,7 @@ event.on_research_cancelled(function(e)
   end
 end)
 
-event.on_research_finished(function(e)
+script.on_event(defines.events.on_research_finished, function(e)
   local technology = e.research
   local force = technology.force
   local force_table = global.forces[force.index]
@@ -208,7 +207,7 @@ event.on_research_finished(function(e)
   end
 end)
 
-event.on_research_reversed(function(e)
+script.on_event(defines.events.on_research_reversed, function(e)
   local technology = e.research
   local force = technology.force
   local force_table = global.forces[force.index]
@@ -220,11 +219,11 @@ event.on_research_reversed(function(e)
   util.schedule_gui_update(force_table)
 end)
 
-event.register(constants.on_research_queue_updated, function(e)
+script.on_event(constants.on_research_queue_updated, function(e)
   util.schedule_gui_update(global.forces[e.force.index])
 end)
 
-event.on_string_translated(function(e)
+script.on_event(defines.events.on_string_translated, function(e)
   local result = dictionary.process_translation(e)
   if result then
     for _, player_index in pairs(result.players) do
@@ -236,7 +235,7 @@ event.on_string_translated(function(e)
   end
 end)
 
-event.on_tick(function(e)
+script.on_event(defines.events.on_tick, function(e)
   dictionary.check_skipped()
   if next(global.update_force_guis) then
     for force_index in pairs(global.update_force_guis) do
@@ -258,7 +257,7 @@ event.on_tick(function(e)
   end
 end)
 
-event.on_nth_tick(60, function()
+script.on_nth_tick(60, function()
   for force_index, force_table in pairs(global.forces) do
     local force = game.forces[force_index]
     local current = force.current_research

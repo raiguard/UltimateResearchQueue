@@ -1,4 +1,3 @@
-local event = require("__flib__/event")
 local misc = require("__flib__/misc")
 
 local constants = require("__UltimateResearchQueue__/constants")
@@ -49,7 +48,7 @@ function queue:push(tech_names)
   if next(self.queue) == first_added then
     self:update_active_research()
   end
-  event.raise(constants.on_research_queue_updated, { force = self.force })
+  script.raise_event(constants.on_research_queue_updated, { force = self.force })
 end
 
 --- Add one or more technologies to the front of the queue
@@ -70,7 +69,7 @@ function queue:push_front(tech_names)
   end
   self.queue = new
   self:update_active_research()
-  event.raise(constants.on_research_queue_updated, { force = self.force })
+  script.raise_event(constants.on_research_queue_updated, { force = self.force })
 end
 
 --- @param tech_name string
@@ -97,14 +96,14 @@ function queue:remove(tech_name, is_recursive)
   end
   if not is_recursive then
     self:update_active_research()
-    event.raise(constants.on_research_queue_updated, { force = self.force })
+    script.raise_event(constants.on_research_queue_updated, { force = self.force })
   end
 end
 
 function queue:toggle_paused()
   self.paused = not self.paused
   self:update_active_research()
-  event.raise(constants.on_research_queue_updated, { force = self.force })
+  script.raise_event(constants.on_research_queue_updated, { force = self.force })
 end
 
 function queue:update_active_research()
