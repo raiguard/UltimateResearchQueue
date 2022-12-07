@@ -1,4 +1,3 @@
-local gui = require("__flib__/gui")
 local math = require("__flib__/math")
 local table = require("__flib__/table")
 
@@ -61,27 +60,6 @@ function util.format_time_short(ticks)
   return result
 end
 
---- @param player LuaPlayer|uint
---- @return Gui?
-function util.get_gui(player)
-  if type(player) == "table" then
-    player = player.index
-  end
-  --- @type PlayerTable?
-  local player_table = global.players[player]
-  if player_table then
-    local gui = player_table.gui
-    if gui then
-      if not gui.elems.urq_window.valid then
-        gui:destroy()
-        gui = gui.new(gui.player, gui.player_table)
-        gui.player.print({ "message.urq-recreated-gui" })
-      end
-      return gui
-    end
-  end
-end
-
 --- @param tech LuaTechnology
 --- @return double
 function util.get_research_progress(tech)
@@ -123,15 +101,6 @@ function util.get_research_unit_count(tech)
     return game.evaluate_expression(formula, { l = level, L = level })
   else
     return tech.research_unit_count --[[@as double]]
-  end
-end
-
---- @param force_table ForceTable
-function util.schedule_gui_update(force_table)
-  if game.tick_paused then
-    util.update_force_guis(force_table.force)
-  else
-    global.update_force_guis[force_table.force.index] = true
   end
 end
 
@@ -195,7 +164,7 @@ end
 
 --- @param elem LuaGuiElement
 function util.is_double_click(elem)
-  local tags = gui.get_tags(elem)
+  local tags = elem.tags
   local last_click_tick = tags.last_click_tick or 0
   local is_double_click = game.ticks_played - last_click_tick < 12
   if is_double_click then
@@ -203,7 +172,7 @@ function util.is_double_click(elem)
   else
     tags.last_click_tick = game.ticks_played
   end
-  gui.set_tags(elem, tags)
+  elem.tags = tags
   return is_double_click
 end
 
@@ -217,68 +186,13 @@ function util.move_to(element, parent, index)
   dummy.destroy()
 end
 
---- @param force LuaForce
-function util.update_force_guis(force)
-  for _, player in pairs(force.players) do
-    local gui = util.get_gui(player)
-    if gui then
-      gui:update_queue()
-      gui:update_tech_info_footer()
-      gui:update_tech_list()
-      gui:filter_tech_list()
-    end
-  end
-end
-
---- @param force_table ForceTable
---- @param technology LuaTechnology
-function util.update_research_state(force_table, technology)
-  local order = global.technology_order[technology.name]
-  local grouped_techs = force_table.grouped_technologies
-  local previous_state = force_table.research_states[technology.name]
-  local new_state = util.get_research_state(force_table, technology)
-  -- Keep track of the highest-researched upgrade tech
-  if technology.upgrade then
-    local base_name = string.gsub(technology.name, "%-%d*$", "")
-    local upgrade_level = technology.level
-    local current_level = force_table.upgrade_states[base_name] or 0
-    if
-      upgrade_level > current_level
-      and (new_state == constants.research_state.researched or force_table.queue:contains(technology.name))
-    then
-      force_table.upgrade_states[base_name] = upgrade_level
-    elseif upgrade_level <= current_level then
-      force_table.upgrade_states[base_name] = upgrade_level - 1
-    end
-  end
-  -- Change research state
-  if new_state ~= previous_state then
-    grouped_techs[previous_state][order] = nil
-    grouped_techs[new_state][order] = technology
-    force_table.research_states[technology.name] = new_state
-  end
-end
-
---- @param force_table ForceTable
---- @param technology LuaTechnology
-function util.update_research_state_reqs(force_table, technology)
-  util.update_research_state(force_table, technology)
-  local requisites = global.technology_requisites[technology.name]
-  if requisites then
-    local technologies = technology.force.technologies
-    for requisite_name in pairs(requisites) do
-      util.update_research_state(force_table, technologies[requisite_name])
-    end
-  end
-end
-
 --- @param button LuaGuiElement
 --- @param technology LuaTechnology
 --- @param research_state ResearchState
 --- @param selected_tech string?
 --- @param in_queue boolean
 function util.update_tech_slot_style(button, technology, research_state, selected_tech, in_queue)
-  local tags = gui.get_tags(button)
+  local tags = button.tags
   if tags.research_state ~= research_state then
     local properties = util.get_technology_slot_properties(technology, research_state, selected_tech)
     button.style = properties.style
@@ -293,7 +207,7 @@ function util.update_tech_slot_style(button, technology, research_state, selecte
       button.level_range_label.style = "urq_technology_slot_level_range_label_" .. properties.research_state_str
     end
     tags.research_state = research_state
-    gui.set_tags(button, tags)
+    button.tags = tags
   end
   local duration_label = button.duration_label --[[@as LuaGuiElement]]
   if in_queue and not duration_label.visible then

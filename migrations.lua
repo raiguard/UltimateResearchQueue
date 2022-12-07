@@ -52,7 +52,7 @@ function migrations.migrate_force(force)
   end
   cache.build_research_states(force)
   util.ensure_queue_disabled(force)
-  force_table.queue:verify_integrity()
+  queue.verify_integrity(force_table.queue)
 end
 
 --- @param player LuaPlayer
@@ -62,7 +62,7 @@ function migrations.migrate_player(player)
     return
   end
   if player_table.gui then
-    player_table.gui:destroy()
+    player_table.gui.destroy(gui)
   end
   player_table.dictionaries = nil
   gui.new(player, player_table)

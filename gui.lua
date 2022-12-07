@@ -1,8 +1,9 @@
-local gui = require("__flib__/gui-lite")
+local flib_gui = require("__flib__/gui-lite")
 local math = require("__flib__/math")
 local table = require("__flib__/table")
 
 local constants = require("__UltimateResearchQueue__/constants")
+local queue = require("__UltimateResearchQueue__/queue")
 local util = require("__UltimateResearchQueue__/util")
 
 --- @param elem LuaGuiElement
@@ -48,9 +49,7 @@ end
 --- @field tech_info_footer_unresearch_button LuaGuiElement
 
 --- @class Gui
-local root = {}
-local root_mt = { __index = root }
-script.register_metatable("UltimateResearchQueue_main_gui", root_mt)
+local gui = {}
 
 --- @param effect TechnologyModifier
 local function effect_button(effect)
@@ -182,7 +181,7 @@ local function technology_slot(technology, research_state, selected_name, is_tec
     tags = {
       research_state = research_state,
     },
-    handler = { [defines.events.on_gui_click] = root.on_tech_slot_click },
+    handler = { [defines.events.on_gui_click] = gui.on_tech_slot_click },
     {
       type = "flow",
       style = "urq_technology_slot_sprite_flow",
@@ -233,31 +232,35 @@ end
 
 -- METHODS
 
-function root:cancel_research(e)
+--- @param self Gui
+function gui.cancel_research(self, e)
   local tech_name = e.element.name
-  self.force_table.queue:remove(tech_name)
-  self:update_tech_info_footer()
+  queue.remove(self.force_table.queue, tech_name)
+  gui.update_tech_info_footer(self)
 end
 
-function root:clear_queue()
-  local queue = self.force_table.queue
-  local tech_name = next(queue.queue)
+--- @param self Gui
+function gui.clear_queue(self)
+  local force_queue = self.force_table.queue
+  local tech_name = next(force_queue.queue)
   while tech_name do
-    queue:remove(tech_name)
-    tech_name = next(queue.queue)
+    queue.remove(force_queue, tech_name)
+    tech_name = next(force_queue.queue)
   end
-  self:update_tech_info_footer()
+  gui.update_tech_info_footer(self)
 end
 
-function root:destroy()
+--- @param self Gui
+function gui.destroy(self)
   if self.elems.urq_window.valid then
     self.elems.urq_window.destroy()
   end
   self.player_table.gui = nil
 end
 
+--- @param self Gui
 -- Updates tech list button visibility based on search query and other settings
-function root:filter_tech_list()
+function gui.filter_tech_list(self)
   local query = self.state.search_query
   local dictionaries = self.player_table.dictionaries
   local technologies = game.technology_prototypes
@@ -304,7 +307,8 @@ function root:filter_tech_list()
   end
 end
 
-function root:hide()
+--- @param self Gui
+function gui.hide(self)
   if self.state.opening_graph then
     return
   end
@@ -314,52 +318,57 @@ function root:hide()
   self.elems.urq_window.visible = false
 end
 
---- @param e on_gui_click
-function root:on_start_research_click(e)
+--- @param self Gui
+--- @param e EventData.on_gui_click
+function gui.on_start_research_click(self, e)
   local selected = self.state.selected
   if not selected then
     return
   end
-  self:start_research(selected, e.control and util.is_cheating(self.player))
+  gui.start_research(self, selected, e.control and util.is_cheating(self.player))
 end
 
---- @param e on_gui_click
-function root:on_tech_slot_click(e)
+--- @param self Gui
+--- @param e EventData.on_gui_click
+function gui.on_tech_slot_click(self, e)
   if DEBUG then
     log("tech clicked: " .. e.element.name)
   end
   local tech_name = e.element.name
   if e.button == defines.mouse_button_type.right then
-    self.force_table.queue:remove(tech_name)
+    queue.remove(self.force_table.queue, tech_name)
     return
   end
   if util.is_double_click(e.element) then
-    self:start_research(tech_name)
+    gui.start_research(self, tech_name)
     return
   end
-  self:select_tech(tech_name)
+  gui.select_tech(self, tech_name)
 end
 
---- @param e on_gui_click
-function root:on_titlebar_click(e)
+--- @param self Gui
+--- @param e EventData.on_gui_click
+function gui.on_titlebar_click(self, e)
   if e.button == defines.mouse_button_type.middle then
     self.elems.urq_window.force_auto_center()
   end
 end
 
-function root:on_window_closed()
+--- @param self Gui
+function gui.on_window_closed(self)
   if self.state.pinned then
     return
   end
   if self.state.search_open then
-    self:toggle_search()
+    gui.toggle_search(self)
     self.player.opened = self.elems.urq_window
     return
   end
-  self:hide()
+  gui.hide(self)
 end
 
-function root:open_in_graph()
+--- @param self Gui
+function gui.open_in_graph(self)
   local selected_technology = self.state.selected
   if selected_technology then
     self.state.opening_graph = true
@@ -368,8 +377,9 @@ function root:open_in_graph()
   end
 end
 
+--- @param self Gui
 --- @param tech_name string
-function root:select_tech(tech_name)
+function gui.select_tech(self, tech_name)
   local former_selected = self.state.selected
   if former_selected == tech_name then
     return
@@ -400,7 +410,7 @@ function root:select_tech(tech_name)
   local main_slot_frame = self.elems.tech_info_main_slot_frame
   main_slot_frame.clear() -- The best thing to do is clear it, otherwise we'd need to diff all the sub-elements
   if tech_name then
-    gui.add(main_slot_frame, { technology_slot(technology, research_state, nil, true) })
+    flib_gui.add(main_slot_frame, { technology_slot(technology, research_state, nil, true) })
   end
   -- Name and description
   self.elems.tech_info_name_label.caption = technology.localised_name
@@ -417,22 +427,23 @@ function root:select_tech(tech_name)
       tooltip = game.item_prototypes[ingredient.name].localised_name,
     }
   end)
-  gui.add(ingredients_table, ingredients_children)
+  flib_gui.add(ingredients_table, ingredients_children)
   self.elems.tech_info_ingredients_time_label.caption = "[img=quantity-time] "
     .. math.round(technology.research_unit_energy / 60, 0.1)
   self.elems.tech_info_ingredients_count_label.caption = "[img=quantity-multiplier] " .. technology.research_unit_count
   -- Effects
   local effects_table = self.elems.tech_info_effects_table
   effects_table.clear()
-  gui.add(effects_table, table.map(technology.effects, effect_button))
+  flib_gui.add(effects_table, table.map(technology.effects, effect_button))
   -- Footer
-  self:update_tech_info_footer()
+  gui.update_tech_info_footer(self)
 end
 
+--- @param self Gui
 --- @param select_tech string?
-function root:show(select_tech)
+function gui.show(self, select_tech)
   if select_tech then
-    self:select_tech(select_tech)
+    gui.select_tech(self, select_tech)
   end
   self.elems.urq_window.visible = true
   self.elems.urq_window.bring_to_front()
@@ -441,9 +452,10 @@ function root:show(select_tech)
   end
 end
 
+--- @param self Gui
 --- @param tech_name string
 --- @param instant_research boolean?
-function root:start_research(tech_name, instant_research)
+function gui.start_research(self, tech_name, instant_research)
   local research_state = self.force_table.research_states[tech_name]
   if research_state == constants.research_state.researched then
     util.flying_text(self.player, { "message.urq-already-researched" })
@@ -465,7 +477,7 @@ function root:start_research(tech_name, instant_research)
       end
     end
   else
-    local push_error = self.force_table.queue:push(to_research)
+    local push_error = queue.push(self.force_table.queue, to_research)
     if push_error == constants.queue_push_error.already_in_queue then
       util.flying_text(self.player, { "message.urq-already-in-queue" })
     elseif push_error == constants.queue_push_error.queue_full then
@@ -476,10 +488,11 @@ function root:start_research(tech_name, instant_research)
       util.flying_text(self.player, { "message.urq-too-many-prerequisites-queue-full" })
     end
   end
-  self:update_tech_info_footer()
+  gui.update_tech_info_footer(self)
 end
 
-function root:toggle_pinned()
+--- @param self Gui
+function gui.toggle_pinned(self)
   self.state.pinned = not self.state.pinned
   toggle_frame_action_button(self.elems.pin_button, "flib_pin", self.state.pinned)
   if self.state.pinned then
@@ -494,7 +507,8 @@ function root:toggle_pinned()
   end
 end
 
-function root:toggle_search()
+--- @param self Gui
+function gui.toggle_search(self)
   self.state.search_open = not self.state.search_open
   toggle_frame_action_button(self.elems.search_button, "utility/search", self.state.search_open)
   self.elems.search_textfield.visible = self.state.search_open
@@ -503,23 +517,26 @@ function root:toggle_search()
   else
     self.state.search_query = ""
     self.elems.search_textfield.text = ""
-    self:filter_tech_list()
+    gui.filter_tech_list(self)
   end
 end
 
-function root:toggle_queue_paused()
-  self.force_table.queue:toggle_paused()
+--- @param self Gui
+function gui.toggle_queue_paused(self)
+  queue.toggle_paused(self.force_table.queue)
 end
 
-function root:toggle_visible()
+--- @param self Gui
+function gui.toggle_visible(self)
   if self.elems.urq_window.visible then
-    self:hide()
+    gui.hide(self)
   else
-    self:show()
+    gui.show(self)
   end
 end
 
-function root:unresearch()
+--- @param self Gui
+function gui.unresearch(self)
   local selected = self.state.selected
   if not selected then
     return
@@ -541,7 +558,8 @@ function root:unresearch()
   propagate(self.force.technologies, self.force.technologies[selected])
 end
 
-function root:update_durations_and_progress()
+--- @param self Gui
+function gui.update_durations_and_progress(self)
   local queue_table = self.elems.queue_table
   local techs_table = self.elems.techs_table
   for tech_name, duration in pairs(self.force_table.queue.queue) do
@@ -561,10 +579,11 @@ function root:update_durations_and_progress()
 
     ::continue::
   end
-  self:update_tech_info_footer(true)
+  gui.update_tech_info_footer(self, true)
 end
 
-function root:update_queue()
+--- @param self Gui
+function gui.update_queue(self)
   local profiler = game.create_profiler()
 
   local paused = self.force_table.queue.paused
@@ -602,7 +621,7 @@ function root:update_queue()
     else
       local button_template = technology_slot(technologies[tech_name], research_states[tech_name], self.state.selected)
       button_template.index = i
-      gui.add(queue_table, { button_template })
+      flib_gui.add(queue_table, { button_template })
     end
   end
   local children = queue_table.children
@@ -615,19 +634,21 @@ function root:update_queue()
   end
 end
 
-function root:update_search_query()
+--- @param self Gui
+function gui.update_search_query(self)
   self.state.search_query = self.elems.search_textfield.text
 
   if game.tick_paused or #self.state.search_query == 0 then
     global.filter_tech_list[self.player.index] = nil
-    self:filter_tech_list()
+    gui.filter_tech_list(self)
   else
     global.filter_tech_list[self.player.index] = game.tick + 30
   end
 end
 
+--- @param self Gui
 --- @param progress_only boolean?
-function root:update_tech_info_footer(progress_only)
+function gui.update_tech_info_footer(self, progress_only)
   local selected = self.state.selected
   if not selected then
     return
@@ -636,7 +657,7 @@ function root:update_tech_info_footer(progress_only)
   local elems = self.elems
   local research_state = self.force_table.research_states[selected]
   local researched = research_state == constants.research_state.researched
-  local in_queue = self.force_table.queue:contains(selected)
+  local in_queue = queue.contains(self.force_table.queue, selected)
   local progress = util.get_research_progress(self.force.technologies[selected])
   local is_cheating = util.is_cheating(self.player)
 
@@ -659,11 +680,12 @@ function root:update_tech_info_footer(progress_only)
   end
 end
 
-function root:update_tech_list()
+--- @param self Gui
+function gui.update_tech_list(self)
   local profiler = game.create_profiler()
   local techs_table = self.elems.techs_table
   local research_states = self.force_table.research_states
-  local queue = self.force_table.queue
+  local force_queue = self.force_table.queue
   local i = 0
   for group_state, group in pairs(self.force_table.grouped_technologies) do
     for j = 1, global.num_technologies do
@@ -678,12 +700,12 @@ function root:update_tech_list()
             technology,
             group_state,
             self.state.selected,
-            queue:contains(technology.name)
+            queue.contains(force_queue, technology.name)
           )
         else
           local button_template = technology_slot(technology, research_states[technology.name], self.state.selected)
           button_template.index = i
-          gui.add(techs_table, { button_template })
+          flib_gui.add(techs_table, { button_template })
         end
       end
     end
@@ -698,9 +720,9 @@ function root:update_tech_list()
   end
 end
 
-gui.add_handlers(root, function(e, handler)
+flib_gui.add_handlers(gui, function(e, handler)
   local player = game.get_player(e.player_index) --[[@as LuaPlayer]]
-  local gui = util.get_gui(player)
+  local gui = gui.get(player)
   if gui then
     handler(gui, e)
   end
@@ -711,20 +733,20 @@ end)
 --- @param player LuaPlayer
 --- @param player_table PlayerTable
 --- @return Gui
-function root.new(player, player_table)
+function gui.new(player, player_table)
   --- @type GuiElems
-  local elems = gui.add(player.gui.screen, {
+  local elems = flib_gui.add(player.gui.screen, {
     {
       type = "frame",
       name = "urq_window",
       direction = "vertical",
       visible = false,
-      handler = { [defines.events.on_gui_closed] = root.on_window_closed },
+      handler = { [defines.events.on_gui_closed] = gui.on_window_closed },
       {
         type = "flow",
         name = "titlebar_flow",
         style = "flib_titlebar_flow",
-        handler = { [defines.events.on_gui_click] = root.on_titlebar_click },
+        handler = { [defines.events.on_gui_click] = gui.on_titlebar_click },
         {
           type = "label",
           style = "frame_title",
@@ -738,11 +760,11 @@ function root.new(player, player_table)
           style = "urq_search_textfield",
           visible = false,
           clear_and_focus_on_right_click = true,
-          handler = { [defines.events.on_gui_text_changed] = root.update_search_query },
+          handler = { [defines.events.on_gui_text_changed] = gui.update_search_query },
         },
-        frame_action_button("search_button", "utility/search", { "gui.urq-search-instruction" }, root.toggle_search),
-        frame_action_button("pin_button", "flib_pin", { "gui.flib-keep-open" }, root.toggle_pinned),
-        frame_action_button("close_button", "utility/close", { "gui.close-instruction" }, root.hide),
+        frame_action_button("search_button", "utility/search", { "gui.urq-search-instruction" }, gui.toggle_search),
+        frame_action_button("pin_button", "flib_pin", { "gui.flib-keep-open" }, gui.toggle_pinned),
+        frame_action_button("close_button", "utility/close", { "gui.close-instruction" }, gui.hide),
       },
       {
         type = "flow",
@@ -773,7 +795,7 @@ function root.new(player, player_table)
                 style = "tool_button",
                 sprite = "utility/pause",
                 tooltip = { "gui.urq-pause-queue" },
-                handler = { [defines.events.on_gui_click] = root.toggle_queue_paused },
+                handler = { [defines.events.on_gui_click] = gui.toggle_queue_paused },
               },
               {
                 type = "sprite-button",
@@ -782,7 +804,7 @@ function root.new(player, player_table)
                 sprite = "utility/trash",
                 tooltip = { "gui.urq-clear-queue" },
                 enabled = false,
-                handler = { [defines.events.on_gui_click] = root.clear_queue },
+                handler = { [defines.events.on_gui_click] = gui.clear_queue },
               },
             },
             {
@@ -819,7 +841,7 @@ function root.new(player, player_table)
                 style = "tool_button",
                 sprite = "urq_open_in_graph",
                 tooltip = { "gui.urq-open-in-graph" },
-                handler = { [defines.events.on_gui_click] = root.open_in_graph },
+                handler = { [defines.events.on_gui_click] = gui.open_in_graph },
               },
             },
             {
@@ -904,7 +926,7 @@ function root.new(player, player_table)
                 caption = { "gui-technology-preview.un-research" },
                 tooltip = { "gui-technology-preview.un-research-tooltip" },
                 visible = false,
-                handler = { [defines.events.on_gui_click] = root.unresearch },
+                handler = { [defines.events.on_gui_click] = gui.unresearch },
               },
               {
                 type = "button",
@@ -913,7 +935,7 @@ function root.new(player, player_table)
                 caption = { "gui.urq-cancel-research" },
                 tooltip = { "gui.urq-cancel-research" },
                 visible = false,
-                handler = { [defines.events.on_gui_click] = root.cancel_research },
+                handler = { [defines.events.on_gui_click] = gui.cancel_research },
               },
               {
                 type = "button",
@@ -921,7 +943,7 @@ function root.new(player, player_table)
                 style = "green_button",
                 caption = { "gui-technology-preview.start-research" },
                 tooltip = { "gui-technology-preview.start-research" },
-                handler = { [defines.events.on_gui_click] = root.on_start_research_click },
+                handler = { [defines.events.on_gui_click] = gui.on_start_research_click },
               },
             },
           },
@@ -971,18 +993,59 @@ function root.new(player, player_table)
       selected = nil,
     },
   }
-  setmetatable(self, root_mt)
   player_table.gui = self
 
-  self:update_queue()
-  self:update_tech_list()
-  self:update_durations_and_progress()
-  self:filter_tech_list()
+  gui.update_queue(self)
+  gui.update_tech_list(self)
+  gui.update_durations_and_progress(self)
+  gui.filter_tech_list(self)
 
   return self
 end
 
-root.dispatch = gui.dispatch
-root.handle_events = gui.handle_events
+--- @param player LuaPlayer|uint
+--- @return Gui?
+function gui.get(player)
+  if type(player) == "table" then
+    player = player.index
+  end
+  local player_table = global.players[player]
+  if player_table then
+    local gui = player_table.gui
+    if gui then
+      if not gui.elems.urq_window.valid then
+        gui.destroy(gui)
+        gui = gui.new(gui.player, gui.player_table)
+        gui.player.print({ "message.urq-recreated-gui" })
+      end
+      return gui
+    end
+  end
+end
 
-return root
+--- @param force LuaForce
+function gui.update_force(force)
+  for _, player in pairs(force.players) do
+    local player_gui = gui.get(player)
+    if player_gui then
+      gui.update_queue(player_gui)
+      gui.update_tech_info_footer(player_gui)
+      gui.update_tech_list(player_gui)
+      gui.filter_tech_list(player_gui)
+    end
+  end
+end
+
+--- @param force_table ForceTable
+function gui.schedule_update(force_table)
+  if game.tick_paused then
+    gui.update_force(force_table.force)
+  else
+    global.update_force_guis[force_table.force.index] = true
+  end
+end
+
+gui.dispatch = flib_gui.dispatch
+gui.handle_events = flib_gui.handle_events
+
+return gui

@@ -6,6 +6,7 @@ local migration = require("__flib__/migration")
 local constants = require("__UltimateResearchQueue__/constants")
 local gui = require("__UltimateResearchQueue__/gui")
 local migrations = require("__UltimateResearchQueue__/migrations")
+local queue = require("__UltimateResearchQueue__/queue")
 local util = require("__UltimateResearchQueue__/util")
 
 -- Bootstrap
@@ -61,9 +62,9 @@ script.on_event({
   defines.events.on_player_cheat_mode_disabled,
 }, function(e)
   local player = game.get_player(e.player_index) --[[@as LuaPlayer]]
-  local gui = util.get_gui(player)
-  if gui then
-    gui:update_tech_info_footer()
+  local player_gui = gui.get(player)
+  if player_gui then
+    gui.update_tech_info_footer(player_gui)
   end
 end)
 
@@ -75,11 +76,11 @@ if not DEBUG then
   script.on_event(defines.events.on_gui_opened, function(e)
     local player = game.get_player(e.player_index) --[[@as LuaPlayer]]
     if player.opened_gui_type == defines.gui_type.research then
-      local gui = util.get_gui(player)
-      if gui and not gui.state.opening_graph then
+      local player_gui = gui.get(player)
+      if player_gui and not player_gui.state.opening_graph then
         local opened = player.opened --[[@as LuaTechnology?]]
         player.opened = nil
-        gui:show(opened and opened.name or nil)
+        gui.show(player_gui, opened and opened.name or nil)
       end
     end
   end)
@@ -87,33 +88,33 @@ end
 
 script.on_event(defines.events.on_gui_closed, function(e)
   if not gui.dispatch(e) and e.gui_type == defines.gui_type.research then
-    local gui = util.get_gui(e.player_index)
-    if gui and gui.elems.urq_window.visible and not gui.state.pinned then
-      gui.player.opened = gui.elems.urq_window
+    local player_gui = gui.get(e.player_index)
+    if player_gui and player_gui.elems.urq_window.visible and not player_gui.state.pinned then
+      player_gui.player.opened = player_gui.elems.urq_window
     end
   end
 end)
 
 script.on_event("urq-focus-search", function(e)
   local player = game.get_player(e.player_index) --[[@as LuaPlayer]]
-  local gui = util.get_gui(player)
-  if gui and player.opened == gui.elems.urq_window then
-    gui:toggle_search()
+  local player_gui = gui.get(player)
+  if player_gui and player.opened == player_gui.elems.urq_window then
+    gui.toggle_search(player_gui)
   end
 end)
 
 script.on_event("urq-toggle-gui", function(e)
-  local gui = util.get_gui(e.player_index)
-  if gui then
-    gui:toggle_visible()
+  local player_gui = gui.get(e.player_index)
+  if player_gui then
+    gui.toggle_visible(player_gui)
   end
 end)
 
 script.on_event(defines.events.on_lua_shortcut, function(e)
   if e.prototype_name == "urq-toggle-gui" then
-    local gui = util.get_gui(e.player_index)
-    if gui then
-      gui:toggle_visible()
+    local player_gui = gui.get(e.player_index)
+    if player_gui then
+      gui.toggle_visible(player_gui)
     end
   end
 end)
@@ -129,9 +130,9 @@ script.on_event(defines.events.on_research_started, function(e)
   end
   util.ensure_queue_disabled(force)
 
-  local queue = force_table.queue
-  if next(queue.queue) ~= technology.name then
-    queue:push_front({ technology.name })
+  local force_queue = force_table.queue
+  if next(force_queue.queue) ~= technology.name then
+    queue.push_front(force_queue, { technology.name })
   end
 end)
 
@@ -143,12 +144,12 @@ script.on_event(defines.events.on_research_cancelled, function(e)
   end
   util.ensure_queue_disabled(force)
 
-  local queue = force_table.queue
-  if queue.paused then
+  local force_queue = force_table.queue
+  if force_queue.paused then
     return
   end
   for tech_name in pairs(e.research) do
-    queue:remove(tech_name)
+    queue.remove(force_queue, tech_name)
   end
 end)
 
@@ -160,12 +161,12 @@ script.on_event(defines.events.on_research_finished, function(e)
     return
   end
   util.ensure_queue_disabled(force)
-  if force_table.queue:contains(technology.name) then
-    force_table.queue:remove(technology.name)
+  if queue.contains(force_table.queue, technology.name) then
+    queue.remove(force_table.queue, technology.name)
   else
     -- This was insta-researched
-    util.update_research_state_reqs(force_table, technology)
-    util.schedule_gui_update(force_table)
+    queue.update_research_state_reqs(force_table, technology)
+    gui.schedule_update(force_table)
   end
   for _, player in pairs(force.players) do
     if player.mod_settings["urq-print-completed-message"].value then
@@ -182,12 +183,12 @@ script.on_event(defines.events.on_research_reversed, function(e)
     return
   end
   util.ensure_queue_disabled(force)
-  util.update_research_state_reqs(force_table, e.research)
-  util.schedule_gui_update(force_table)
+  queue.update_research_state_reqs(force_table, e.research)
+  gui.schedule_update(force_table)
 end)
 
 script.on_event(constants.on_research_queue_updated, function(e)
-  util.schedule_gui_update(global.forces[e.force.index])
+  gui.schedule_update(global.forces[e.force.index])
 end)
 
 -- Settings
@@ -197,9 +198,9 @@ script.on_event(defines.events.on_runtime_mod_setting_changed, function(e)
     return
   end
   local player = game.get_player(e.player_index) --[[@as LuaPlayer]]
-  local gui = util.get_gui(player)
-  if gui then
-    gui:filter_tech_list()
+  local player_gui = gui.get(player)
+  if player_gui then
+    gui.filter_tech_list(player_gui)
   end
 end)
 
@@ -211,16 +212,16 @@ script.on_event(defines.events.on_tick, function(e)
     for force_index in pairs(global.update_force_guis) do
       -- TODO: Update each player's GUI on a separate tick?
       local force = game.forces[force_index]
-      util.update_force_guis(force)
+      gui.update_force(force)
     end
     global.update_force_guis = {}
   end
   for player_index, tick in pairs(global.filter_tech_list) do
     if tick <= e.tick then
       local player = game.get_player(player_index) --[[@as LuaPlayer]]
-      local gui = util.get_gui(player)
-      if gui and gui.elems.urq_window.visible then
-        gui:filter_tech_list()
+      local player_gui = gui.get(player)
+      if player_gui and player_gui.elems.urq_window.visible then
+        gui.filter_tech_list(player_gui)
       end
       global.filter_tech_list[player_index] = nil
     end
@@ -262,12 +263,12 @@ script.on_nth_tick(60, function()
         end
       end
 
-      force_table.queue:update_durations(speed)
+      queue.update_durations(force_table.queue, speed)
 
       for _, player in pairs(force.players) do
-        local gui = util.get_gui(player)
-        if gui then
-          gui:update_durations_and_progress()
+        local player_gui = gui.get(player)
+        if player_gui then
+          gui.update_durations_and_progress(player_gui)
         end
       end
     end
