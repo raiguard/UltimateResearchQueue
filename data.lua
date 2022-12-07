@@ -1,4 +1,4 @@
-require("__UltimateResearchQueue__.debug")
+require("__UltimateResearchQueue__/debug")
 
 data:extend({
   {

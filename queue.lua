@@ -1,8 +1,8 @@
-local event = require("__flib__.event")
-local misc = require("__flib__.misc")
+local event = require("__flib__/event")
+local misc = require("__flib__/misc")
 
-local constants = require("__UltimateResearchQueue__.constants")
-local util = require("__UltimateResearchQueue__.util")
+local constants = require("__UltimateResearchQueue__/constants")
+local util = require("__UltimateResearchQueue__/util")
 
 --- @class Queue
 local queue = {}

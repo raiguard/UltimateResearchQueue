@@ -1,9 +1,9 @@
-local gui = require("__flib__.gui-lite")
-local math = require("__flib__.math")
-local table = require("__flib__.table")
+local gui = require("__flib__/gui-lite")
+local math = require("__flib__/math")
+local table = require("__flib__/table")
 
-local constants = require("__UltimateResearchQueue__.constants")
-local util = require("__UltimateResearchQueue__.util")
+local constants = require("__UltimateResearchQueue__/constants")
+local util = require("__UltimateResearchQueue__/util")
 
 --- @param elem LuaGuiElement
 --- @param sprite_base string

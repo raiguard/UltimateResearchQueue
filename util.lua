@@ -1,8 +1,8 @@
-local gui = require("__flib__.gui")
-local math = require("__flib__.math")
-local table = require("__flib__.table")
+local gui = require("__flib__/gui")
+local math = require("__flib__/math")
+local table = require("__flib__/table")
 
-local constants = require("__UltimateResearchQueue__.constants")
+local constants = require("__UltimateResearchQueue__/constants")
 
 local util = {}
 

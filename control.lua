@@ -1,14 +1,14 @@
-require("__UltimateResearchQueue__.debug")
+require("__UltimateResearchQueue__/debug")
 
-local dictionary = require("__flib__.dictionary")
-local event = require("__flib__.event")
-local migration = require("__flib__.migration")
+local dictionary = require("__flib__/dictionary")
+local event = require("__flib__/event")
+local migration = require("__flib__/migration")
 
-local constants = require("__UltimateResearchQueue__.constants")
-local cache = require("__UltimateResearchQueue__.cache")
-local gui = require("__UltimateResearchQueue__.gui")
-local migrations = require("__UltimateResearchQueue__.migrations")
-local util = require("__UltimateResearchQueue__.util")
+local constants = require("__UltimateResearchQueue__/constants")
+local cache = require("__UltimateResearchQueue__/cache")
+local gui = require("__UltimateResearchQueue__/gui")
+local migrations = require("__UltimateResearchQueue__/migrations")
+local util = require("__UltimateResearchQueue__/util")
 
 local function build_dictionaries()
   dictionary.init()

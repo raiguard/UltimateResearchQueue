@@ -1,5 +1,5 @@
-local constants = require("__UltimateResearchQueue__.constants")
-local util = require("__UltimateResearchQueue__.util")
+local constants = require("__UltimateResearchQueue__/constants")
+local util = require("__UltimateResearchQueue__/util")
 
 local cache = {}
 

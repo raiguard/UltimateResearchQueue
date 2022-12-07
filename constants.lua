@@ -1,4 +1,4 @@
-local event = require("__flib__.event")
+local event = require("__flib__/event")
 
 local constants = {}
 
