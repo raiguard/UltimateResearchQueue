@@ -7,8 +7,8 @@ local queue = require("__UltimateResearchQueue__/queue")
 local util = require("__UltimateResearchQueue__/util")
 
 --- @param elem LuaGuiElement
---- @param sprite_base string
 --- @param value boolean
+--- @param sprite_base string
 local function toggle_frame_action_button(elem, sprite_base, value)
   if value then
     elem.style = "flib_selected_frame_action_button"
@@ -741,11 +741,13 @@ function gui.new(player, player_table)
       name = "urq_window",
       direction = "vertical",
       visible = false,
+      elem_mods = { auto_center = true },
       handler = { [defines.events.on_gui_closed] = gui.on_window_closed },
       {
         type = "flow",
         name = "titlebar_flow",
         style = "flib_titlebar_flow",
+        drag_target = "urq_window",
         handler = { [defines.events.on_gui_click] = gui.on_titlebar_click },
         {
           type = "label",
@@ -970,9 +972,6 @@ function gui.new(player, player_table)
       },
     },
   })
-
-  elems.titlebar_flow.drag_target = elems.urq_window
-  elems.urq_window.force_auto_center()
 
   local force = player.force --[[@as LuaForce]]
 
