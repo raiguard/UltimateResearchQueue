@@ -264,79 +264,79 @@ if DEBUG then
     {
       type = "ammo-damage",
       ammo_category = "bullet",
-      modifier = 100,
+      modifier = 1,
     },
     {
       type = "artillery-range",
-      modifier = 100,
+      modifier = 1,
     },
     {
       type = "character-build-distance",
-      modifier = 100,
+      modifier = 1,
     },
     {
       type = "character-build-distance",
-      modifier = 100,
+      modifier = 1,
     },
     {
       type = "character-crafting-speed",
-      modifier = 100,
+      modifier = 1,
     },
     {
       type = "character-health-bonus",
-      modifier = 100,
+      modifier = 1,
     },
     {
       type = "character-inventory-slots-bonus",
-      modifier = 100,
+      modifier = 1,
     },
     {
       type = "character-item-drop-distance",
-      modifier = 100,
+      modifier = 1,
     },
     {
       type = "character-item-pickup-distance",
-      modifier = 100,
+      modifier = 1,
     },
     {
       type = "character-logistic-requests",
-      modifier = 100,
+      modifier = 1,
     },
     {
       type = "character-logistic-trash-slots",
-      modifier = 100,
+      modifier = 1,
     },
     {
       type = "character-loot-pickup-distance",
-      modifier = 100,
+      modifier = 1,
     },
     {
       type = "character-mining-speed",
-      modifier = 100,
+      modifier = 1,
     },
     {
       type = "character-reach-distance",
-      modifier = 100,
+      modifier = 1,
     },
     {
       type = "character-resource-reach-distance",
-      modifier = 100,
+      modifier = 1,
     },
     {
       type = "character-running-speed",
-      modifier = 100,
+      modifier = 1,
     },
     {
       type = "deconstruction-time-to-live",
-      modifier = 100,
+      modifier = 1,
     },
     {
       type = "follower-robot-lifetime",
-      modifier = 100,
+      modifier = 1,
     },
     {
       type = "ghost-time-to-live",
-      modifier = 100,
+      modifier = 1,
     },
     {
       type = "give-item",
@@ -346,11 +346,11 @@ if DEBUG then
     {
       type = "gun-speed",
       ammo_category = "bullet",
-      modifier = 100,
+      modifier = 1,
     },
     {
       type = "inserter-stack-size-bonus",
-      modifier = 100,
+      modifier = 1,
     },
     {
       type = "laboratory-productivity",
@@ -362,19 +362,19 @@ if DEBUG then
     },
     {
       type = "max-failed-attempts-per-tick-per-construction-queue",
-      modifier = 100,
+      modifier = 1,
     },
     {
       type = "max-successful-attempts-per-tick-per-construction-queue",
-      modifier = 100,
+      modifier = 1,
     },
     {
       type = "maximum-following-robots-count",
-      modifier = 100,
+      modifier = 1,
     },
     {
       type = "mining-drill-productivity-bonus",
-      modifier = 100,
+      modifier = 1,
     },
     {
       type = "nothing",
@@ -382,28 +382,28 @@ if DEBUG then
     },
     {
       type = "stack-inserter-capacity-bonus",
-      modifier = 100,
+      modifier = 1,
     },
     {
       type = "train-braking-force-bonus",
-      modifier = 100,
+      modifier = 1,
     },
     {
       type = "turret-attack",
       turret_id = "gun-turret",
-      modifier = 100,
+      modifier = 1,
     },
     {
       type = "worker-robot-battery",
-      modifier = 100,
+      modifier = 1,
     },
     {
       type = "worker-robot-speed",
-      modifier = 100,
+      modifier = 1,
     },
     {
       type = "worker-robot-storage",
-      modifier = 100,
+      modifier = 1,
     },
     {
       type = "zoom-to-world-blueprint-enabled",
