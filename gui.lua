@@ -49,7 +49,7 @@ end
 --- @field tech_info_footer_start_button LuaGuiElement
 --- @field tech_info_footer_unresearch_button LuaGuiElement
 
---- @class Gui
+--- @class GuiMod
 local gui = {}
 
 --- @param effect TechnologyModifier
