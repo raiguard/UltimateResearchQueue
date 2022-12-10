@@ -1,3 +1,4 @@
+--- @class Constants
 local constants = {}
 
 --- @alias EffectDisplayType

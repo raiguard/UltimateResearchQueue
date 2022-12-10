@@ -16,17 +16,14 @@ script.on_init(function()
   global.filter_tech_list = {}
   --- @type table<uint, ForceTable>
   global.forces = {}
-  --- @type table<uint, PlayerTable>
-  global.players = {}
+  --- @type table<uint, Gui>
+  global.guis = {}
   --- @type table<uint, boolean>
   global.update_force_guis = {}
 
   -- game.forces is apparently keyed by name, not index
   for _, force in pairs(game.forces) do
     migrations.init_force(force)
-  end
-  for _, player in pairs(game.players) do
-    migrations.init_player(player.index)
   end
   migrations.generic()
 end)
@@ -37,13 +34,6 @@ migration.handle_on_configuration_changed(nil, migrations.generic)
 
 dictionary.handle_events()
 
-script.on_event(dictionary.on_player_dictionaries_ready, function(e)
-  local player_table = global.players[e.player_index]
-  if player_table then
-    player_table.dictionaries = dictionary.get_all(e.player_index)
-  end
-end)
-
 -- Force and Player
 
 script.on_event(defines.events.on_force_created, function(e)
@@ -52,7 +42,6 @@ script.on_event(defines.events.on_force_created, function(e)
 end)
 
 script.on_event(defines.events.on_player_created, function(e)
-  migrations.init_player(e.player_index)
   migrations.migrate_player(game.get_player(e.player_index) --[[@as LuaPlayer]])
 end)
 
@@ -61,8 +50,7 @@ script.on_event({
   defines.events.on_player_cheat_mode_enabled,
   defines.events.on_player_cheat_mode_disabled,
 }, function(e)
-  local player = game.get_player(e.player_index) --[[@as LuaPlayer]]
-  local player_gui = gui.get(player)
+  local player_gui = gui.get(e.player_index)
   if player_gui then
     gui.update_tech_info_footer(player_gui)
   end
@@ -76,7 +64,7 @@ if not DEBUG then
   script.on_event(defines.events.on_gui_opened, function(e)
     local player = game.get_player(e.player_index) --[[@as LuaPlayer]]
     if player.opened_gui_type == defines.gui_type.research then
-      local player_gui = gui.get(player)
+      local player_gui = gui.get(e.player_index)
       if player_gui and not player_gui.state.opening_graph then
         local opened = player.opened --[[@as LuaTechnology?]]
         player.opened = nil
@@ -97,7 +85,7 @@ end)
 
 script.on_event("urq-focus-search", function(e)
   local player = game.get_player(e.player_index) --[[@as LuaPlayer]]
-  local player_gui = gui.get(player)
+  local player_gui = gui.get(e.player_index)
   if player_gui and player.opened == player_gui.elems.urq_window then
     gui.toggle_search(player_gui)
   end
@@ -197,8 +185,7 @@ script.on_event(defines.events.on_runtime_mod_setting_changed, function(e)
   if e.setting ~= "urq-show-disabled-techs" then
     return
   end
-  local player = game.get_player(e.player_index) --[[@as LuaPlayer]]
-  local player_gui = gui.get(player)
+  local player_gui = gui.get(e.player_index)
   if player_gui then
     gui.filter_tech_list(player_gui)
   end
@@ -218,8 +205,7 @@ script.on_event(defines.events.on_tick, function(e)
   end
   for player_index, tick in pairs(global.filter_tech_list) do
     if tick <= e.tick then
-      local player = game.get_player(player_index) --[[@as LuaPlayer]]
-      local player_gui = gui.get(player)
+      local player_gui = gui.get(player_index)
       if player_gui and player_gui.elems.urq_window.visible then
         gui.filter_tech_list(player_gui)
       end
@@ -228,6 +214,7 @@ script.on_event(defines.events.on_tick, function(e)
   end
 end)
 
+-- FIXME: This is not accurate enough
 script.on_nth_tick(60, function()
   for force_index, force_table in pairs(global.forces) do
     local force = game.forces[force_index]
@@ -266,7 +253,7 @@ script.on_nth_tick(60, function()
       queue.update_durations(force_table.queue, speed)
 
       for _, player in pairs(force.players) do
-        local player_gui = gui.get(player)
+        local player_gui = gui.get(player.index)
         if player_gui then
           gui.update_durations_and_progress(player_gui)
         end

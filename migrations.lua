@@ -36,14 +36,6 @@ function migrations.init_force(force)
   global.forces[force.index] = force_table
 end
 
---- @param player_index uint
-function migrations.init_player(player_index)
-  --- @class PlayerTable
-  --- @field gui Gui?
-  --- @field dictionaries table<string, table<string, string>>?
-  global.players[player_index] = {}
-end
-
 --- @param force LuaForce
 function migrations.migrate_force(force)
   local force_table = global.forces[force.index]
@@ -57,15 +49,8 @@ end
 
 --- @param player LuaPlayer
 function migrations.migrate_player(player)
-  local player_table = global.players[player.index]
-  if not player_table then
-    return
-  end
-  if player_table.gui then
-    player_table.gui.destroy(gui)
-  end
-  player_table.dictionaries = nil
-  gui.new(player, player_table)
+  gui.destroy(player.index)
+  gui.new(player)
 end
 
 migrations.by_version = {}

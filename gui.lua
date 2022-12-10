@@ -1,3 +1,4 @@
+local dictionary = require("__flib__/dictionary-lite")
 local flib_gui = require("__flib__/gui-lite")
 local math = require("__flib__/math")
 local table = require("__flib__/table")
@@ -251,18 +252,10 @@ function gui.clear_queue(self)
 end
 
 --- @param self Gui
-function gui.destroy(self)
-  if self.elems.urq_window.valid then
-    self.elems.urq_window.destroy()
-  end
-  self.player_table.gui = nil
-end
-
---- @param self Gui
 -- Updates tech list button visibility based on search query and other settings
 function gui.filter_tech_list(self)
   local query = self.state.search_query
-  local dictionaries = self.player_table.dictionaries
+  local dictionaries = dictionary.get_all(self.player.index)
   local technologies = game.technology_prototypes
   local research_states = self.force_table.research_states
   local upgrade_states = self.force_table.upgrade_states
@@ -721,8 +714,7 @@ function gui.update_tech_list(self)
 end
 
 flib_gui.add_handlers(gui, function(e, handler)
-  local player = game.get_player(e.player_index) --[[@as LuaPlayer]]
-  local gui = gui.get(player)
+  local gui = gui.get(e.player_index)
   if gui then
     handler(gui, e)
   end
@@ -731,9 +723,8 @@ end)
 --- BOOTSTRAP
 
 --- @param player LuaPlayer
---- @param player_table PlayerTable
 --- @return Gui
-function gui.new(player, player_table)
+function gui.new(player)
   --- @type GuiElems
   local elems = flib_gui.add(player.gui.screen, {
     {
@@ -981,7 +972,6 @@ function gui.new(player, player_table)
     force = force,
     force_table = global.forces[player.force.index],
     player = player,
-    player_table = player_table,
     state = {
       opening_graph = false,
       pinned = false,
@@ -992,7 +982,7 @@ function gui.new(player, player_table)
       selected = nil,
     },
   }
-  player_table.gui = self
+  global.guis[player.index] = self
 
   gui.update_queue(self)
   gui.update_tech_list(self)
@@ -1002,30 +992,34 @@ function gui.new(player, player_table)
   return self
 end
 
---- @param player LuaPlayer|uint
+--- @param player_index uint
+function gui.destroy(player_index)
+  local self = global.guis[player_index]
+  if not self then
+    return
+  end
+  if self.elems.urq_window.valid then
+    self.elems.urq_window.destroy()
+  end
+  global.guis[self.player.index] = nil
+end
+
+--- @param player_index uint
 --- @return Gui?
-function gui.get(player)
-  if type(player) == "table" then
-    player = player.index
+function gui.get(player_index)
+  local self = global.guis[player_index]
+  if not self or not self.elems.urq_window.valid then
+    gui.destroy(player_index)
+    self = gui.new(game.get_player(player_index) --[[@as LuaPlayer]])
+    self.player.print({ "message.urq-recreated-gui" })
   end
-  local player_table = global.players[player]
-  if player_table then
-    local gui = player_table.gui
-    if gui then
-      if not gui.elems.urq_window.valid then
-        gui.destroy(gui)
-        gui = gui.new(gui.player, gui.player_table)
-        gui.player.print({ "message.urq-recreated-gui" })
-      end
-      return gui
-    end
-  end
+  return self
 end
 
 --- @param force LuaForce
 function gui.update_force(force)
   for _, player in pairs(force.players) do
-    local player_gui = gui.get(player)
+    local player_gui = gui.get(player.index)
     if player_gui then
       gui.update_queue(player_gui)
       gui.update_tech_info_footer(player_gui)
