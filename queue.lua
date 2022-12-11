@@ -42,6 +42,7 @@ function queue.push(self, tech_names)
       end
       self.queue[tech_name] = "[img=infinity]"
       self.len = self.len + 1
+      -- FIXME:
       queue.update_research_state_reqs(self.force_table, technologies[tech_name])
     end
   end
@@ -140,6 +141,7 @@ end
 
 --- @param self Queue
 function queue.verify_integrity(self)
+  -- TODO: highest_levels
   local old_queue = self.queue
   self.queue = {}
   self.len = 0

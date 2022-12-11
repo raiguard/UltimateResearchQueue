@@ -7,6 +7,8 @@ local constants = require("__UltimateResearchQueue__/constants")
 local queue = require("__UltimateResearchQueue__/queue")
 local util = require("__UltimateResearchQueue__/util")
 
+-- Utilities
+
 --- @param elem LuaGuiElement
 --- @param value boolean
 --- @param sprite_base string
@@ -84,12 +86,12 @@ end
 --- @param force_table ForceTable
 --- @param technology LuaTechnology
 --- @param selected_tech string?
-local function update_tech_slot_style(button, force_table, technology, selected_tech)
+local function update_tech_slot(button, force_table, technology, selected_tech)
   -- TODO:
-  local research_state = force_table.research_states[technology.name]
+  local properties = get_technology_slot_properties(force_table, technology, selected_tech)
+  local research_state = properties.research_state
   local tags = button.tags
   if tags.research_state ~= research_state then
-    local properties = get_technology_slot_properties(force_table, technology, selected_tech)
     button.style = properties.style
     if research_state == constants.research_state.researched then
       button.progressbar.visible = false
@@ -103,6 +105,15 @@ local function update_tech_slot_style(button, force_table, technology, selected_
     end
     tags.research_state = research_state
     button.tags = tags
+  end
+  if properties.ranged then
+    local level_label = button.level_label
+    if level_label then
+      -- FIXME:
+      level_label.caption = tostring(
+        math.max(technology.level, (force_table.upgrade_states[string.match(technology.name, "^(.*)%-%d*$")] or 0) + 1)
+      )
+    end
   end
   local duration_label = button.duration_label --[[@as LuaGuiElement]]
   local in_queue = queue.contains(force_table.queue, technology.name)
@@ -144,6 +155,8 @@ end
 
 --- @class GuiMod
 local gui = {}
+
+-- Templates
 
 --- @param effect TechnologyModifier
 local function effect_button(effect)
@@ -322,7 +335,7 @@ local function technology_slot(force_table, technology, selected_name, is_tech_i
   }
 end
 
--- METHODS
+-- Methods
 
 --- @param self Gui
 function gui.cancel_research(self, e)
@@ -364,7 +377,15 @@ function gui.filter_tech_list(self)
     local upgrade_matched = true
     if technology.upgrade then
       local base_name = string.gsub(technology.name, "%-%d*$", "")
-      upgrade_matched = (upgrade_states[base_name] or 0) + 1 >= technology.level
+      local max_level = (upgrade_states[base_name] or 0) + 1
+      upgrade_matched = max_level >= technology.level
+      if
+        upgrade_matched
+        and (technology.level == technology.max_level or research_state == constants.research_state.researched)
+      then
+        -- FIXME: Need to keep track of upgrade paths, this doesn't work consistently
+        upgrade_matched = max_level - technology.level < 2
+      end
     end
     -- Search query
     local search_matched = #query == 0 -- Automatically pass search on empty query
@@ -693,7 +714,7 @@ function gui.update_queue(self)
     local button = queue_table[tech_name]
     if button then
       move_to(button, queue_table, i)
-      update_tech_slot_style(button, self.force_table, technologies[tech_name], self.state.selected)
+      update_tech_slot(button, self.force_table, technologies[tech_name], self.state.selected)
     else
       local button_template = technology_slot(self.force_table, technologies[tech_name], self.state.selected)
       button_template.index = i
@@ -769,7 +790,7 @@ function gui.update_tech_list(self)
         local button = techs_table[technology.name]
         if button then
           move_to(button, techs_table, i)
-          update_tech_slot_style(button, self.force_table, technology, self.state.selected)
+          update_tech_slot(button, self.force_table, technology, self.state.selected)
         else
           local button_template = technology_slot(self.force_table, technology, self.state.selected)
           button_template.index = i
@@ -795,7 +816,7 @@ flib_gui.add_handlers(gui, function(e, handler)
   end
 end)
 
---- BOOTSTRAP
+--- Bootstrap
 
 --- @param player LuaPlayer
 --- @return Gui
