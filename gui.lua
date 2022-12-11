@@ -20,6 +20,94 @@ local function toggle_frame_action_button(elem, sprite_base, value)
   end
 end
 
+--- @param elem LuaGuiElement
+local function is_double_click(elem)
+  local tags = elem.tags
+  local last_click_tick = tags.last_click_tick or 0
+  local is_double_click = game.ticks_played - last_click_tick < 12
+  if is_double_click then
+    tags.last_click_tick = nil
+  else
+    tags.last_click_tick = game.ticks_played
+  end
+  elem.tags = tags
+  return is_double_click
+end
+
+--- @param element LuaGuiElement
+--- @param parent LuaGuiElement
+--- @param index number
+local function move_to(element, parent, index)
+  --- @cast index uint
+  local dummy = parent.add({ type = "empty-widget", index = index })
+  parent.swap_children(element.get_index_in_parent(), index)
+  dummy.destroy()
+end
+
+--- @param technology LuaTechnology
+--- @param research_state ResearchState
+--- @param selected_name string?
+--- @return TechnologySlotProperties
+local function get_technology_slot_properties(technology, research_state, selected_name)
+  local selected = selected_name == technology.name
+  local max_level = technology.prototype.max_level
+  local ranged = technology.prototype.level ~= max_level
+  local leveled = technology.upgrade or technology.level > 1 or ranged
+
+  local research_state_str = table.find(constants.research_state, research_state)
+  local max_level_str = max_level == math.max_uint and "[img=infinity]" or tostring(max_level)
+  local style = "urq_technology_slot_"
+    .. (selected and "selected_" or "")
+    .. (leveled and "leveled_" or "")
+    .. research_state_str
+  local unselected_style = "urq_technology_slot_" .. (leveled and "leveled_" or "") .. research_state_str
+
+  --- @class TechnologySlotProperties
+  local res = {
+    leveled = leveled,
+    max_level = max_level,
+    max_level_str = max_level_str,
+    ranged = ranged,
+    research_state_str = research_state_str,
+    selected = selected,
+    style = style,
+    unselected_style = unselected_style,
+  }
+
+  return res
+end
+
+--- @param button LuaGuiElement
+--- @param technology LuaTechnology
+--- @param research_state ResearchState
+--- @param selected_tech string?
+--- @param in_queue boolean
+local function update_tech_slot_style(button, technology, research_state, selected_tech, in_queue)
+  local tags = button.tags
+  if tags.research_state ~= research_state then
+    local properties = get_technology_slot_properties(technology, research_state, selected_tech)
+    button.style = properties.style
+    if research_state == constants.research_state.researched then
+      button.progressbar.visible = false
+      button.progressbar.value = 0
+    end
+    if properties.leveled then
+      button.level_label.style = "urq_technology_slot_level_label_" .. properties.research_state_str
+    end
+    if properties.ranged then
+      button.level_range_label.style = "urq_technology_slot_level_range_label_" .. properties.research_state_str
+    end
+    tags.research_state = research_state
+    button.tags = tags
+  end
+  local duration_label = button.duration_label --[[@as LuaGuiElement]]
+  if in_queue and not duration_label.visible then
+    duration_label.visible = true
+  elseif not in_queue and duration_label.visible then
+    duration_label.visible = false
+  end
+end
+
 --- @class GuiElems
 --- @field urq_window LuaGuiElement
 --- @field titlebar_flow LuaGuiElement
@@ -150,7 +238,7 @@ end
 --- @param is_tech_info boolean?
 --- @return GuiElemDef
 local function technology_slot(technology, research_state, selected_name, is_tech_info)
-  local properties = util.get_technology_slot_properties(technology, research_state, selected_name)
+  local properties = get_technology_slot_properties(technology, research_state, selected_name)
   local progress = util.get_research_progress(technology)
 
   local ingredients = {}
@@ -332,7 +420,7 @@ function gui.on_tech_slot_click(self, e)
     queue.remove(self.force_table.queue, tech_name)
     return
   end
-  if util.is_double_click(e.element) then
+  if is_double_click(e.element) then
     gui.start_research(self, tech_name)
     return
   end
@@ -603,14 +691,8 @@ function gui.update_queue(self)
     i = i + 1
     local button = queue_table[tech_name]
     if button then
-      util.move_to(button, queue_table, i)
-      util.update_tech_slot_style(
-        button,
-        technologies[tech_name],
-        research_states[tech_name],
-        self.state.selected,
-        true
-      )
+      move_to(button, queue_table, i)
+      update_tech_slot_style(button, technologies[tech_name], research_states[tech_name], self.state.selected, true)
     else
       local button_template = technology_slot(technologies[tech_name], research_states[tech_name], self.state.selected)
       button_template.index = i
@@ -687,8 +769,8 @@ function gui.update_tech_list(self)
         i = i + 1
         local button = techs_table[technology.name]
         if button then
-          util.move_to(button, techs_table, i)
-          util.update_tech_slot_style(
+          move_to(button, techs_table, i)
+          update_tech_slot_style(
             button,
             technology,
             group_state,
@@ -1009,9 +1091,11 @@ end
 function gui.get(player_index)
   local self = global.guis[player_index]
   if not self or not self.elems.urq_window.valid then
+    if self then
+      self.player.print({ "message.urq-recreated-gui" })
+    end
     gui.destroy(player_index)
     self = gui.new(game.get_player(player_index) --[[@as LuaPlayer]])
-    self.player.print({ "message.urq-recreated-gui" })
   end
   return self
 end
