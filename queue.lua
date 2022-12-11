@@ -15,54 +15,29 @@ end
 
 --- Add one or more technologies to the back of the queue
 --- @param self Queue
---- @param tech_names string[]
+--- @param tech_name string
 --- @return LocalisedString?
-function queue.push(self, tech_names)
+function queue.push(self, tech_name)
   local technologies = self.force.technologies
-  local first_added
-  local num_techs = #tech_names
-  if num_techs > constants.queue_limit then
-    return { "message.urq-too-many-unresearched-prerequisites" }
-  else
-    -- It shouldn't ever be greater... right?
-    if self.len >= constants.queue_limit then
-      return { "message.urq-queue-is-full" }
-    elseif self.len + num_techs > constants.queue_limit then
-      return { "message.urq-too-many-prerequisites-queue-full" }
-    end
-  end
-  local last = tech_names[#tech_names]
-  if queue.contains(self, last) then
+  if queue.contains(self, tech_name) then
     return { "message.urq-already-in-queue" }
   end
-  for _, tech_name in pairs(tech_names) do
-    if not self.queue[tech_name] then
-      if not first_added then
-        first_added = tech_name
-      end
-      self.queue[tech_name] = "[img=infinity]"
-      self.len = self.len + 1
-      -- FIXME:
-      queue.update_research_state_reqs(self.force_table, technologies[tech_name])
-    end
-  end
-  if next(self.queue) == first_added then
+  self.queue[tech_name] = "[img=infinity]"
+  self.len = self.len + 1
+  queue.update_research_state_reqs(self.force_table, technologies[tech_name])
+  if next(self.queue) == tech_name then
     queue.update_active_research(self)
   end
 end
 
 --- Add one or more technologies to the front of the queue
 --- @param self Queue
---- @param tech_names string[]
-function queue.push_front(self, tech_names)
+--- @param tech_name string
+function queue.push_front(self, tech_name)
   local technologies = self.force.technologies
   --- @type table<string, string>
-  local new = {}
-  for _, tech_name in pairs(tech_names) do
-    new[tech_name] = "[img=infinity]"
-    self.len = self.len + 1
-    queue.update_research_state_reqs(self.force_table, technologies[tech_name])
-  end
+  local new = { [tech_name] = "[img=infinity]" }
+  queue.update_research_state_reqs(self.force_table, technologies[tech_name])
   for name, duration in pairs(self.queue) do
     if not new[name] then
       new[name] = duration
@@ -144,7 +119,7 @@ function queue.verify_integrity(self)
   self.len = 0
   for tech_name in pairs(old_queue) do
     if self.force.technologies[tech_name] then
-      queue.push(self, { tech_name })
+      queue.push(self, tech_name)
       self.len = self.len + 1
     end
   end

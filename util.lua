@@ -104,8 +104,6 @@ function util.get_research_unit_count(tech)
   end
 end
 
---- Get all unreearched prerequisites. Note that the table is returned in reverse order and must be iterated in
---- reverse.
 --- @param force_table ForceTable
 --- @param tech LuaTechnology
 --- @return string[]
@@ -115,7 +113,7 @@ function util.get_unresearched_prerequisites(force_table, tech)
   for prerequisite_name, prerequisite in pairs(global.technology_prerequisites[tech.name]) do
     if
       research_states[prerequisite.name] ~= constants.research_state.researched
-      and not force_table.queue[prerequisite_name]
+      and not force_table.queue.queue[prerequisite_name]
     then
       table.insert(to_research, prerequisite_name)
     end

@@ -573,23 +573,41 @@ function gui.start_research(self, tech_name, instant_research)
   else
     to_research = { tech_name }
   end
-  if instant_research then
-    local technologies = self.force.technologies
-    for _, tech_name in pairs(to_research) do
+  local num_to_research = #to_research
+  if num_to_research > constants.queue_limit then
+    util.flying_text(self.player, { "message.urq-too-many-unresearched-prerequisites" })
+    return
+  else
+    local len = self.force_table.queue.len
+    -- It shouldn't ever be greater... right?
+    if len >= constants.queue_limit then
+      util.flying_text(self.player, { "message.urq-queue-is-full" })
+      return
+    elseif len + num_to_research > constants.queue_limit then
+      util.flying_text(self.player, { "message.urq-too-many-prerequisites-queue-full" })
+      return
+    end
+  end
+  local technologies = self.force.technologies
+  local added = false
+  for _, tech_name in pairs(to_research) do
+    if instant_research then
       local technology = technologies[tech_name]
       if not technology.researched then
         technology.researched = true
       end
-    end
-  else
-    local push_error = queue.push(self.force_table.queue, to_research)
-    if push_error then
-      util.flying_text(self.player, push_error)
     else
-      gui.schedule_update(self.force_table)
+      local push_error = queue.push(self.force_table.queue, tech_name)
+      if push_error then
+        util.flying_text(self.player, push_error)
+      else
+        added = true
+      end
     end
   end
-  gui.update_tech_info_footer(self)
+  if added then
+    gui.schedule_update(self.force_table)
+  end
 end
 
 --- @param self Gui
