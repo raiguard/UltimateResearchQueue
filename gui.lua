@@ -44,23 +44,27 @@ local function move_to(element, parent, index)
   dummy.destroy()
 end
 
+--- @param force_table ForceTable
 --- @param technology LuaTechnology
---- @param research_state ResearchState
 --- @param selected_name string?
+--- @param level uint?
 --- @return TechnologySlotProperties
-local function get_technology_slot_properties(technology, research_state, selected_name)
+local function get_technology_slot_properties(force_table, technology, selected_name, level)
+  -- TODO:
+  local research_state = force_table.research_states[technology.name]
   local selected = selected_name == technology.name
+
+  local level = level or technology.prototype.level
   local max_level = technology.prototype.max_level
-  local ranged = technology.prototype.level ~= max_level
+  local ranged = level ~= max_level
   local leveled = technology.upgrade or technology.level > 1 or ranged
 
   local research_state_str = table.find(constants.research_state, research_state)
   local max_level_str = max_level == math.max_uint and "[img=infinity]" or tostring(max_level)
   local style = "urq_technology_slot_"
-    .. (selected and "selected_" or "")
-    .. (leveled and "leveled_" or "")
     .. research_state_str
-  local unselected_style = "urq_technology_slot_" .. (leveled and "leveled_" or "") .. research_state_str
+    .. (leveled and "_leveled" or "")
+    .. (selected and "_selected" or "")
 
   --- @class TechnologySlotProperties
   local res = {
@@ -68,24 +72,24 @@ local function get_technology_slot_properties(technology, research_state, select
     max_level = max_level,
     max_level_str = max_level_str,
     ranged = ranged,
+    research_state = research_state,
     research_state_str = research_state_str,
-    selected = selected,
     style = style,
-    unselected_style = unselected_style,
   }
 
   return res
 end
 
 --- @param button LuaGuiElement
+--- @param force_table ForceTable
 --- @param technology LuaTechnology
---- @param research_state ResearchState
 --- @param selected_tech string?
---- @param in_queue boolean
-local function update_tech_slot_style(button, technology, research_state, selected_tech, in_queue)
+local function update_tech_slot_style(button, force_table, technology, selected_tech)
+  -- TODO:
+  local research_state = force_table.research_states[technology.name]
   local tags = button.tags
   if tags.research_state ~= research_state then
-    local properties = get_technology_slot_properties(technology, research_state, selected_tech)
+    local properties = get_technology_slot_properties(force_table, technology, selected_tech)
     button.style = properties.style
     if research_state == constants.research_state.researched then
       button.progressbar.visible = false
@@ -101,6 +105,7 @@ local function update_tech_slot_style(button, technology, research_state, select
     button.tags = tags
   end
   local duration_label = button.duration_label --[[@as LuaGuiElement]]
+  local in_queue = queue.contains(force_table.queue, technology.name)
   if in_queue and not duration_label.visible then
     duration_label.visible = true
   elseif not in_queue and duration_label.visible then
@@ -232,13 +237,13 @@ local function frame_action_button(name, sprite, tooltip, action)
   }
 end
 
+--- @param force_table ForceTable
 --- @param technology LuaTechnology
---- @param research_state ResearchState
 --- @param selected_name string?
 --- @param is_tech_info boolean?
 --- @return GuiElemDef
-local function technology_slot(technology, research_state, selected_name, is_tech_info)
-  local properties = get_technology_slot_properties(technology, research_state, selected_name)
+local function technology_slot(force_table, technology, selected_name, is_tech_info)
+  local properties = get_technology_slot_properties(force_table, technology, selected_name)
   local progress = util.get_research_progress(technology)
 
   local ingredients = {}
@@ -267,9 +272,7 @@ local function technology_slot(technology, research_state, selected_name, is_tec
     style = properties.style,
     tooltip = tooltip,
     ignored_by_interaction = is_tech_info,
-    tags = {
-      research_state = research_state,
-    },
+    tags = { research_state = properties.research_state },
     handler = { [defines.events.on_gui_click] = gui.on_tech_slot_click },
     {
       type = "flow",
@@ -472,13 +475,13 @@ function gui.select_tech(self, tech_name)
     if former_selected then
       local former_slot = table[former_selected]
       if former_slot then
-        former_slot.style = string.gsub(former_slot.style.name, "selected_", "")
+        former_slot.style = string.gsub(former_slot.style.name, "_selected", "")
         table.parent.scroll_to_element(former_slot)
       end
     end
     local new_slot = table[tech_name]
     if new_slot then
-      new_slot.style = string.gsub(new_slot.style.name, "urq_technology_slot_", "urq_technology_slot_selected_")
+      new_slot.style = new_slot.style.name .. "_selected"
       table.parent.scroll_to_element(new_slot)
     end
   end
@@ -486,12 +489,11 @@ function gui.select_tech(self, tech_name)
   -- Tech information
 
   local technology = self.force.technologies[tech_name]
-  local research_state = self.force_table.research_states[tech_name]
   -- Slot
   local main_slot_frame = self.elems.tech_info_main_slot_frame
   main_slot_frame.clear() -- The best thing to do is clear it, otherwise we'd need to diff all the sub-elements
   if tech_name then
-    flib_gui.add(main_slot_frame, { technology_slot(technology, research_state, nil, true) })
+    flib_gui.add(main_slot_frame, technology_slot(self.force_table, technology, nil, true))
   end
   -- Name and description
   self.elems.tech_info_name_label.caption = technology.localised_name
@@ -684,7 +686,6 @@ function gui.update_queue(self)
 
   local queue = self.force_table.queue.queue
   local queue_table = self.elems.queue_table
-  local research_states = self.force_table.research_states
   local technologies = self.force.technologies
   local i = 0
   for tech_name in pairs(queue) do
@@ -692,11 +693,11 @@ function gui.update_queue(self)
     local button = queue_table[tech_name]
     if button then
       move_to(button, queue_table, i)
-      update_tech_slot_style(button, technologies[tech_name], research_states[tech_name], self.state.selected, true)
+      update_tech_slot_style(button, self.force_table, technologies[tech_name], self.state.selected)
     else
-      local button_template = technology_slot(technologies[tech_name], research_states[tech_name], self.state.selected)
+      local button_template = technology_slot(self.force_table, technologies[tech_name], self.state.selected)
       button_template.index = i
-      flib_gui.add(queue_table, { button_template })
+      flib_gui.add(queue_table, button_template)
     end
   end
   local children = queue_table.children
@@ -759,10 +760,8 @@ end
 function gui.update_tech_list(self)
   local profiler = game.create_profiler()
   local techs_table = self.elems.techs_table
-  local research_states = self.force_table.research_states
-  local force_queue = self.force_table.queue
   local i = 0
-  for group_state, group in pairs(self.force_table.grouped_technologies) do
+  for _, group in pairs(self.force_table.grouped_technologies) do
     for j = 1, global.num_technologies do
       local technology = group[j]
       if technology then
@@ -770,15 +769,9 @@ function gui.update_tech_list(self)
         local button = techs_table[technology.name]
         if button then
           move_to(button, techs_table, i)
-          update_tech_slot_style(
-            button,
-            technology,
-            group_state,
-            self.state.selected,
-            queue.contains(force_queue, technology.name)
-          )
+          update_tech_slot_style(button, self.force_table, technology, self.state.selected)
         else
-          local button_template = technology_slot(technology, research_states[technology.name], self.state.selected)
+          local button_template = technology_slot(self.force_table, technology, self.state.selected)
           button_template.index = i
           flib_gui.add(techs_table, { button_template })
         end

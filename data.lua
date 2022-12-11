@@ -38,7 +38,7 @@ local styles = data.raw["gui-style"].default
 --- @param y number
 --- @param level_color Color
 --- @param level_range_color Color
-local function technology_slot(name, y, level_color, level_range_color)
+local function build_technology_slot(name, y, level_color, level_range_color)
   styles["urq_technology_slot_" .. name] = {
     type = "button_style",
     default_graphical_set = {
@@ -70,7 +70,7 @@ local function technology_slot(name, y, level_color, level_range_color)
     left_click_sound = { filename = "__core__/sound/gui-square-button-large.ogg", volume = 1 },
   }
 
-  styles["urq_technology_slot_selected_" .. name] = {
+  styles["urq_technology_slot_" .. name .. "_selected"] = {
     type = "button_style",
     default_graphical_set = {
       base = {
@@ -101,7 +101,7 @@ local function technology_slot(name, y, level_color, level_range_color)
     left_click_sound = { filename = "__core__/sound/gui-square-button-large.ogg", volume = 1 },
   }
 
-  styles["urq_technology_slot_leveled_" .. name] = {
+  styles["urq_technology_slot_" .. name .. "_leveled"] = {
     type = "button_style",
     default_graphical_set = {
       base = {
@@ -132,7 +132,7 @@ local function technology_slot(name, y, level_color, level_range_color)
     left_click_sound = { filename = "__core__/sound/gui-square-button-large.ogg", volume = 1 },
   }
 
-  styles["urq_technology_slot_selected_leveled_" .. name] = {
+  styles["urq_technology_slot_" .. name .. "_leveled_selected"] = {
     type = "button_style",
     default_graphical_set = {
       base = {
@@ -183,11 +183,11 @@ local function technology_slot(name, y, level_color, level_range_color)
   }
 end
 
-technology_slot("available", 0, { 77, 71, 48 }, { 255, 241, 183 })
-technology_slot("conditionally_available", 200, { 95, 68, 32 }, { 255, 234, 206 })
-technology_slot("not_available", 400, { 116, 34, 32 }, { 255, 214, 213 })
-technology_slot("researched", 600, { 0, 84, 5 }, { 165, 255, 171 })
-technology_slot("disabled", 800, { 132, 132, 132 }, { 132, 132, 132 })
+build_technology_slot("available", 0, { 77, 71, 48 }, { 255, 241, 183 })
+build_technology_slot("conditionally_available", 200, { 95, 68, 32 }, { 255, 234, 206 })
+build_technology_slot("not_available", 400, { 116, 34, 32 }, { 255, 214, 213 })
+build_technology_slot("researched", 600, { 0, 84, 5 }, { 165, 255, 171 })
+build_technology_slot("disabled", 800, { 132, 132, 132 }, { 132, 132, 132 })
 
 styles.urq_technology_slot_sprite_flow = {
   type = "horizontal_flow_style",
