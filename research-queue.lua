@@ -148,22 +148,6 @@ function research_queue.update_research_state(force_table, technology)
   local grouped_techs = force_table.grouped_technologies
   local previous_state = force_table.research_states[technology.name]
   local new_state = util.get_research_state(force_table, technology)
-  -- Keep track of the highest-researched upgrade tech
-  if technology.upgrade then
-    local base_name = string.gsub(technology.name, "%-%d*$", "")
-    local upgrade_level = technology.level
-    local current_level = force_table.upgrade_states[base_name] or 0
-    if
-      upgrade_level > current_level
-      and (
-        new_state == constants.research_state.researched or research_queue.contains(force_table.queue, technology.name)
-      )
-    then
-      force_table.upgrade_states[base_name] = upgrade_level
-    elseif upgrade_level <= current_level then
-      force_table.upgrade_states[base_name] = upgrade_level - 1
-    end
-  end
   -- Change research state
   if new_state ~= previous_state then
     grouped_techs[previous_state][order] = nil

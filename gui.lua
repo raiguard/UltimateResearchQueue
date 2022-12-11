@@ -110,9 +110,7 @@ local function update_tech_slot(button, force_table, technology, selected_tech)
     local level_label = button.level_label
     if level_label then
       -- FIXME:
-      level_label.caption = tostring(
-        math.max(technology.level, (force_table.upgrade_states[string.match(technology.name, "^(.*)%-%d*$")] or 0) + 1)
-      )
+      level_label.caption = tostring(technology.level)
     end
   end
   local duration_label = button.duration_label --[[@as LuaGuiElement]]
@@ -362,7 +360,6 @@ function gui.filter_tech_list(self)
   local dictionaries = dictionary.get_all(self.player.index)
   local technologies = game.technology_prototypes
   local research_states = self.force_table.research_states
-  local upgrade_states = self.force_table.upgrade_states
   local show_disabled = self.player.mod_settings["urq-show-disabled-techs"].value
   for _, button in pairs(self.elems.techs_table.children) do
     local tech_name = button.name
@@ -374,19 +371,8 @@ function gui.filter_tech_list(self)
       research_state_matched = false
     end
     -- Show/hide upgrade techs
+    -- FIXME:
     local upgrade_matched = true
-    if technology.upgrade then
-      local base_name = string.gsub(technology.name, "%-%d*$", "")
-      local max_level = (upgrade_states[base_name] or 0) + 1
-      upgrade_matched = max_level >= technology.level
-      if
-        upgrade_matched
-        and (technology.level == technology.max_level or research_state == constants.research_state.researched)
-      then
-        -- FIXME: Need to keep track of upgrade paths, this doesn't work consistently
-        upgrade_matched = max_level - technology.level < 2
-      end
-    end
     -- Search query
     local search_matched = #query == 0 -- Automatically pass search on empty query
     if research_state_matched and not search_matched then

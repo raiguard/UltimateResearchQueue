@@ -118,7 +118,6 @@ function cache.build_research_states(force)
   local force_table = global.forces[force.index]
   local groups = {}
   local research_states = {}
-  local upgrade_states = {}
   for _, research_state in pairs(constants.research_state) do
     groups[research_state] = {}
   end
@@ -127,25 +126,9 @@ function cache.build_research_states(force)
     local state = util.get_research_state(force_table, technology)
     research_states[name] = state
     groups[state][order[name]] = technology
-    if technology.upgrade then
-      local base_name = string.gsub(technology.name, "%-%d*$", "")
-      local upgrade_level = technology.level
-      local current_level = upgrade_states[base_name] or 0
-      if
-        upgrade_level > current_level
-        and (
-          state == constants.research_state.researched or research_queue.contains(force_table.queue, technology.name)
-        )
-      then
-        upgrade_states[base_name] = upgrade_level
-      elseif upgrade_level <= current_level then
-        upgrade_states[base_name] = upgrade_level - 1
-      end
-    end
   end
   force_table.grouped_technologies = groups
   force_table.research_states = research_states
-  force_table.upgrade_states = upgrade_states
 end
 
 function cache.build_technology_list()

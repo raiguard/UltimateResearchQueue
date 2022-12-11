@@ -29,8 +29,6 @@ function migrations.init_force(force)
     research_progress_samples = {},
     --- @type table<string, ResearchState>
     research_states = {},
-    --- @type table<string, number>
-    upgrade_states = {},
   }
   force_table.queue = research_queue.new(force, force_table)
   global.forces[force.index] = force_table
