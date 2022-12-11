@@ -6,7 +6,7 @@ local constants = require("__UltimateResearchQueue__/constants")
 local util = {}
 
 --- @param tech LuaTechnology
---- @param queue Queue?
+--- @param queue ResearchQueue?
 function util.are_prereqs_satisfied(tech, queue)
   for name, prereq in pairs(tech.prerequisites) do
     if not prereq.researched then

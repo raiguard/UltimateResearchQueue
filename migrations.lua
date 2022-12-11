@@ -1,6 +1,6 @@
 local cache = require("__UltimateResearchQueue__/cache")
 local gui = require("__UltimateResearchQueue__/gui")
-local queue = require("__UltimateResearchQueue__/queue")
+local research_queue = require("__UltimateResearchQueue__/research-queue")
 local util = require("__UltimateResearchQueue__/util")
 
 local migrations = {}
@@ -20,7 +20,7 @@ end
 --- @param force LuaForce
 function migrations.init_force(force)
   --- @class ForceTable
-  --- @field queue Queue
+  --- @field queue ResearchQueue
   local force_table = {
     force = force,
     --- @type table<ResearchState, LuaTechnology[]>
@@ -32,7 +32,7 @@ function migrations.init_force(force)
     --- @type table<string, number>
     upgrade_states = {},
   }
-  force_table.queue = queue.new(force, force_table)
+  force_table.queue = research_queue.new(force, force_table)
   global.forces[force.index] = force_table
 end
 
@@ -44,7 +44,7 @@ function migrations.migrate_force(force)
   end
   cache.build_research_states(force)
   util.ensure_queue_disabled(force)
-  queue.verify_integrity(force_table.queue)
+  research_queue.verify_integrity(force_table.queue)
 end
 
 --- @param player LuaPlayer

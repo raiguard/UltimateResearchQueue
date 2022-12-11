@@ -6,7 +6,7 @@ local migration = require("__flib__/migration")
 local constants = require("__UltimateResearchQueue__/constants")
 local gui = require("__UltimateResearchQueue__/gui")
 local migrations = require("__UltimateResearchQueue__/migrations")
-local queue = require("__UltimateResearchQueue__/queue")
+local research_queue = require("__UltimateResearchQueue__/research-queue")
 local util = require("__UltimateResearchQueue__/util")
 
 -- Bootstrap
@@ -120,7 +120,7 @@ script.on_event(defines.events.on_research_started, function(e)
 
   local force_queue = force_table.queue
   if next(force_queue.queue) ~= technology.name then
-    queue.push_front(force_queue, { technology.name })
+    research_queue.push_front(force_queue, { technology.name })
     gui.schedule_update(force_table)
   end
 end)
@@ -138,7 +138,7 @@ script.on_event(defines.events.on_research_cancelled, function(e)
     return
   end
   for tech_name in pairs(e.research) do
-    queue.remove(force_queue, tech_name)
+    research_queue.remove(force_queue, tech_name)
   end
   gui.schedule_update(force_table)
 end)
@@ -151,11 +151,11 @@ script.on_event(defines.events.on_research_finished, function(e)
     return
   end
   util.ensure_queue_disabled(force)
-  if queue.contains(force_table.queue, technology.name) then
-    queue.remove(force_table.queue, technology.name)
+  if research_queue.contains(force_table.queue, technology.name) then
+    research_queue.remove(force_table.queue, technology.name)
   else
     -- This was insta-researched
-    queue.update_research_state_reqs(force_table, technology)
+    research_queue.update_research_state_reqs(force_table, technology)
   end
   gui.schedule_update(force_table)
   for _, player in pairs(force.players) do
@@ -173,7 +173,7 @@ script.on_event(defines.events.on_research_reversed, function(e)
     return
   end
   util.ensure_queue_disabled(force)
-  queue.update_research_state_reqs(force_table, e.research)
+  research_queue.update_research_state_reqs(force_table, e.research)
   gui.schedule_update(force_table)
 end)
 
@@ -248,7 +248,7 @@ script.on_nth_tick(60, function()
         end
       end
 
-      queue.update_durations(force_table.queue, speed)
+      research_queue.update_durations(force_table.queue, speed)
 
       for _, player in pairs(force.players) do
         local player_gui = gui.get(player.index)

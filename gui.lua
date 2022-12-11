@@ -4,7 +4,7 @@ local math = require("__flib__/math")
 local table = require("__flib__/table")
 
 local constants = require("__UltimateResearchQueue__/constants")
-local queue = require("__UltimateResearchQueue__/queue")
+local research_queue = require("__UltimateResearchQueue__/research-queue")
 local util = require("__UltimateResearchQueue__/util")
 
 -- Utilities
@@ -116,7 +116,7 @@ local function update_tech_slot(button, force_table, technology, selected_tech)
     end
   end
   local duration_label = button.duration_label --[[@as LuaGuiElement]]
-  local in_queue = queue.contains(force_table.queue, technology.name)
+  local in_queue = research_queue.contains(force_table.queue, technology.name)
   if in_queue and not duration_label.visible then
     duration_label.visible = true
   elseif not in_queue and duration_label.visible then
@@ -340,7 +340,7 @@ end
 --- @param self Gui
 function gui.cancel_research(self, e)
   local tech_name = e.element.name
-  queue.remove(self.force_table.queue, tech_name)
+  research_queue.remove(self.force_table.queue, tech_name)
   gui.schedule_update(self.force_table)
 end
 
@@ -349,7 +349,7 @@ function gui.clear_queue(self)
   local force_queue = self.force_table.queue
   local tech_name = next(force_queue.queue)
   while tech_name do
-    queue.remove(force_queue, tech_name)
+    research_queue.remove(force_queue, tech_name)
     tech_name = next(force_queue.queue)
   end
   gui.schedule_update(self.force_table)
@@ -441,7 +441,7 @@ function gui.on_tech_slot_click(self, e)
   end
   local tech_name = e.element.name
   if e.button == defines.mouse_button_type.right then
-    queue.remove(self.force_table.queue, tech_name)
+    research_queue.remove(self.force_table.queue, tech_name)
     gui.schedule_update(self.force_table)
     return
   end
@@ -574,7 +574,7 @@ function gui.start_research(self, tech_name, instant_research)
     for prerequisite_name, prerequisite in pairs(global.technology_prerequisites[tech.name]) do
       if
         research_states[prerequisite.name] ~= constants.research_state.researched
-        and not queue.contains(self.force_table.queue, prerequisite.name)
+        and not research_queue.contains(self.force_table.queue, prerequisite.name)
       then
         table.insert(to_research, prerequisite_name)
       end
@@ -607,7 +607,7 @@ function gui.start_research(self, tech_name, instant_research)
         technology.researched = true
       end
     else
-      local push_error = queue.push(self.force_table.queue, tech_name)
+      local push_error = research_queue.push(self.force_table.queue, tech_name)
       if push_error then
         util.flying_text(self.player, push_error)
       else
@@ -652,7 +652,7 @@ end
 
 --- @param self Gui
 function gui.toggle_queue_paused(self)
-  queue.toggle_paused(self.force_table.queue)
+  research_queue.toggle_paused(self.force_table.queue)
   gui.schedule_update(self.force_table)
 end
 
@@ -780,7 +780,7 @@ function gui.update_tech_info_footer(self, progress_only)
   local elems = self.elems
   local research_state = self.force_table.research_states[selected]
   local researched = research_state == constants.research_state.researched
-  local in_queue = queue.contains(self.force_table.queue, selected)
+  local in_queue = research_queue.contains(self.force_table.queue, selected)
   local progress = util.get_research_progress(self.force.technologies[selected])
   local is_cheating = util.is_cheating(self.player)
 

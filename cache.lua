@@ -1,7 +1,7 @@
 local dictionary = require("__flib__/dictionary-lite")
 
 local constants = require("__UltimateResearchQueue__/constants")
-local queue = require("__UltimateResearchQueue__/queue")
+local research_queue = require("__UltimateResearchQueue__/research-queue")
 local util = require("__UltimateResearchQueue__/util")
 
 local cache = {}
@@ -133,7 +133,9 @@ function cache.build_research_states(force)
       local current_level = upgrade_states[base_name] or 0
       if
         upgrade_level > current_level
-        and (state == constants.research_state.researched or queue.contains(force_table.queue, technology.name))
+        and (
+          state == constants.research_state.researched or research_queue.contains(force_table.queue, technology.name)
+        )
       then
         upgrade_states[base_name] = upgrade_level
       elseif upgrade_level <= current_level then

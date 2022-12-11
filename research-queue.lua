@@ -3,55 +3,55 @@ local format = require("__flib__/format")
 local constants = require("__UltimateResearchQueue__/constants")
 local util = require("__UltimateResearchQueue__/util")
 
---- @class Queue
-local queue = {}
+--- @class ResearchQueue
+local research_queue = {}
 
---- @param self Queue
+--- @param self ResearchQueue
 --- @param tech_name string
 --- @return boolean
-function queue.contains(self, tech_name)
+function research_queue.contains(self, tech_name)
   return self.queue[tech_name] and true or false
 end
 
 --- Add one or more technologies to the back of the queue
---- @param self Queue
+--- @param self ResearchQueue
 --- @param tech_name string
 --- @return LocalisedString?
-function queue.push(self, tech_name)
+function research_queue.push(self, tech_name)
   local technologies = self.force.technologies
-  if queue.contains(self, tech_name) then
+  if research_queue.contains(self, tech_name) then
     return { "message.urq-already-in-queue" }
   end
   self.queue[tech_name] = "[img=infinity]"
   self.len = self.len + 1
-  queue.update_research_state_reqs(self.force_table, technologies[tech_name])
+  research_queue.update_research_state_reqs(self.force_table, technologies[tech_name])
   if next(self.queue) == tech_name then
-    queue.update_active_research(self)
+    research_queue.update_active_research(self)
   end
 end
 
 --- Add one or more technologies to the front of the queue
---- @param self Queue
+--- @param self ResearchQueue
 --- @param tech_name string
-function queue.push_front(self, tech_name)
+function research_queue.push_front(self, tech_name)
   local technologies = self.force.technologies
   --- @type table<string, string>
   local new = { [tech_name] = "[img=infinity]" }
-  queue.update_research_state_reqs(self.force_table, technologies[tech_name])
+  research_queue.update_research_state_reqs(self.force_table, technologies[tech_name])
   for name, duration in pairs(self.queue) do
     if not new[name] then
       new[name] = duration
     end
   end
   self.queue = new
-  queue.update_active_research(self)
+  research_queue.update_active_research(self)
 end
 
---- @param self Queue
+--- @param self ResearchQueue
 --- @param tech_name string
 --- @param is_recursive boolean?
 --- @return boolean?
-function queue.remove(self, tech_name, is_recursive)
+function research_queue.remove(self, tech_name, is_recursive)
   if not self.queue[tech_name] then
     return
   end
@@ -60,30 +60,30 @@ function queue.remove(self, tech_name, is_recursive)
   local technologies = self.force.technologies
   local force_table = self.force_table
   local research_states = force_table.research_states
-  queue.update_research_state(self.force_table, technologies[tech_name])
+  research_queue.update_research_state(self.force_table, technologies[tech_name])
   -- Remove any now-invalid researches from the queue
   local requisites = global.technology_requisites[tech_name]
   if requisites then
     for requisite_name in pairs(requisites) do
-      queue.update_research_state(force_table, technologies[requisite_name])
+      research_queue.update_research_state(force_table, technologies[requisite_name])
       if self.queue[requisite_name] and research_states[requisite_name] == constants.research_state.not_available then
-        queue.remove(self, requisite_name, true)
+        research_queue.remove(self, requisite_name, true)
       end
     end
   end
   if not is_recursive then
-    queue.update_active_research(self)
+    research_queue.update_active_research(self)
   end
 end
 
---- @param self Queue
-function queue.toggle_paused(self)
+--- @param self ResearchQueue
+function research_queue.toggle_paused(self)
   self.paused = not self.paused
-  queue.update_active_research(self)
+  research_queue.update_active_research(self)
 end
 
---- @param self Queue
-function queue.update_active_research(self)
+--- @param self ResearchQueue
+function research_queue.update_active_research(self)
   local first = next(self.queue)
   if not self.paused and first then
     local current_research = self.force.current_research
@@ -95,9 +95,9 @@ function queue.update_active_research(self)
   end
 end
 
---- @param self Queue
+--- @param self ResearchQueue
 --- @param speed number
-function queue.update_durations(self, speed)
+function research_queue.update_durations(self, speed)
   local duration = 0
   for tech_name in pairs(self.queue) do
     if speed == 0 then
@@ -111,15 +111,15 @@ function queue.update_durations(self, speed)
   end
 end
 
---- @param self Queue
-function queue.verify_integrity(self)
+--- @param self ResearchQueue
+function research_queue.verify_integrity(self)
   -- TODO: highest_levels
   local old_queue = self.queue
   self.queue = {}
   self.len = 0
   for tech_name in pairs(old_queue) do
     if self.force.technologies[tech_name] then
-      queue.push(self, tech_name)
+      research_queue.push(self, tech_name)
       self.len = self.len + 1
     end
   end
@@ -127,9 +127,9 @@ end
 
 --- @param force LuaForce
 --- @param force_table ForceTable
---- @return Queue
-function queue.new(force, force_table)
-  --- @class Queue
+--- @return ResearchQueue
+function research_queue.new(force, force_table)
+  --- @class ResearchQueue
   local self = {
     force = force,
     force_table = force_table,
@@ -143,7 +143,7 @@ end
 
 --- @param force_table ForceTable
 --- @param technology LuaTechnology
-function queue.update_research_state(force_table, technology)
+function research_queue.update_research_state(force_table, technology)
   local order = global.technology_order[technology.name]
   local grouped_techs = force_table.grouped_technologies
   local previous_state = force_table.research_states[technology.name]
@@ -155,7 +155,9 @@ function queue.update_research_state(force_table, technology)
     local current_level = force_table.upgrade_states[base_name] or 0
     if
       upgrade_level > current_level
-      and (new_state == constants.research_state.researched or queue.contains(force_table.queue, technology.name))
+      and (
+        new_state == constants.research_state.researched or research_queue.contains(force_table.queue, technology.name)
+      )
     then
       force_table.upgrade_states[base_name] = upgrade_level
     elseif upgrade_level <= current_level then
@@ -172,15 +174,15 @@ end
 
 --- @param force_table ForceTable
 --- @param technology LuaTechnology
-function queue.update_research_state_reqs(force_table, technology)
-  queue.update_research_state(force_table, technology)
+function research_queue.update_research_state_reqs(force_table, technology)
+  research_queue.update_research_state(force_table, technology)
   local requisites = global.technology_requisites[technology.name]
   if requisites then
     local technologies = technology.force.technologies
     for requisite_name in pairs(requisites) do
-      queue.update_research_state(force_table, technologies[requisite_name])
+      research_queue.update_research_state(force_table, technologies[requisite_name])
     end
   end
 end
 
-return queue
+return research_queue
