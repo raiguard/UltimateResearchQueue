@@ -104,24 +104,6 @@ function util.get_research_unit_count(tech)
   end
 end
 
---- @param force_table ForceTable
---- @param tech LuaTechnology
---- @return string[]
-function util.get_unresearched_prerequisites(force_table, tech)
-  local research_states = force_table.research_states
-  local to_research = {}
-  for prerequisite_name, prerequisite in pairs(global.technology_prerequisites[tech.name]) do
-    if
-      research_states[prerequisite.name] ~= constants.research_state.researched
-      and not force_table.queue.queue[prerequisite_name]
-    then
-      table.insert(to_research, prerequisite_name)
-    end
-  end
-  table.insert(to_research, tech.name)
-  return to_research
-end
-
 --- @param player LuaPlayer
 function util.is_cheating(player)
   return player.cheat_mode or player.controller_type == defines.controllers.editor

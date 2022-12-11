@@ -82,14 +82,6 @@ constants.overlay_constant = {
 
 constants.queue_limit = 7 * 7
 
---- @enum QueuePushError
-constants.queue_push_error = {
-  already_in_queue = 1,
-  queue_full = 2,
-  too_many_prerequisites = 3,
-  too_many_prerequisites_queue_full = 4,
-}
-
 --- @enum ResearchState
 constants.research_state = {
   available = 1,

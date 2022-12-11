@@ -566,13 +566,22 @@ function gui.start_research(self, tech_name, instant_research)
     util.flying_text(self.player, { "message.urq-already-researched" })
     return
   end
-  local to_research
+  local to_research = {}
   if research_state == constants.research_state.not_available then
     -- Add all prerequisites to research this tech ASAP
-    to_research = util.get_unresearched_prerequisites(self.force_table, self.force.technologies[tech_name])
-  else
-    to_research = { tech_name }
+    local research_states = self.force_table.research_states
+    local tech = self.force.technologies[tech_name]
+    for prerequisite_name, prerequisite in pairs(global.technology_prerequisites[tech.name]) do
+      if
+        research_states[prerequisite.name] ~= constants.research_state.researched
+        and not queue.contains(self.force_table.queue, prerequisite.name)
+      then
+        table.insert(to_research, prerequisite_name)
+      end
+    end
   end
+  table.insert(to_research, tech_name)
+  -- Check for errors
   local num_to_research = #to_research
   if num_to_research > constants.queue_limit then
     util.flying_text(self.player, { "message.urq-too-many-unresearched-prerequisites" })
@@ -588,6 +597,7 @@ function gui.start_research(self, tech_name, instant_research)
       return
     end
   end
+  -- Add to queue
   local technologies = self.force.technologies
   local added = false
   for _, tech_name in pairs(to_research) do
