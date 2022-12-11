@@ -80,10 +80,6 @@ constants.overlay_constant = {
   ["zoom-to-world-upgrade-planner-enabled"] = "utility/zoom_to_world_upgrade_planner_enabled_modifier_constant",
 }
 
-constants.on_research_queue_updated = script.generate_event_name()
---- @class EventData.on_research_queue_updated: EventData
---- @field force LuaForce
-
 constants.queue_limit = 7 * 7
 
 --- @enum QueuePushError

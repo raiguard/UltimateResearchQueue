@@ -341,7 +341,7 @@ end
 function gui.cancel_research(self, e)
   local tech_name = e.element.name
   queue.remove(self.force_table.queue, tech_name)
-  gui.update_tech_info_footer(self)
+  gui.schedule_update(self.force_table)
 end
 
 --- @param self Gui
@@ -352,7 +352,7 @@ function gui.clear_queue(self)
     queue.remove(force_queue, tech_name)
     tech_name = next(force_queue.queue)
   end
-  gui.update_tech_info_footer(self)
+  gui.schedule_update(self.force_table)
 end
 
 --- @param self Gui
@@ -442,6 +442,7 @@ function gui.on_tech_slot_click(self, e)
   local tech_name = e.element.name
   if e.button == defines.mouse_button_type.right then
     queue.remove(self.force_table.queue, tech_name)
+    gui.schedule_update(self.force_table)
     return
   end
   if is_double_click(e.element) then
@@ -582,14 +583,10 @@ function gui.start_research(self, tech_name, instant_research)
     end
   else
     local push_error = queue.push(self.force_table.queue, to_research)
-    if push_error == constants.queue_push_error.already_in_queue then
-      util.flying_text(self.player, { "message.urq-already-in-queue" })
-    elseif push_error == constants.queue_push_error.queue_full then
-      util.flying_text(self.player, { "message.urq-queue-is-full" })
-    elseif push_error == constants.queue_push_error.too_many_prerequisites then
-      util.flying_text(self.player, { "message.urq-too-many-unresearched-prerequisites" })
-    elseif push_error == constants.queue_push_error.too_many_prerequisites_queue_full then
-      util.flying_text(self.player, { "message.urq-too-many-prerequisites-queue-full" })
+    if push_error then
+      util.flying_text(self.player, push_error)
+    else
+      gui.schedule_update(self.force_table)
     end
   end
   gui.update_tech_info_footer(self)
@@ -628,6 +625,7 @@ end
 --- @param self Gui
 function gui.toggle_queue_paused(self)
   queue.toggle_paused(self.force_table.queue)
+  gui.schedule_update(self.force_table)
 end
 
 --- @param self Gui

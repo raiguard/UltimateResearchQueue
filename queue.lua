@@ -16,24 +16,24 @@ end
 --- Add one or more technologies to the back of the queue
 --- @param self Queue
 --- @param tech_names string[]
---- @return QueuePushError?
+--- @return LocalisedString?
 function queue.push(self, tech_names)
   local technologies = self.force.technologies
   local first_added
   local num_techs = #tech_names
   if num_techs > constants.queue_limit then
-    return constants.queue_push_error.too_many_prerequisites
+    return { "message.urq-too-many-unresearched-prerequisites" }
   else
     -- It shouldn't ever be greater... right?
     if self.len >= constants.queue_limit then
-      return constants.queue_push_error.queue_full
+      return { "message.urq-queue-is-full" }
     elseif self.len + num_techs > constants.queue_limit then
-      return constants.queue_push_error.too_many_prerequisites_queue_full
+      return { "message.urq-too-many-prerequisites-queue-full" }
     end
   end
   local last = tech_names[#tech_names]
   if queue.contains(self, last) then
-    return constants.queue_push_error.already_in_queue
+    return { "message.urq-already-in-queue" }
   end
   for _, tech_name in pairs(tech_names) do
     if not self.queue[tech_name] then
@@ -49,7 +49,6 @@ function queue.push(self, tech_names)
   if next(self.queue) == first_added then
     queue.update_active_research(self)
   end
-  script.raise_event(constants.on_research_queue_updated, { force = self.force })
 end
 
 --- Add one or more technologies to the front of the queue
@@ -71,12 +70,12 @@ function queue.push_front(self, tech_names)
   end
   self.queue = new
   queue.update_active_research(self)
-  script.raise_event(constants.on_research_queue_updated, { force = self.force })
 end
 
 --- @param self Queue
 --- @param tech_name string
 --- @param is_recursive boolean?
+--- @return boolean?
 function queue.remove(self, tech_name, is_recursive)
   if not self.queue[tech_name] then
     return
@@ -99,7 +98,6 @@ function queue.remove(self, tech_name, is_recursive)
   end
   if not is_recursive then
     queue.update_active_research(self)
-    script.raise_event(constants.on_research_queue_updated, { force = self.force })
   end
 end
 
@@ -107,7 +105,6 @@ end
 function queue.toggle_paused(self)
   self.paused = not self.paused
   queue.update_active_research(self)
-  script.raise_event(constants.on_research_queue_updated, { force = self.force })
 end
 
 --- @param self Queue

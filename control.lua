@@ -121,6 +121,7 @@ script.on_event(defines.events.on_research_started, function(e)
   local force_queue = force_table.queue
   if next(force_queue.queue) ~= technology.name then
     queue.push_front(force_queue, { technology.name })
+    gui.schedule_update(force_table)
   end
 end)
 
@@ -139,6 +140,7 @@ script.on_event(defines.events.on_research_cancelled, function(e)
   for tech_name in pairs(e.research) do
     queue.remove(force_queue, tech_name)
   end
+  gui.schedule_update(force_table)
 end)
 
 script.on_event(defines.events.on_research_finished, function(e)
@@ -154,8 +156,8 @@ script.on_event(defines.events.on_research_finished, function(e)
   else
     -- This was insta-researched
     queue.update_research_state_reqs(force_table, technology)
-    gui.schedule_update(force_table)
   end
+  gui.schedule_update(force_table)
   for _, player in pairs(force.players) do
     if player.mod_settings["urq-print-completed-message"].value then
       player.print({ "message.urq-research-completed", technology.name })
@@ -173,10 +175,6 @@ script.on_event(defines.events.on_research_reversed, function(e)
   util.ensure_queue_disabled(force)
   queue.update_research_state_reqs(force_table, e.research)
   gui.schedule_update(force_table)
-end)
-
-script.on_event(constants.on_research_queue_updated, function(e)
-  gui.schedule_update(global.forces[e.force.index])
 end)
 
 -- Settings
