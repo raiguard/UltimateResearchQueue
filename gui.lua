@@ -7,6 +7,10 @@ local constants = require("__UltimateResearchQueue__/constants")
 local research_queue = require("__UltimateResearchQueue__/research-queue")
 local util = require("__UltimateResearchQueue__/util")
 
+--- @class TechnologyDataWithLevel
+--- @field data TechnologyData
+--- @field level uint
+
 -- Utilities
 
 --- @param elem LuaGuiElement
@@ -46,80 +50,51 @@ local function move_to(element, parent, index)
   dummy.destroy()
 end
 
---- @param force_table ForceTable
---- @param technology LuaTechnology
---- @param selected_name string?
---- @param level uint?
+--- @param tech_data TechnologyData
+--- @param is_selected boolean?
 --- @return TechnologySlotProperties
-local function get_technology_slot_properties(force_table, technology, selected_name, level)
-  -- TODO:
-  local research_state = force_table.research_states[technology.name]
-  local selected = selected_name == technology.name
-
-  local level = level or technology.prototype.level
-  local max_level = technology.prototype.max_level
-  local ranged = level ~= max_level
-  local leveled = technology.upgrade or technology.level > 1 or ranged
-
-  local research_state_str = table.find(constants.research_state, research_state)
-  local max_level_str = max_level == math.max_uint and "[img=infinity]" or tostring(max_level)
+local function get_technology_slot_properties(tech_data, is_selected)
+  local research_state_str = table.find(constants.research_state, tech_data.research_state)
+  local max_level_str = tech_data.max_level == math.max_uint and "[img=infinity]" or tostring(tech_data.max_level)
   local style = "urq_technology_slot_"
     .. research_state_str
-    .. (leveled and "_leveled" or "")
-    .. (selected and "_selected" or "")
+    .. ((tech_data.is_multilevel or tech_data.base_level > 1) and "_leveled" or "")
+    .. (is_selected and "_selected" or "")
 
   --- @class TechnologySlotProperties
-  local res = {
-    leveled = leveled,
-    max_level = max_level,
-    max_level_str = max_level_str,
-    ranged = ranged,
-    research_state = research_state,
-    research_state_str = research_state_str,
-    style = style,
-  }
-
-  return res
+  return { max_level_str = max_level_str, research_state_str = research_state_str, style = style }
 end
 
 --- @param button LuaGuiElement
---- @param force_table ForceTable
---- @param technology LuaTechnology
---- @param selected_tech string?
-local function update_tech_slot(button, force_table, technology, selected_tech)
-  -- TODO:
-  local properties = get_technology_slot_properties(force_table, technology, selected_tech)
-  local research_state = properties.research_state
+--- @param tech_data TechnologyDataWithLevel
+--- @param is_selected boolean?
+local function update_tech_slot(button, tech_data, is_selected)
+  local tech_data, level = tech_data.data, tech_data.level
+  local properties = get_technology_slot_properties(tech_data, is_selected)
   local tags = button.tags
+  local research_state = tech_data.research_state
   if tags.research_state ~= research_state then
     button.style = properties.style
     if research_state == constants.research_state.researched then
       button.progressbar.visible = false
       button.progressbar.value = 0
     end
-    if properties.leveled then
+    if tech_data.is_multilevel or tech_data.base_level > 1 then
       button.level_label.style = "urq_technology_slot_level_label_" .. properties.research_state_str
     end
-    if properties.ranged then
+    if tech_data.is_multilevel then
       button.level_range_label.style = "urq_technology_slot_level_range_label_" .. properties.research_state_str
     end
-    tags.research_state = research_state
+    tags.research_state = research_state --[[@as AnyBasic]]
     button.tags = tags
   end
-  if properties.ranged then
+  if tech_data.is_multilevel then
     local level_label = button.level_label
     if level_label then
-      -- FIXME:
-      level_label.caption = tostring(technology.level)
+      level_label.caption = tostring(level or tech_data.technology.level)
     end
   end
-  local duration_label = button.duration_label --[[@as LuaGuiElement]]
-  local in_queue = research_queue.contains(force_table.queue, technology.name)
-  if in_queue and not duration_label.visible then
-    duration_label.visible = true
-  elseif not in_queue and duration_label.visible then
-    duration_label.visible = false
-  end
+  button.duration_label.visible = tech_data.in_queue
 end
 
 --- @class GuiElems
@@ -248,18 +223,18 @@ local function frame_action_button(name, sprite, tooltip, action)
   }
 end
 
---- @param force_table ForceTable
---- @param technology LuaTechnology
---- @param selected_name string?
+--- @param tech_data TechnologyDataWithLevel
+--- @param is_selected boolean?
 --- @param is_tech_info boolean?
 --- @return GuiElemDef
-local function technology_slot(force_table, technology, selected_name, is_tech_info)
-  local properties = get_technology_slot_properties(force_table, technology, selected_name)
-  local progress = util.get_research_progress(technology)
+local function technology_slot(tech_data, is_selected, is_tech_info)
+  local tech_data, level = tech_data.data, tech_data.level
+  local properties = get_technology_slot_properties(tech_data, is_selected)
+  local progress = util.get_research_progress(tech_data.technology)
 
   local ingredients = {}
   local ingredients_len = 0
-  for i, ingredient in pairs(technology.research_unit_ingredients) do
+  for i, ingredient in pairs(tech_data.technology.research_unit_ingredients) do
     ingredients_len = i
     table.insert(ingredients, {
       type = "sprite",
@@ -272,18 +247,18 @@ local function technology_slot(force_table, technology, selected_name, is_tech_i
   -- TODO: Add remainder to always fill available space
   local ingredients_spacing = math.clamp((68 - 16) / (ingredients_len - 1) - 16, -15, -5)
 
-  local tooltip = technology.localised_name
+  local tooltip = tech_data.technology.localised_name
   if DEBUG then
-    tooltip = { "", tooltip, "\norder=" .. global.technology_order[technology.name] }
+    tooltip = { "", tooltip, "\norder=" .. global.technology_order[tech_data.name] }
   end
 
   return {
     type = "sprite-button",
-    name = technology.name,
+    name = tech_data.name,
     style = properties.style,
     tooltip = tooltip,
     ignored_by_interaction = is_tech_info,
-    tags = { research_state = properties.research_state },
+    tags = { research_state = tech_data.research_state, tech_name = tech_data.name, level = level },
     handler = { [defines.events.on_gui_click] = gui.on_tech_slot_click },
     {
       type = "flow",
@@ -292,21 +267,21 @@ local function technology_slot(force_table, technology, selected_name, is_tech_i
       {
         type = "sprite",
         style = "urq_technology_slot_sprite",
-        sprite = "technology/" .. technology.name,
+        sprite = "technology/" .. tech_data.name,
       },
     },
-    properties.leveled and {
+    (tech_data.is_multilevel or tech_data.base_level > 1) and {
       type = "label",
       name = "level_label",
       style = "urq_technology_slot_level_label_" .. properties.research_state_str,
-      caption = technology.level,
+      caption = level or tech_data.technology.level,
       ignored_by_interaction = true,
     } or {},
-    properties.ranged and {
+    tech_data.is_multilevel and {
       type = "label",
       name = "level_range_label",
       style = "urq_technology_slot_level_range_label_" .. properties.research_state_str,
-      caption = technology.prototype.level .. " - " .. properties.max_level_str,
+      caption = tech_data.base_level .. " - " .. properties.max_level_str,
       ignored_by_interaction = true,
     } or {},
     {
@@ -336,19 +311,29 @@ end
 -- Methods
 
 --- @param self Gui
+--- @param e EventData.on_gui_click
 function gui.cancel_research(self, e)
-  local tech_name = e.element.name
-  research_queue.remove(self.force_table.queue, tech_name)
+  local tags = e.element.tags
+  local tech_name, level = tags.tech_name --[[@as string]], tags.level --[[@as uint]]
+  local tech_data = self.force_table.technologies_lookup[tech_name]
+  research_queue.remove(self.force_table.queue, { data = tech_data, level = level })
   gui.schedule_update(self.force_table)
 end
 
 --- @param self Gui
+function gui.cancel_selected_research(self)
+  local selected = self.state.selected
+  if selected then
+    research_queue.remove(self.force_table.queue, selected)
+    gui.schedule_update(self.force_table)
+  end
+end
+
+--- @param self Gui
 function gui.clear_queue(self)
-  local force_queue = self.force_table.queue
-  local tech_name = next(force_queue.queue)
-  while tech_name do
-    research_queue.remove(force_queue, tech_name)
-    tech_name = next(force_queue.queue)
+  local queue = self.force_table.queue
+  while queue.head do
+    research_queue.remove(queue, queue.head)
   end
   gui.schedule_update(self.force_table)
 end
@@ -358,16 +343,14 @@ end
 function gui.filter_tech_list(self)
   local query = self.state.search_query
   local dictionaries = dictionary.get_all(self.player.index)
-  local technologies = game.technology_prototypes
-  local research_states = self.force_table.research_states
+  local technologies_lookup = self.force_table.technologies_lookup
   local show_disabled = self.player.mod_settings["urq-show-disabled-techs"].value
   for _, button in pairs(self.elems.techs_table.children) do
     local tech_name = button.name
-    local technology = technologies[tech_name]
+    local tech_data = technologies_lookup[tech_name]
     -- Show/hide disabled
     local research_state_matched = true
-    local research_state = research_states[tech_name]
-    if research_state == constants.research_state.disabled and not show_disabled then
+    if tech_data.research_state == constants.research_state.disabled and not show_disabled then
       research_state_matched = false
     end
     -- Show/hide upgrade techs
@@ -379,7 +362,7 @@ function gui.filter_tech_list(self)
       local to_search = {}
       if dictionaries then
         table.insert(to_search, dictionaries.technology[tech_name])
-        for _, effect in pairs(technology.effects) do
+        for _, effect in pairs(tech_data.technology.effects) do
           if effect.type == "unlock-recipe" then
             table.insert(to_search, dictionaries.recipe[effect.recipe])
           end
@@ -425,17 +408,20 @@ function gui.on_tech_slot_click(self, e)
   if DEBUG then
     log("tech clicked: " .. e.element.name)
   end
-  local tech_name = e.element.name
+  local tags = e.element.tags
+  local tech_name, level = tags.tech_name, tags.level
+  local tech_data = self.force_table.technologies_lookup[tech_name]
+  local wrapped_data = { data = tech_data, level = level }
   if e.button == defines.mouse_button_type.right then
-    research_queue.remove(self.force_table.queue, tech_name)
+    research_queue.remove(self.force_table.queue, wrapped_data)
     gui.schedule_update(self.force_table)
     return
   end
   if is_double_click(e.element) then
-    gui.start_research(self, tech_name)
+    gui.start_research(self, wrapped_data)
     return
   end
-  gui.select_tech(self, tech_name)
+  gui.select_tech(self, wrapped_data)
 end
 
 --- @param self Gui
@@ -461,33 +447,33 @@ end
 
 --- @param self Gui
 function gui.open_in_graph(self)
-  local selected_technology = self.state.selected
-  if selected_technology then
+  local selected = self.state.selected
+  if selected then
     self.state.opening_graph = true
-    self.player.open_technology_gui(selected_technology)
+    self.player.open_technology_gui(selected.data.technology)
     self.state.opening_graph = false
   end
 end
 
 --- @param self Gui
---- @param tech_name string
-function gui.select_tech(self, tech_name)
+--- @param tech_data TechnologyDataWithLevel
+function gui.select_tech(self, tech_data)
   local former_selected = self.state.selected
-  if former_selected == tech_name then
+  if former_selected and former_selected.data == tech_data and former_selected.level == tech_data.level then
     return
   end
-  self.state.selected = tech_name
+  self.state.selected = tech_data
 
   -- Queue and techs list
   for _, table in pairs({ self.elems.queue_table, self.elems.techs_table }) do
     if former_selected then
-      local former_slot = table[former_selected]
+      local former_slot = table[former_selected.data.name] --[[@as LuaGuiElement?]]
       if former_slot then
         former_slot.style = string.gsub(former_slot.style.name, "_selected", "")
         table.parent.scroll_to_element(former_slot)
       end
     end
-    local new_slot = table[tech_name]
+    local new_slot = table[tech_data.data.name] --[[@as LuaGuiElement?]]
     if new_slot then
       new_slot.style = new_slot.style.name .. "_selected"
       table.parent.scroll_to_element(new_slot)
@@ -496,12 +482,12 @@ function gui.select_tech(self, tech_name)
 
   -- Tech information
 
-  local technology = self.force.technologies[tech_name]
+  local technology = tech_data.data.technology
   -- Slot
   local main_slot_frame = self.elems.tech_info_main_slot_frame
   main_slot_frame.clear() -- The best thing to do is clear it, otherwise we'd need to diff all the sub-elements
-  if tech_name then
-    flib_gui.add(main_slot_frame, technology_slot(self.force_table, technology, nil, true))
+  if tech_data then
+    flib_gui.add(main_slot_frame, technology_slot(tech_data, nil, true))
   end
   -- Name and description
   self.elems.tech_info_name_label.caption = technology.localised_name
@@ -534,7 +520,8 @@ end
 --- @param select_tech string?
 function gui.show(self, select_tech)
   if select_tech then
-    gui.select_tech(self, select_tech)
+    local select_data = self.force_table.technologies_lookup[select_tech]
+    gui.select_tech(self, { data = select_data })
   end
   self.elems.urq_window.visible = true
   self.elems.urq_window.bring_to_front()
@@ -544,29 +531,30 @@ function gui.show(self, select_tech)
 end
 
 --- @param self Gui
---- @param tech_name string
+--- @param wrapped_data TechnologyDataWithLevel
 --- @param instant_research boolean?
-function gui.start_research(self, tech_name, instant_research)
-  local research_state = self.force_table.research_states[tech_name]
+function gui.start_research(self, wrapped_data, instant_research)
+  local tech_data, level = wrapped_data.data, wrapped_data.level
+  local research_state = tech_data.research_state
   if research_state == constants.research_state.researched then
     util.flying_text(self.player, { "message.urq-already-researched" })
     return
   end
+  --- @type TechnologyDataWithLevel[]
   local to_research = {}
   if research_state == constants.research_state.not_available then
     -- Add all prerequisites to research this tech ASAP
-    local research_states = self.force_table.research_states
-    local tech = self.force.technologies[tech_name]
-    for prerequisite_name, prerequisite in pairs(global.technology_prerequisites[tech.name]) do
-      if
-        research_states[prerequisite.name] ~= constants.research_state.researched
-        and not research_queue.contains(self.force_table.queue, prerequisite.name)
-      then
-        table.insert(to_research, prerequisite_name)
+    local technology = tech_data.technology
+    local technologies_lookup = self.force_table.technologies_lookup
+    for _, prerequisite_name in pairs(global.technology_prerequisites[technology.name]) do
+      local prerequisite_data = technologies_lookup[prerequisite_name]
+      if prerequisite_data.research_state ~= constants.research_state.researched and not prerequisite_data.in_queue then
+        -- FIXME: Insert entries for every level
+        table.insert(to_research, { data = prerequisite_data })
       end
     end
   end
-  table.insert(to_research, tech_name)
+  table.insert(to_research, wrapped_data)
   -- Check for errors
   local num_to_research = #to_research
   if num_to_research > constants.queue_limit then
@@ -584,16 +572,14 @@ function gui.start_research(self, tech_name, instant_research)
     end
   end
   -- Add to queue
-  local technologies = self.force.technologies
   local added = false
-  for _, tech_name in pairs(to_research) do
+  for _, wrapped_data in pairs(to_research) do
     if instant_research then
-      local technology = technologies[tech_name]
-      if not technology.researched then
-        technology.researched = true
+      if not wrapped_data.data.research_state == constants.research_state.researched then
+        wrapped_data.data.technology.researched = true
       end
     else
-      local push_error = research_queue.push(self.force_table.queue, tech_name)
+      local push_error = research_queue.push(self.force_table.queue, wrapped_data)
       if push_error then
         util.flying_text(self.player, push_error)
       else
@@ -657,43 +643,46 @@ function gui.unresearch(self)
   if not selected then
     return
   end
+  local technologies_lookup = self.force_table.technologies_lookup
 
-  local function propagate(technologies, technology)
-    local requisites = global.technology_requisites[technology.name]
+  --- @param tech_data TechnologyData
+  local function propagate(tech_data)
+    local requisites = global.technology_requisites[tech_data.name]
     if requisites then
-      for requisite_name in pairs(requisites) do
-        local requisite = technologies[requisite_name]
-        if requisite.researched then
-          propagate(technologies, requisite)
+      for _, requisite_name in pairs(requisites) do
+        local requisite_data = technologies_lookup[requisite_name]
+        if requisite_data.research_state == constants.research_state.researched then
+          propagate(requisite_data)
         end
       end
     end
-    technology.researched = false
+    tech_data.technology.researched = false
   end
 
-  propagate(self.force.technologies, self.force.technologies[selected])
+  propagate(selected.data)
 end
 
 --- @param self Gui
 function gui.update_durations_and_progress(self)
   local queue_table = self.elems.queue_table
   local techs_table = self.elems.techs_table
-  for tech_name, duration in pairs(self.force_table.queue.queue) do
-    local queue_button = queue_table[tech_name]
-    local techs_button = techs_table[tech_name]
-    if not queue_button or not techs_button then
-      goto continue
+  local queue = self.force_table.queue
+  local node = queue.head
+  while node do
+    local name = util.get_technology_name(node)
+    local queue_button = queue_table[name]
+    local techs_button = techs_table[name]
+    if queue_button and techs_button then
+      queue_button.duration_label.caption = queue.durations[name]
+      techs_button.duration_label.caption = queue.durations[name]
+
+      local progress = util.get_research_progress(node.data.technology)
+      queue_button.progressbar.value = progress
+      queue_button.progressbar.visible = progress > 0
+      techs_button.progressbar.value = progress
+      techs_button.progressbar.visible = progress > 0
     end
-    queue_button.duration_label.caption = duration
-    techs_button.duration_label.caption = duration
-
-    local progress = util.get_research_progress(self.force.technologies[tech_name])
-    queue_button.progressbar.value = progress
-    queue_button.progressbar.visible = progress > 0
-    techs_button.progressbar.value = progress
-    techs_button.progressbar.visible = progress > 0
-
-    ::continue::
+    node = node.next
   end
   gui.update_tech_info_footer(self, true)
 end
@@ -712,26 +701,30 @@ function gui.update_queue(self)
     pause_button.tooltip = { "gui.urq-pause-queue" }
   end
 
-  self.elems.queue_trash_button.enabled = next(self.force_table.queue.queue) and true or false
+  local queue = self.force_table.queue
+  self.elems.queue_trash_button.enabled = queue.len > 0
 
   self.elems.queue_population_label.caption =
     { "gui.urq-queue-population", self.force_table.queue.len, constants.queue_limit }
 
-  local queue = self.force_table.queue.queue
   local queue_table = self.elems.queue_table
-  local technologies = self.force.technologies
   local i = 0
-  for tech_name in pairs(queue) do
+  local node = queue.head
+  while node do
     i = i + 1
-    local button = queue_table[tech_name]
+    local name = util.get_technology_name(node)
+    local button = queue_table[name]
+    local tech_data = node.data
+    -- FIXME: Selected styles
     if button then
       move_to(button, queue_table, i)
-      update_tech_slot(button, self.force_table, technologies[tech_name], self.state.selected)
+      update_tech_slot(button, { data = tech_data, level = node.level })
     else
-      local button_template = technology_slot(self.force_table, technologies[tech_name], self.state.selected)
+      local button_template = technology_slot({ data = tech_data, level = node.level })
       button_template.index = i
       flib_gui.add(queue_table, button_template)
     end
+    node = node.next
   end
   local children = queue_table.children
   for i = i + 1, #children do
@@ -762,15 +755,16 @@ function gui.update_tech_info_footer(self, progress_only)
   if not selected then
     return
   end
+  local tech_data = selected.data
+  local selected_name = util.get_technology_name(selected)
 
   local elems = self.elems
-  local research_state = self.force_table.research_states[selected]
-  local researched = research_state == constants.research_state.researched
-  local in_queue = research_queue.contains(self.force_table.queue, selected)
-  local progress = util.get_research_progress(self.force.technologies[selected])
+  local is_researched = tech_data.research_state == constants.research_state.researched
+  local in_queue = tech_data.in_queue
+  local progress = util.get_research_progress(tech_data.technology)
   local is_cheating = util.is_cheating(self.player)
 
-  elems.tech_info_footer_frame.visible = not (researched and not is_cheating)
+  elems.tech_info_footer_frame.visible = not (is_researched and not is_cheating)
 
   local progressbar = elems.tech_info_footer_progressbar
   progressbar.visible = progress > 0
@@ -778,14 +772,13 @@ function gui.update_tech_info_footer(self, progress_only)
   if in_queue then
     progressbar.value = progress
     progressbar.caption =
-      { "", self.force_table.queue.queue[selected], " - ", { "format-percent", math.round(progress * 100) } }
+      { "", self.force_table.queue.durations[selected_name], " - ", { "format-percent", math.round(progress * 100) } }
   end
 
   if not progress_only then
-    elems.tech_info_footer_start_button.visible = not researched and not in_queue
-    elems.tech_info_footer_cancel_button.visible = not researched and in_queue
-    elems.tech_info_footer_cancel_button.name = selected
-    elems.tech_info_footer_unresearch_button.visible = researched and is_cheating
+    elems.tech_info_footer_start_button.visible = not is_researched and not in_queue
+    elems.tech_info_footer_cancel_button.visible = not is_researched and in_queue
+    elems.tech_info_footer_unresearch_button.visible = is_researched and is_cheating
   end
 end
 
@@ -794,17 +787,19 @@ function gui.update_tech_list(self)
   local profiler = game.create_profiler()
   local techs_table = self.elems.techs_table
   local i = 0
-  for _, group in pairs(self.force_table.grouped_technologies) do
+  for _, group in pairs(self.force_table.technology_groups) do
     for j = 1, global.num_technologies do
-      local technology = group[j]
-      if technology then
+      --- @cast j uint
+      local tech_data = group[j]
+      if tech_data then
         i = i + 1
-        local button = techs_table[technology.name]
+        -- FIXME: Selected styles
+        local button = techs_table[tech_data.name]
         if button then
           move_to(button, techs_table, i)
-          update_tech_slot(button, self.force_table, technology, self.state.selected)
+          update_tech_slot(button, { data = tech_data })
         else
-          local button_template = technology_slot(self.force_table, technology, self.state.selected)
+          local button_template = technology_slot({ data = tech_data })
           button_template.index = i
           flib_gui.add(techs_table, { button_template })
         end
@@ -1036,7 +1031,7 @@ function gui.new(player)
                 caption = { "gui.urq-cancel-research" },
                 tooltip = { "gui.urq-cancel-research" },
                 visible = false,
-                handler = { [defines.events.on_gui_click] = gui.cancel_research },
+                handler = { [defines.events.on_gui_click] = gui.cancel_selected_research },
               },
               {
                 type = "button",
@@ -1086,7 +1081,7 @@ function gui.new(player)
       research_state_counts = {},
       search_open = false,
       search_query = "",
-      --- @type string?
+      --- @type TechnologyDataWithLevel?
       selected = nil,
     },
   }

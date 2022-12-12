@@ -8,7 +8,7 @@ local migrations = {}
 function migrations.generic()
   cache.build_effect_icons()
   cache.build_dictionaries()
-  cache.build_technology_list()
+  cache.sort_technologies()
   for _, force in pairs(game.forces) do
     migrations.migrate_force(force)
   end
@@ -23,12 +23,14 @@ function migrations.init_force(force)
   --- @field queue ResearchQueue
   local force_table = {
     force = force,
-    --- @type table<ResearchState, LuaTechnology[]>
-    grouped_technologies = {},
     --- @type ProgressSample[]
     research_progress_samples = {},
-    --- @type table<string, ResearchState>
-    research_states = {},
+    --- @type table<TechnologyData, TechnologyData>
+    technologies = {},
+    --- @type table<ResearchState, table<uint, TechnologyData>>
+    technology_groups = {},
+    --- @type table<string, TechnologyData>
+    technologies_lookup = {},
   }
   force_table.queue = research_queue.new(force, force_table)
   global.forces[force.index] = force_table
@@ -40,7 +42,7 @@ function migrations.migrate_force(force)
   if not force_table then
     return
   end
-  cache.build_research_states(force)
+  cache.build_force_technologies(force)
   util.ensure_queue_disabled(force)
   research_queue.verify_integrity(force_table.queue)
 end

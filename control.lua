@@ -3,7 +3,6 @@ require("__UltimateResearchQueue__/debug")
 local dictionary = require("__flib__/dictionary-lite")
 local migration = require("__flib__/migration")
 
-local constants = require("__UltimateResearchQueue__/constants")
 local gui = require("__UltimateResearchQueue__/gui")
 local migrations = require("__UltimateResearchQueue__/migrations")
 local research_queue = require("__UltimateResearchQueue__/research-queue")
@@ -66,7 +65,7 @@ if not DEBUG then
     if player.opened_gui_type == defines.gui_type.research then
       local player_gui = gui.get(e.player_index)
       if player_gui and not player_gui.state.opening_graph then
-        local opened = player.opened --[[@as LuaTechnology?]]
+        local opened = player.opened --[[@as TechnologyData?]]
         player.opened = nil
         gui.show(player_gui, opened and opened.name or nil)
       end
@@ -118,11 +117,15 @@ script.on_event(defines.events.on_research_started, function(e)
   end
   util.ensure_queue_disabled(force)
 
-  local force_queue = force_table.queue
-  if next(force_queue.queue) ~= technology.name then
-    research_queue.push_front(force_queue, { technology.name })
-    gui.schedule_update(force_table)
+  local tech_data = force_table.technologies_lookup[technology.name]
+  if research_queue.contains(force_table.queue, { data = tech_data }) then
+    if force_table.queue.head.data == tech_data then
+      return
+    end
+    research_queue.remove(force_table.queue, { data = tech_data })
   end
+  research_queue.push(force_table.queue, { data = tech_data }, true)
+  gui.schedule_update(force_table)
 end)
 
 script.on_event(defines.events.on_research_cancelled, function(e)
@@ -137,8 +140,10 @@ script.on_event(defines.events.on_research_cancelled, function(e)
   if force_queue.paused then
     return
   end
+  local technologies_lookup = force_table.technologies_lookup
   for tech_name in pairs(e.research) do
-    research_queue.remove(force_queue, tech_name)
+    local tech_data = technologies_lookup[tech_name]
+    research_queue.remove(force_queue, { data = tech_data })
   end
   gui.schedule_update(force_table)
 end)
@@ -151,11 +156,13 @@ script.on_event(defines.events.on_research_finished, function(e)
     return
   end
   util.ensure_queue_disabled(force)
-  if research_queue.contains(force_table.queue, technology.name) then
-    research_queue.remove(force_table.queue, technology.name)
+  local tech_data = force_table.technologies_lookup[e.research.name]
+  if research_queue.contains(force_table.queue, { data = tech_data }) then
+    -- TODO: Multilevel
+    research_queue.remove(force_table.queue, { data = tech_data })
   else
     -- This was insta-researched
-    research_queue.update_research_state_reqs(force_table, technology)
+    research_queue.update_research_state_reqs(force_table, tech_data)
   end
   gui.schedule_update(force_table)
   for _, player in pairs(force.players) do
@@ -173,7 +180,7 @@ script.on_event(defines.events.on_research_reversed, function(e)
     return
   end
   util.ensure_queue_disabled(force)
-  research_queue.update_research_state_reqs(force_table, e.research)
+  research_queue.update_research_state_reqs(force_table, force_table.technologies_lookup[e.research.name])
   gui.schedule_update(force_table)
 end)
 
@@ -218,6 +225,7 @@ script.on_nth_tick(60, function()
     local force = game.forces[force_index]
     local current = force.current_research
     if current then
+      local current_data = force_table.technologies_lookup[current.name]
       local samples = force_table.research_progress_samples
       --- @class ProgressSample
       local sample = { progress = force.research_progress, tech = current.name }
@@ -237,7 +245,8 @@ script.on_nth_tick(60, function()
             local diff = (current_sample.progress - previous_sample.progress) / 60
             -- Don't add if the speed is negative for whatever reason
             if diff > 0 then
-              speed = speed + diff * util.get_research_unit_count(current) * current.research_unit_energy
+              speed = speed
+                + diff * util.get_research_unit_count({ data = current_data }) * current.research_unit_energy
               num_samples = num_samples + 1
             end
           end

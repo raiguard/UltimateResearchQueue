@@ -5,12 +5,12 @@ local constants = require("__UltimateResearchQueue__/constants")
 
 local util = {}
 
---- @param tech LuaTechnology
---- @param queue ResearchQueue?
-function util.are_prereqs_satisfied(tech, queue)
-  for name, prereq in pairs(tech.prerequisites) do
+--- @param tech_data TechnologyData
+--- @param check_queue boolean?
+function util.are_prereqs_satisfied(tech_data, check_queue)
+  for _, prereq in pairs(tech_data.technology.prerequisites) do
     if not prereq.researched then
-      if not queue or not queue.queue[name] then
+      if not check_queue or not tech_data.in_queue then
         return false
       end
     end
@@ -73,31 +73,32 @@ function util.get_research_progress(tech)
   end
 end
 
---- @param force_table ForceTable
---- @param tech LuaTechnology
+--- @param tech_data TechnologyData
 --- @return ResearchState
-function util.get_research_state(force_table, tech)
-  if tech.researched then
+function util.get_research_state(tech_data)
+  local technology = tech_data.technology
+  if technology.researched then
     return constants.research_state.researched
   end
-  if not tech.enabled then
+  if not technology.enabled then
     return constants.research_state.disabled
   end
-  if util.are_prereqs_satisfied(tech) then
+  if util.are_prereqs_satisfied(tech_data) then
     return constants.research_state.available
   end
-  if util.are_prereqs_satisfied(tech, force_table.queue) then
+  if util.are_prereqs_satisfied(tech_data, true) then
     return constants.research_state.conditionally_available
   end
   return constants.research_state.not_available
 end
 
 --- @param tech LuaTechnology
+--- @param level uint?
 --- @return double
-function util.get_research_unit_count(tech)
+function util.get_research_unit_count(tech, level)
   local formula = tech.research_unit_count_formula
   if formula then
-    local level = tech.level --[[@as double]]
+    local level = level or tech.level
     return game.evaluate_expression(formula, { l = level, L = level })
   else
     return tech.research_unit_count --[[@as double]]
@@ -107,6 +108,16 @@ end
 --- @param player LuaPlayer
 function util.is_cheating(player)
   return player.cheat_mode or player.controller_type == defines.controllers.editor
+end
+
+--- @param tech_data TechnologyDataWithLevel|ResearchQueueNode
+--- @return string
+function util.get_technology_name(tech_data)
+  if tech_data.level then
+    return tech_data.data.base_name .. "-" .. tech_data.level
+  else
+    return tech_data.data.name
+  end
 end
 
 return util

@@ -7,3 +7,9 @@ Welcome / tutorial screen
 Optimization pass
 Playtesting
 Release!
+
+MULTILEVEL NOTES:
+
+A tech can have multiple levels - whether that be infinite or not - and must be
+able to exist in the queue in multiple levels. It only needs to exist in the
+tech list once though.
