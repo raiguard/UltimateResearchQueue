@@ -130,7 +130,7 @@ function gui_util.technology_slot(handler, tech_data, level, is_selected, is_que
 
   return {
     type = "sprite-button",
-    name = is_queue and util.get_queue_name(tech_data, level) or tech_data.name,
+    name = is_queue and util.get_queue_key(tech_data, level) or tech_data.name,
     style = properties.style,
     tooltip = tooltip,
     tags = { research_state = tech_data.research_state, tech_name = tech_data.name, level = level },
@@ -177,7 +177,7 @@ function gui_util.technology_slot(handler, tech_data, level, is_selected, is_que
       name = "progressbar",
       style = "urq_technology_slot_progressbar",
       value = progress,
-      visible = not is_tech_info and progress > 0,
+      visible = progress > 0,
       ignored_by_interaction = true,
     },
   }

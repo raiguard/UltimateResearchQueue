@@ -7,6 +7,8 @@ local util = require("__UltimateResearchQueue__/util")
 --- @class ResearchQueueNode
 --- @field data TechnologyData
 --- @field level uint
+--- @field duration string
+--- @field key string
 --- @field next ResearchQueueNode?
 
 --- @class ResearchQueue
@@ -24,22 +26,22 @@ end
 --- @return boolean
 function research_queue.contains(self, tech_data, level)
   if not tech_data.is_multilevel then
-    return not not self.durations[tech_data.name]
+    return not not self.lookup[tech_data.name]
   end
 
   if level and type(level) == "number" then
     -- This level
-    return not not self.durations[tech_data.base_name .. "-" .. level]
+    return not not self.lookup[tech_data.base_name .. "-" .. level]
   elseif level and tech_data.max_level ~= math.max_uint then
     -- All levels
     for i = tech_data.technology.level, tech_data.max_level do
-      if not self.durations[tech_data.base_name .. "-" .. i] then
+      if not self.lookup[tech_data.base_name .. "-" .. i] then
         return false
       end
     end
   else
     -- Any level
-    for key in pairs(self.durations) do
+    for key in pairs(self.lookup) do
       if string.find(key, tech_data.base_name) then
         return true
       end
@@ -64,31 +66,31 @@ function research_queue.get_highest_level(self, tech_data)
   return highest
 end
 
---- Add one or more technologies to the back of the queue
+--- Add a technology and its prerequisites to the queue.
 --- @param self ResearchQueue
 --- @param tech_data TechnologyData
 --- @param level uint
---- @param front boolean?
+--- @param to_front boolean?
 --- @return LocalisedString?
-function research_queue.push(self, tech_data, level, front)
-  if research_queue.contains(self, tech_data, level) then
-    return { "message.urq-already-in-queue" }
-  end
+local function push(self, tech_data, level, to_front)
+  -- Update flag and length
   tech_data.in_queue = true
-  -- Add duration and increment length
-  local queue_name = util.get_queue_name(tech_data, level)
-  self.durations[queue_name] = "[img=infinity]"
   self.len = self.len + 1
   -- Add to linked list
+  local key = util.get_queue_key(tech_data, level)
   --- @type ResearchQueueNode
-  if front or not self.head then
-    self.head = { data = tech_data, level = level, next = self.head }
+  local new_node = { data = tech_data, level = level, duration = "", key = key }
+  self.lookup[key] = new_node
+  if to_front or not self.head then
+    new_node.next = self.head
+    self.head = new_node
   else
-    local node = self.head --[[@as ResearchQueueNode]]
-    while node.next do --- @diagnostic disable-line
+    local node = self.head
+    while node and node.next do
       node = node.next
     end
-    node.next = { data = tech_data, level = level }
+    -- This shouldn't ever fail...
+    node.next = new_node
   end
   -- Update research states
   research_queue.update_research_state_reqs(self.force_table, tech_data)
@@ -97,38 +99,98 @@ function research_queue.push(self, tech_data, level, front)
   end
 end
 
---- @param self ResearchQueue
+--- @param to_research TechnologyDataAndLevel[]
 --- @param tech_data TechnologyData
 --- @param level uint?
+--- @param queue ResearchQueue?
+local function add_tech(to_research, tech_data, level, queue)
+  local lower = tech_data.technology.level
+  if queue then
+    lower = math.max(research_queue.get_highest_level(queue, tech_data) + 1, lower)
+  end
+  for i = lower, level or tech_data.max_level do
+    table.insert(to_research, { data = tech_data, level = i })
+  end
+end
+
+--- Add a technology and its prerequisites to the queue.
+--- @param self ResearchQueue
+--- @param tech_data TechnologyData
+--- @param level uint
+--- @param to_front boolean?
+--- @return LocalisedString?
+function research_queue.push(self, tech_data, level, to_front)
+  local research_state = tech_data.research_state
+  if research_state == constants.research_state.researched then
+    return { "message.urq-already-researched" }
+  elseif research_queue.contains(self, tech_data, level) then
+    return { "message.urq-already-in-queue" }
+  end
+  --- @type TechnologyDataAndLevel[]
+  local to_research = {}
+  if research_state == constants.research_state.not_available then
+    -- Add all prerequisites to research this tech ASAP
+    local technology = tech_data.technology
+    local technologies = self.force_table.technologies
+    for _, prerequisite_name in pairs(global.technology_prerequisites[technology.name]) do
+      local prerequisite_data = technologies[prerequisite_name]
+      if not prerequisite_data.in_queue and prerequisite_data.research_state ~= constants.research_state.researched then
+        add_tech(to_research, prerequisite_data)
+      end
+    end
+  end
+  add_tech(to_research, tech_data, level, self.force_table.queue)
+  -- Check for errors
+  local num_to_research = #to_research
+  if num_to_research > constants.queue_limit then
+    return { "message.urq-too-many-unresearched-prerequisites" }
+  else
+    local len = self.force_table.queue.len
+    -- It shouldn't ever be greater... right?
+    if len >= constants.queue_limit then
+      return { "message.urq-queue-is-full" }
+    elseif len + num_to_research > constants.queue_limit then
+      return { "message.urq-too-many-prerequisites-queue-full" }
+    end
+  end
+  -- TODO: Push to front in reverse order
+  local start, stop, step
+  if to_front then
+    start, stop, step = num_to_research, 1, -1
+  else
+    start, stop, step = 1, num_to_research, 1
+  end
+  for i = start, stop, step do
+    local to_research = to_research[i]
+    push(self, to_research.data, to_research.level, to_front)
+  end
+end
+
+--- @param self ResearchQueue
+--- @param tech_data TechnologyData
+--- @param level uint
 --- @return boolean?
 function research_queue.remove(self, tech_data, level)
-  if not level then
-    local node = self.head
-    while node do
-      if node.data == tech_data then
-        research_queue.remove(self, tech_data, node.level)
-      end
-      node = node.next
-    end
-    return
-  end
-  local queue_name = util.get_queue_name(tech_data, level)
-  if not self.durations[queue_name] then
+  local key = util.get_queue_key(tech_data, level)
+  if not self.lookup[key] then
     return
   end
   -- Remove from linked list
-  local node = self.head
+  local node, prev = self.head, nil
   while node and (node.data ~= tech_data or node.level ~= level) do
+    prev = node
     node = node.next
   end
   if not node then
     return
   end
-  -- Remove duration and decrement length
-  self.durations[queue_name] = nil
+  -- Remove node and decrement length
+  self.lookup[key] = nil
   self.len = self.len - 1
   if node == self.head then
     self.head = node.next
+  else
+    prev.next = node.next
   end
   -- Update in_queue status
   if tech_data.is_multilevel then
@@ -147,12 +209,18 @@ function research_queue.remove(self, tech_data, level)
       local requisite_data = technologies[requisite_name]
       research_queue.update_research_state(force_table, requisite_data)
       if requisite_data.in_queue and requisite_data.research_state == constants.research_state.not_available then
-        -- FIXME: Multilevel
-        research_queue.remove(self, requisite_data)
+        local level = requisite_data.technology.level
+        if requisite_data.is_multilevel then
+          level = level + 1
+        end
+        research_queue.remove(self, requisite_data, level)
       end
     end
   end
-  research_queue.update_active_research(self)
+  -- TODO: Remove higher-level techs
+  if not self.head or self.head.data == tech_data then
+    research_queue.update_active_research(self)
+  end
 end
 
 --- @param self ResearchQueue
@@ -166,7 +234,7 @@ function research_queue.update_active_research(self)
   local head = self.head
   if not self.paused and head then
     local current_research = self.force.current_research
-    if not current_research or head.data.name ~= current_research.name then
+    if not current_research or head.data.name ~= current_research then
       self.force.add_research(head.data.technology)
     end
   else
@@ -181,7 +249,7 @@ function research_queue.update_durations(self, speed)
   local node = self.head
   while node do
     if speed == 0 then
-      self.durations[util.get_queue_name(node.data, node.level)] = "[img=infinity]"
+      node.duration = "[img=infinity]"
     else
       local tech_data = node.data
       local progress = util.get_research_progress(tech_data.technology)
@@ -190,7 +258,7 @@ function research_queue.update_durations(self, speed)
           * util.get_research_unit_count(tech_data.technology, node.level)
           * tech_data.technology.research_unit_energy
           / speed
-      self.durations[util.get_queue_name(node.data, node.level)] = format.time(duration --[[@as uint]])
+      node.duration = format.time(duration --[[@as uint]])
     end
     node = node.next
   end
@@ -217,15 +285,14 @@ function research_queue.new(force, force_table)
   --- @class ResearchQueue
   local self = {
     --- @type table<string, string>
-    durations = {},
     force = force,
     force_table = force_table,
     --- @type ResearchQueueNode?
     head = nil,
     len = 0,
+    --- @type table<string, ResearchQueueNode>
+    lookup = {},
     paused = false,
-    -- --- @type ResearchQueueNode?
-    -- tail = nil,
   }
   return self
 end

@@ -6,10 +6,10 @@ local util = {}
 --- Ensure that the vanilla research queue is disabled
 --- @param force LuaForce
 function util.ensure_queue_disabled(force)
-  -- if force.research_queue_enabled then
-  --   force.print({ "message.urq-vanilla-queue-disabled" })
-  --   force.research_queue_enabled = false
-  -- end
+  if force.research_queue_enabled then
+    force.print({ "message.urq-vanilla-queue-disabled" })
+    force.research_queue_enabled = false
+  end
 end
 
 --- @param player LuaPlayer
@@ -79,7 +79,7 @@ end
 --- @param tech_data TechnologyData
 --- @param level uint
 --- @return string
-function util.get_queue_name(tech_data, level)
+function util.get_queue_key(tech_data, level)
   if tech_data.is_multilevel then
     return tech_data.base_name .. "-" .. level
   else

@@ -8,7 +8,7 @@ local gui_util = require("__UltimateResearchQueue__/gui-util")
 local research_queue = require("__UltimateResearchQueue__/research-queue")
 local util = require("__UltimateResearchQueue__/util")
 
---- @class SelectedTechnology
+--- @class TechnologyDataAndLevel
 --- @field data TechnologyData
 --- @field level uint
 
@@ -263,79 +263,17 @@ function gui.show(self, select_tech)
   end
 end
 
---- @param to_research SelectedTechnology[]
---- @param tech_data TechnologyData
---- @param level uint?
---- @param queue ResearchQueue?
-local function add_tech(to_research, tech_data, level, queue)
-  local lower = tech_data.technology.level
-  if queue then
-    lower = math.max(research_queue.get_highest_level(queue, tech_data) + 1, lower)
-  end
-  for i = lower, level or tech_data.max_level do
-    table.insert(to_research, { data = tech_data, level = i })
-  end
-end
-
 --- @param self Gui
 --- @param tech_data TechnologyData
 --- @param level uint
---- @param instant_research boolean?
-function gui.start_research(self, tech_data, level, instant_research)
-  local research_state = tech_data.research_state
-  if research_state == constants.research_state.researched then
-    util.flying_text(self.player, { "message.urq-already-researched" })
+--- @param to_front boolean?
+function gui.start_research(self, tech_data, level, to_front)
+  local push_error = research_queue.push(self.force_table.queue, tech_data, level, to_front)
+  if push_error then
+    util.flying_text(self.player, push_error)
     return
   end
-  --- @type SelectedTechnology[]
-  local to_research = {}
-  if research_state == constants.research_state.not_available then
-    -- Add all prerequisites to research this tech ASAP
-    local technology = tech_data.technology
-    local technologies = self.force_table.technologies
-    for _, prerequisite_name in pairs(global.technology_prerequisites[technology.name]) do
-      local prerequisite_data = technologies[prerequisite_name]
-      if not prerequisite_data.in_queue and prerequisite_data.research_state ~= constants.research_state.researched then
-        add_tech(to_research, prerequisite_data)
-      end
-    end
-  end
-  add_tech(to_research, tech_data, level, self.force_table.queue)
-  -- Check for errors
-  local num_to_research = #to_research
-  if num_to_research > constants.queue_limit then
-    util.flying_text(self.player, { "message.urq-too-many-unresearched-prerequisites" })
-    return
-  else
-    local len = self.force_table.queue.len
-    -- It shouldn't ever be greater... right?
-    if len >= constants.queue_limit then
-      util.flying_text(self.player, { "message.urq-queue-is-full" })
-      return
-    elseif len + num_to_research > constants.queue_limit then
-      util.flying_text(self.player, { "message.urq-too-many-prerequisites-queue-full" })
-      return
-    end
-  end
-  -- Add to queue
-  local added = false
-  for _, to_research in pairs(to_research) do
-    if instant_research then
-      if not to_research.data.research_state == constants.research_state.researched then
-        to_research.data.technology.researched = true
-      end
-    else
-      local push_error = research_queue.push(self.force_table.queue, to_research.data, to_research.level)
-      if push_error then
-        util.flying_text(self.player, push_error)
-      else
-        added = true
-      end
-    end
-  end
-  if added then
-    gui.schedule_update(self.force_table)
-  end
+  gui.schedule_update(self.force_table)
 end
 
 --- @param self Gui
@@ -415,12 +353,12 @@ function gui.update_durations_and_progress(self)
   local queue = self.force_table.queue
   local node = queue.head
   while node do
-    local name = util.get_queue_name(node.data, node.level)
+    local name = util.get_queue_key(node.data, node.level)
     local queue_button = queue_table[name]
     local techs_button = techs_table[name]
     if queue_button and techs_button then
-      queue_button.duration_label.caption = queue.durations[name]
-      techs_button.duration_label.caption = queue.durations[name]
+      queue_button.duration_label.caption = node.duration
+      techs_button.duration_label.caption = node.duration
 
       local progress = util.get_research_progress(node.data.technology)
       queue_button.progressbar.value = progress
@@ -459,7 +397,7 @@ function gui.update_queue(self)
   while node do
     i = i + 1
     local tech_data, level = node.data, node.level
-    local name = util.get_queue_name(tech_data, level)
+    local name = util.get_queue_key(tech_data, level)
     local button = queue_table[name]
     -- FIXME: Selected styles
     if button then
@@ -502,7 +440,7 @@ function gui.update_tech_info_footer(self, progress_only)
     return
   end
   local tech_data, level = selected.data, selected.level
-  local selected_name = util.get_queue_name(tech_data, level)
+  local selected_name = util.get_queue_key(tech_data, level)
 
   local elems = self.elems
   local is_researched = tech_data.research_state == constants.research_state.researched
@@ -517,8 +455,12 @@ function gui.update_tech_info_footer(self, progress_only)
   elems.tech_info_footer_pusher.visible = progress == 0
   if in_queue then
     progressbar.value = progress
-    progressbar.caption =
-      { "", self.force_table.queue.durations[selected_name], " - ", { "format-percent", math.round(progress * 100) } }
+    progressbar.caption = {
+      "",
+      self.force_table.queue.lookup[selected_name].duration,
+      " - ",
+      { "format-percent", math.round(progress * 100) },
+    }
   end
 
   if not progress_only then
@@ -840,7 +782,7 @@ function gui.new(player)
       research_state_counts = {},
       search_open = false,
       search_query = "",
-      --- @type SelectedTechnology?
+      --- @type TechnologyDataAndLevel?
       selected = nil,
     },
   }
