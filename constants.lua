@@ -7,6 +7,7 @@ local constants = {}
 --- | "signed"
 --- | "unsigned"
 --- | "ticks"
+
 --- @type table<string, EffectDisplayType>
 constants.effect_display_type = {
   ["artillery-range"] = "float_percent",

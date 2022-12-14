@@ -121,10 +121,8 @@ function cache.build_force_technologies(force)
   for _, research_state in pairs(constants.research_state) do
     technology_groups[research_state] = {}
   end
-  --- @type table<TechnologyData, TechnologyData>
-  local technologies = {}
   --- @type table<string, TechnologyData>
-  local technologies_lookup = {}
+  local technologies = {}
   for name, technology in pairs(force.technologies) do
     local prototype = technology.prototype
     local is_multilevel = prototype.level ~= prototype.max_level
@@ -149,11 +147,9 @@ function cache.build_force_technologies(force)
     }
     data.research_state = util.get_research_state(data)
 
-    technologies[technology] = data
-    technologies_lookup[name] = data
+    technologies[name] = data
     technology_groups[data.research_state][order] = data
   end
-  force_table.technologies_lookup = technologies_lookup
   force_table.technologies = technologies
   force_table.technology_groups = technology_groups
 end

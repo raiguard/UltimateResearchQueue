@@ -117,7 +117,7 @@ script.on_event(defines.events.on_research_started, function(e)
   end
   util.ensure_queue_disabled(force)
 
-  local tech_data = force_table.technologies_lookup[technology.name]
+  local tech_data = force_table.technologies[technology.name]
   if research_queue.contains(force_table.queue, { data = tech_data }) then
     if force_table.queue.head.data == tech_data then
       return
@@ -140,9 +140,9 @@ script.on_event(defines.events.on_research_cancelled, function(e)
   if force_queue.paused then
     return
   end
-  local technologies_lookup = force_table.technologies_lookup
+  local technologies = force_table.technologies
   for tech_name in pairs(e.research) do
-    local tech_data = technologies_lookup[tech_name]
+    local tech_data = technologies[tech_name]
     research_queue.remove(force_queue, { data = tech_data })
   end
   gui.schedule_update(force_table)
@@ -156,7 +156,7 @@ script.on_event(defines.events.on_research_finished, function(e)
     return
   end
   util.ensure_queue_disabled(force)
-  local tech_data = force_table.technologies_lookup[e.research.name]
+  local tech_data = force_table.technologies[e.research.name]
   if research_queue.contains(force_table.queue, { data = tech_data }) then
     -- TODO: Multilevel
     research_queue.remove(force_table.queue, { data = tech_data })
@@ -180,7 +180,7 @@ script.on_event(defines.events.on_research_reversed, function(e)
     return
   end
   util.ensure_queue_disabled(force)
-  research_queue.update_research_state_reqs(force_table, force_table.technologies_lookup[e.research.name])
+  research_queue.update_research_state_reqs(force_table, force_table.technologies[e.research.name])
   gui.schedule_update(force_table)
 end)
 
@@ -225,7 +225,7 @@ script.on_nth_tick(60, function()
     local force = game.forces[force_index]
     local current = force.current_research
     if current then
-      local current_data = force_table.technologies_lookup[current.name]
+      local current_data = force_table.technologies[current.name]
       local samples = force_table.research_progress_samples
       --- @class ProgressSample
       local sample = { progress = force.research_progress, tech = current.name }

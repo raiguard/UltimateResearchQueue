@@ -315,7 +315,7 @@ end
 function gui.cancel_research(self, e)
   local tags = e.element.tags
   local tech_name, level = tags.tech_name --[[@as string]], tags.level --[[@as uint]]
-  local tech_data = self.force_table.technologies_lookup[tech_name]
+  local tech_data = self.force_table.technologies[tech_name]
   research_queue.remove(self.force_table.queue, { data = tech_data, level = level })
   gui.schedule_update(self.force_table)
 end
@@ -343,11 +343,11 @@ end
 function gui.filter_tech_list(self)
   local query = self.state.search_query
   local dictionaries = dictionary.get_all(self.player.index)
-  local technologies_lookup = self.force_table.technologies_lookup
+  local technologies = self.force_table.technologies
   local show_disabled = self.player.mod_settings["urq-show-disabled-techs"].value
   for _, button in pairs(self.elems.techs_table.children) do
     local tech_name = button.name
-    local tech_data = technologies_lookup[tech_name]
+    local tech_data = technologies[tech_name]
     -- Show/hide disabled
     local research_state_matched = true
     if tech_data.research_state == constants.research_state.disabled and not show_disabled then
@@ -410,7 +410,7 @@ function gui.on_tech_slot_click(self, e)
   end
   local tags = e.element.tags
   local tech_name, level = tags.tech_name, tags.level
-  local tech_data = self.force_table.technologies_lookup[tech_name]
+  local tech_data = self.force_table.technologies[tech_name]
   local wrapped_data = { data = tech_data, level = level }
   if e.button == defines.mouse_button_type.right then
     research_queue.remove(self.force_table.queue, wrapped_data)
@@ -520,7 +520,7 @@ end
 --- @param select_tech string?
 function gui.show(self, select_tech)
   if select_tech then
-    local select_data = self.force_table.technologies_lookup[select_tech]
+    local select_data = self.force_table.technologies[select_tech]
     gui.select_tech(self, { data = select_data })
   end
   self.elems.urq_window.visible = true
@@ -545,9 +545,9 @@ function gui.start_research(self, wrapped_data, instant_research)
   if research_state == constants.research_state.not_available then
     -- Add all prerequisites to research this tech ASAP
     local technology = tech_data.technology
-    local technologies_lookup = self.force_table.technologies_lookup
+    local technologies = self.force_table.technologies
     for _, prerequisite_name in pairs(global.technology_prerequisites[technology.name]) do
-      local prerequisite_data = technologies_lookup[prerequisite_name]
+      local prerequisite_data = technologies[prerequisite_name]
       if prerequisite_data.research_state ~= constants.research_state.researched and not prerequisite_data.in_queue then
         -- FIXME: Insert entries for every level
         table.insert(to_research, { data = prerequisite_data })
@@ -643,14 +643,14 @@ function gui.unresearch(self)
   if not selected then
     return
   end
-  local technologies_lookup = self.force_table.technologies_lookup
+  local technologies = self.force_table.technologies
 
   --- @param tech_data TechnologyData
   local function propagate(tech_data)
     local requisites = global.technology_requisites[tech_data.name]
     if requisites then
       for _, requisite_name in pairs(requisites) do
-        local requisite_data = technologies_lookup[requisite_name]
+        local requisite_data = technologies[requisite_name]
         if requisite_data.research_state == constants.research_state.researched then
           propagate(requisite_data)
         end

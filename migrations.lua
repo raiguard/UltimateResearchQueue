@@ -6,8 +6,8 @@ local util = require("__UltimateResearchQueue__/util")
 local migrations = {}
 
 function migrations.generic()
-  cache.build_effect_icons()
   cache.build_dictionaries()
+  cache.build_effect_icons()
   cache.sort_technologies()
   for _, force in pairs(game.forces) do
     migrations.migrate_force(force)
@@ -25,12 +25,10 @@ function migrations.init_force(force)
     force = force,
     --- @type ProgressSample[]
     research_progress_samples = {},
-    --- @type table<TechnologyData, TechnologyData>
-    technologies = {},
     --- @type table<ResearchState, table<uint, TechnologyData>>
     technology_groups = {},
     --- @type table<string, TechnologyData>
-    technologies_lookup = {},
+    technologies = {},
   }
   force_table.queue = research_queue.new(force, force_table)
   global.forces[force.index] = force_table

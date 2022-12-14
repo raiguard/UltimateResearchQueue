@@ -100,12 +100,12 @@ function research_queue.remove(self, tech_data)
   -- Update research states
   research_queue.update_research_state(self.force_table, tech_data)
   -- Remove requisites
-  local technologies_lookup = self.force_table.technologies_lookup
+  local technologies = self.force_table.technologies
   local force_table = self.force_table
   local requisites = global.technology_requisites[tech_data.name]
   if requisites then
     for _, requisite_name in pairs(requisites) do
-      local requisite_data = technologies_lookup[requisite_name]
+      local requisite_data = technologies[requisite_name]
       research_queue.update_research_state(force_table, requisite_data)
       if
         research_queue.contains(self, { data = requisite_data })
@@ -214,7 +214,7 @@ function research_queue.update_research_state_reqs(force_table, tech_data)
   research_queue.update_research_state(force_table, tech_data)
   local requisites = global.technology_requisites[tech_data.name]
   if requisites then
-    local technologies = force_table.technologies_lookup
+    local technologies = force_table.technologies
     for _, requisite_name in pairs(requisites) do
       research_queue.update_research_state(force_table, technologies[requisite_name])
     end
