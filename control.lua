@@ -246,7 +246,7 @@ script.on_nth_tick(60, function()
             -- Don't add if the speed is negative for whatever reason
             if diff > 0 then
               speed = speed
-                + diff * util.get_research_unit_count({ data = current_data }) * current.research_unit_energy
+                + diff * util.get_research_unit_count(current_data.technology) * current.research_unit_energy
               num_samples = num_samples + 1
             end
           end
