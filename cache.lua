@@ -1,7 +1,7 @@
 local dictionary = require("__flib__/dictionary-lite")
 
 local constants = require("__UltimateResearchQueue__/constants")
-local util = require("__UltimateResearchQueue__/util")
+local research_queue = require("__UltimateResearchQueue__/research-queue")
 
 --- @class Cache
 local cache = {}
@@ -121,8 +121,11 @@ function cache.build_force_technologies(force)
   for _, research_state in pairs(constants.research_state) do
     technology_groups[research_state] = {}
   end
+  force_table.technology_groups = technology_groups
   --- @type table<string, TechnologyData>
   local technologies = {}
+  force_table.technologies = technologies
+  -- Loop 1: Assemble data
   for name, technology in pairs(force.technologies) do
     local prototype = technology.prototype
     local is_multilevel = prototype.level ~= prototype.max_level
@@ -138,6 +141,7 @@ function cache.build_force_technologies(force)
       base_name = base_name,
       in_queue = false,
       is_multilevel = is_multilevel,
+      is_upgrade = technology.upgrade,
       max_level = prototype.max_level,
       name = name,
       order = order,
@@ -145,13 +149,15 @@ function cache.build_force_technologies(force)
       research_state = nil,
       technology = technology,
     }
-    data.research_state = util.get_research_state(data)
+    data.in_queue = research_queue.contains(force_table.queue, data, true)
 
     technologies[name] = data
-    technology_groups[data.research_state][order] = data
   end
-  force_table.technologies = technologies
-  force_table.technology_groups = technology_groups
+  -- Loop 2: Add research states and references to other techs
+  for _, tech_data in pairs(technologies) do
+    tech_data.research_state = research_queue.get_research_state(force_table, tech_data)
+    technology_groups[tech_data.research_state][tech_data.order] = tech_data
+  end
 end
 
 function cache.sort_technologies()
@@ -241,6 +247,7 @@ function cache.sort_technologies()
   -- Step 2: Recursively assemble prerequisites for each tech
   local tech_prototypes = game.technology_prototypes
   local checked = {}
+  -- FIXME: This adds a ton of duplicate prerequisites because it's no longer a hash table
   --- @param technology LuaTechnologyPrototype
   local function propagate(technology)
     -- If not all of the prerequisites have been checked, then the list would be incomplete
@@ -251,9 +258,9 @@ function cache.sort_technologies()
     end
     local technology_name = technology.name
     local technology_prerequisites = prerequisites[technology_name]
-    local requisites = requisites[technology_name]
-    if requisites then
-      for _, requisite_name in pairs(requisites) do
+    local tech_requisites = requisites[technology_name]
+    if tech_requisites then
+      for _, requisite_name in pairs(tech_requisites) do
         -- Create the requisite's prerequisite table
         local requisite_prerequisites = prerequisites[requisite_name]
         if not requisite_prerequisites then
@@ -263,14 +270,14 @@ function cache.sort_technologies()
         -- Add all of this technology's prerequisites to the requisite's prerequisites
         if technology_prerequisites then
           for _, prerequisite_name in pairs(technology_prerequisites) do
-            requisite_prerequisites[prerequisite_name] = prerequisite_name
+            table.insert(requisite_prerequisites, prerequisite_name)
           end
         end
         -- Add this technology to the requisite's prerequisites
         table.insert(requisite_prerequisites, technology_name)
       end
       checked[technology_name] = true
-      for _, requisite_name in pairs(requisites) do
+      for _, requisite_name in pairs(tech_requisites) do
         propagate(tech_prototypes[requisite_name])
       end
     end

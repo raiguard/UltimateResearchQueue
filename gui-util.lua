@@ -99,12 +99,12 @@ function gui_util.frame_action_button(name, sprite, tooltip, action)
 end
 
 --- @param handler function
---- @param tech_data TechnologyDataWithLevel
+--- @param tech_data TechnologyData
+--- @param level uint
 --- @param is_selected boolean?
---- @param is_tech_info boolean?
+--- @param is_queue boolean?
 --- @return GuiElemDef
-function gui_util.technology_slot(handler, tech_data, is_selected, is_tech_info)
-  local tech_data, level = tech_data.data, tech_data.level
+function gui_util.technology_slot(handler, tech_data, level, is_selected, is_queue)
   local properties = gui_util.get_technology_slot_properties(tech_data, is_selected)
   local progress = util.get_research_progress(tech_data.technology)
 
@@ -130,10 +130,9 @@ function gui_util.technology_slot(handler, tech_data, is_selected, is_tech_info)
 
   return {
     type = "sprite-button",
-    name = tech_data.name,
+    name = is_queue and util.get_queue_name(tech_data, level) or tech_data.name,
     style = properties.style,
     tooltip = tooltip,
-    ignored_by_interaction = is_tech_info,
     tags = { research_state = tech_data.research_state, tech_name = tech_data.name, level = level },
     handler = { [defines.events.on_gui_click] = handler },
     {
@@ -146,11 +145,11 @@ function gui_util.technology_slot(handler, tech_data, is_selected, is_tech_info)
         sprite = "technology/" .. tech_data.name,
       },
     },
-    (tech_data.is_multilevel or tech_data.base_level > 1) and {
+    (tech_data.is_upgrade or tech_data.is_multilevel or tech_data.base_level > 1) and {
       type = "label",
       name = "level_label",
       style = "urq_technology_slot_level_label_" .. properties.research_state_str,
-      caption = level or tech_data.technology.level,
+      caption = level,
       ignored_by_interaction = true,
     } or {},
     tech_data.is_multilevel and {
@@ -216,7 +215,7 @@ function gui_util.get_technology_slot_properties(tech_data, is_selected)
   local max_level_str = tech_data.max_level == math.max_uint and "[img=infinity]" or tostring(tech_data.max_level)
   local style = "urq_technology_slot_"
     .. research_state_str
-    .. ((tech_data.is_multilevel or tech_data.base_level > 1) and "_leveled" or "")
+    .. ((tech_data.is_upgrade or tech_data.is_multilevel or tech_data.base_level > 1) and "_leveled" or "")
     .. (is_selected and "_selected" or "")
 
   --- @class TechnologySlotProperties
@@ -224,10 +223,10 @@ function gui_util.get_technology_slot_properties(tech_data, is_selected)
 end
 
 --- @param button LuaGuiElement
---- @param tech_data TechnologyDataWithLevel
+--- @param tech_data TechnologyData
+--- @param level uint
 --- @param is_selected boolean?
-function gui_util.update_tech_slot(button, tech_data, is_selected)
-  local tech_data, level = tech_data.data, tech_data.level
+function gui_util.update_tech_slot(button, tech_data, level, is_selected)
   local properties = gui_util.get_technology_slot_properties(tech_data, is_selected)
   local tags = button.tags
   local research_state = tech_data.research_state
@@ -237,13 +236,17 @@ function gui_util.update_tech_slot(button, tech_data, is_selected)
       button.progressbar.visible = false
       button.progressbar.value = 0
     end
-    if tech_data.is_multilevel or tech_data.base_level > 1 then
+    if tech_data.is_upgrade or tech_data.is_multilevel or tech_data.base_level > 1 then
       button.level_label.style = "urq_technology_slot_level_label_" .. properties.research_state_str
     end
     if tech_data.is_multilevel then
       button.level_range_label.style = "urq_technology_slot_level_range_label_" .. properties.research_state_str
     end
     tags.research_state = research_state --[[@as AnyBasic]]
+    button.tags = tags
+  end
+  if tags.level ~= level then
+    tags.level = level
     button.tags = tags
   end
   if tech_data.is_multilevel then

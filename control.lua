@@ -118,13 +118,14 @@ script.on_event(defines.events.on_research_started, function(e)
   util.ensure_queue_disabled(force)
 
   local tech_data = force_table.technologies[technology.name]
-  if research_queue.contains(force_table.queue, { data = tech_data }) then
+  local level = technology.level
+  if research_queue.contains(force_table.queue, tech_data, level) then
     if force_table.queue.head.data == tech_data then
       return
     end
-    research_queue.remove(force_table.queue, { data = tech_data })
+    research_queue.remove(force_table.queue, tech_data, level)
   end
-  research_queue.push(force_table.queue, { data = tech_data }, true)
+  research_queue.push(force_table.queue, tech_data, level, true)
   gui.schedule_update(force_table)
 end)
 
@@ -143,7 +144,8 @@ script.on_event(defines.events.on_research_cancelled, function(e)
   local technologies = force_table.technologies
   for tech_name in pairs(e.research) do
     local tech_data = technologies[tech_name]
-    research_queue.remove(force_queue, { data = tech_data })
+    -- FIXME: Test this
+    research_queue.remove(force_queue, tech_data, tech_data.technology.level)
   end
   gui.schedule_update(force_table)
 end)
@@ -156,10 +158,10 @@ script.on_event(defines.events.on_research_finished, function(e)
     return
   end
   util.ensure_queue_disabled(force)
-  local tech_data = force_table.technologies[e.research.name]
-  if research_queue.contains(force_table.queue, { data = tech_data }) then
-    -- TODO: Multilevel
-    research_queue.remove(force_table.queue, { data = tech_data })
+  local tech_data = force_table.technologies[technology.name]
+  local level = technology.level
+  if research_queue.contains(force_table.queue, tech_data, level) then
+    research_queue.remove(force_table.queue, tech_data, level)
   else
     -- This was insta-researched
     research_queue.update_research_state_reqs(force_table, tech_data)

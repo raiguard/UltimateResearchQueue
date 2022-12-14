@@ -1,30 +1,15 @@
 local math = require("__flib__/math")
 local table = require("__flib__/table")
 
-local constants = require("__UltimateResearchQueue__/constants")
-
 local util = {}
-
---- @param tech_data TechnologyData
---- @param check_queue boolean?
-function util.are_prereqs_satisfied(tech_data, check_queue)
-  for _, prereq in pairs(tech_data.technology.prerequisites) do
-    if not prereq.researched then
-      if not check_queue or not tech_data.in_queue then
-        return false
-      end
-    end
-  end
-  return true
-end
 
 --- Ensure that the vanilla research queue is disabled
 --- @param force LuaForce
 function util.ensure_queue_disabled(force)
-  if force.research_queue_enabled then
-    force.print({ "message.urq-vanilla-queue-disabled" })
-    force.research_queue_enabled = false
-  end
+  -- if force.research_queue_enabled then
+  --   force.print({ "message.urq-vanilla-queue-disabled" })
+  --   force.research_queue_enabled = false
+  -- end
 end
 
 --- @param player LuaPlayer
@@ -73,25 +58,6 @@ function util.get_research_progress(tech)
   end
 end
 
---- @param tech_data TechnologyData
---- @return ResearchState
-function util.get_research_state(tech_data)
-  local technology = tech_data.technology
-  if technology.researched then
-    return constants.research_state.researched
-  end
-  if not technology.enabled then
-    return constants.research_state.disabled
-  end
-  if util.are_prereqs_satisfied(tech_data) then
-    return constants.research_state.available
-  end
-  if util.are_prereqs_satisfied(tech_data, true) then
-    return constants.research_state.conditionally_available
-  end
-  return constants.research_state.not_available
-end
-
 --- @param tech LuaTechnology
 --- @param level uint?
 --- @return double
@@ -110,13 +76,14 @@ function util.is_cheating(player)
   return player.cheat_mode or player.controller_type == defines.controllers.editor
 end
 
---- @param tech_data TechnologyDataWithLevel|ResearchQueueNode
+--- @param tech_data TechnologyData
+--- @param level uint
 --- @return string
-function util.get_technology_name(tech_data)
-  if tech_data.level then
-    return tech_data.data.base_name .. "-" .. tech_data.level
+function util.get_queue_name(tech_data, level)
+  if tech_data.is_multilevel then
+    return tech_data.base_name .. "-" .. level
   else
-    return tech_data.data.name
+    return tech_data.name
   end
 end
 
