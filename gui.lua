@@ -510,28 +510,13 @@ function gui.update_tech_list(self)
           math.max(research_queue.get_highest_level(self.force_table.queue, tech_data) + 1, tech_data.technology.level)
       end
       i = i + 1
-      local button = techs_table[tech_data.name]
-      if button then
+      local button = techs_table[tech_data.name] --[[@as LuaGuiElement]]
+      if i ~= button.get_index_in_parent() then
         gui_util.move_to(button, techs_table, i)
-        gui_util.update_tech_slot(
-          button,
-          tech_data,
-          level,
-          queue,
-          selected.data == tech_data and selected.level == level
-        )
-      else
-        -- TODO: Do all of the creation at the start
-        local button_template = gui_util.technology_slot(gui.on_tech_slot_click, tech_data, level)
-        button_template.index = i
-        flib_gui.add(techs_table, button_template)
       end
+      gui_util.update_tech_slot(button, tech_data, level, queue, selected.data == tech_data and selected.level == level)
       ::continue::
     end
-  end
-  local children = techs_table.children
-  for i = i + 1, #children do
-    children[i].destroy()
   end
   profiler.stop()
   if DEBUG then
@@ -795,13 +780,21 @@ function gui.new(player)
     },
   })
 
+  -- Build techs list
+  local force_table = global.forces[player.force.index]
+  local buttons = {}
+  for _, tech_data in pairs(force_table.technologies) do
+    table.insert(buttons, gui_util.technology_slot(gui.on_tech_slot_click, tech_data, tech_data.base_level))
+  end
+  flib_gui.add(elems.techs_table, buttons)
+
   local force = player.force --[[@as LuaForce]]
 
   --- @class Gui
   local self = {
     elems = elems,
     force = force,
-    force_table = global.forces[player.force.index],
+    force_table = force_table,
     player = player,
     state = {
       opening_graph = false,
