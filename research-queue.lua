@@ -156,7 +156,6 @@ function research_queue.push(self, tech_data, level, to_front)
       return { "message.urq-too-many-prerequisites-queue-full" }
     end
   end
-  -- TODO: Push to front in reverse order
   local start, stop, step
   if to_front then
     start, stop, step = num_to_research, 1, -1
@@ -267,16 +266,22 @@ end
 
 --- @param self ResearchQueue
 function research_queue.verify_integrity(self)
-  -- TODO: highest_levels
-  -- local old_queue = self.queue
-  -- self.queue = {}
-  -- self.len = 0
-  -- for tech_name in pairs(old_queue) do
-  --   if self.force.technologies[tech_name] then
-  --     research_queue.push(self, tech_name)
-  --     self.len = self.len + 1
-  --   end
-  -- end
+  local old_head = self.head
+  self.head, self.lookup, self.len = nil, {}, 0
+  local node = old_head
+  local technologies = self.force_table.technologies
+  while node do
+    local old_tech_data, old_level = node.data, node.level
+    local tech_data = technologies[old_tech_data.name]
+    if not tech_data then
+      goto continue
+    end
+    if old_tech_data.is_multilevel and (old_level < tech_data.base_level or old_level > tech_data.max_level) then
+      goto continue
+    end
+    research_queue.push(self, tech_data, level)
+    ::continue::
+  end
 end
 
 --- @param force LuaForce
