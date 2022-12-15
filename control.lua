@@ -160,6 +160,10 @@ script.on_event(defines.events.on_research_finished, function(e)
   util.ensure_queue_disabled(force)
   local tech_data = force_table.technologies[technology.name]
   local level = technology.level
+  -- For multi-level techs, we want to remove the level that was just finished, not the new level
+  if tech_data.is_multilevel then
+    level = level - 1
+  end
   if research_queue.contains(force_table.queue, tech_data, level) then
     research_queue.remove(force_table.queue, tech_data, level)
   else

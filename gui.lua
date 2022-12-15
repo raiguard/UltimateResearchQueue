@@ -125,12 +125,13 @@ function gui.hide(self)
 end
 
 --- @param self Gui
-function gui.on_start_research_click(self)
+--- @param e EventData.on_gui_click
+function gui.on_start_research_click(self, e)
   local selected = self.state.selected
   if not selected then
     return
   end
-  gui.start_research(self, selected.data, selected.level)
+  gui.start_research(self, selected.data, selected.level, false, e.control and util.is_cheating(self.player))
 end
 
 --- @param self Gui
@@ -148,7 +149,7 @@ function gui.on_tech_slot_click(self, e)
     return
   end
   if gui_util.is_double_click(e.element) then
-    gui.start_research(self, tech_data, level)
+    gui.start_research(self, tech_data, level, false, e.control and util.is_cheating(self.player))
     return
   end
   gui.select_tech(self, tech_data, level)
@@ -266,11 +267,24 @@ end
 --- @param tech_data TechnologyData
 --- @param level uint
 --- @param to_front boolean?
-function gui.start_research(self, tech_data, level, to_front)
-  local push_error = research_queue.push(self.force_table.queue, tech_data, level, to_front)
-  if push_error then
-    util.flying_text(self.player, push_error)
-    return
+--- @param instant_research boolean?
+function gui.start_research(self, tech_data, level, to_front, instant_research)
+  if instant_research then
+    local prereqs = global.technology_prerequisites[tech_data.name]
+    local technologies = self.force_table.technologies
+    for i = 1, #prereqs do
+      local prereq_data = technologies[prereqs[i]]
+      if prereq_data.research_state ~= constants.research_state.researched then
+        prereq_data.technology.researched = true
+      end
+    end
+    tech_data.technology.researched = true
+  else
+    local push_error = research_queue.push(self.force_table.queue, tech_data, level, to_front)
+    if push_error then
+      util.flying_text(self.player, push_error)
+      return
+    end
   end
   gui.schedule_update(self.force_table)
 end

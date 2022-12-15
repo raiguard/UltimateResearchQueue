@@ -247,14 +247,14 @@ function gui_util.update_tech_slot(button, tech_data, level, queue, is_selected)
     tags.research_state = research_state --[[@as AnyBasic]]
     button.tags = tags
   end
-  if tags.level ~= level then
-    tags.level = level
-    button.tags = tags
-  end
   if tech_data.is_multilevel then
+    if tags.level ~= level then
+      tags.level = level
+      button.tags = tags
+    end
     local level_label = button.level_label
     if level_label then
-      level_label.caption = tostring(level or tech_data.technology.level)
+      level_label.caption = tostring(level)
     end
   end
   button.duration_label.visible = research_queue.contains(queue, tech_data, level)

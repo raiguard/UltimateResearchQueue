@@ -1,4 +1,5 @@
 local dictionary = require("__flib__/dictionary-lite")
+local table = require("__flib__/table")
 
 local constants = require("__UltimateResearchQueue__/constants")
 local research_queue = require("__UltimateResearchQueue__/research-queue")
@@ -245,7 +246,14 @@ function cache.sort_technologies()
   -- Step 2: Recursively assemble prerequisites for each tech
   local tech_prototypes = game.technology_prototypes
   local checked = {}
-  -- FIXME: This adds a ton of duplicate prerequisites because it's no longer a hash table
+  --- @param tbl {string: boolean, integer: string}
+  --- @param obj string
+  local function unique_insert(tbl, obj)
+    if not tbl[obj] then
+      tbl[obj] = true
+      tbl[#tbl + 1] = obj
+    end
+  end
   --- @param technology LuaTechnologyPrototype
   local function propagate(technology)
     -- If not all of the prerequisites have been checked, then the list would be incomplete
@@ -267,12 +275,12 @@ function cache.sort_technologies()
         end
         -- Add all of this technology's prerequisites to the requisite's prerequisites
         if technology_prerequisites then
-          for _, prerequisite_name in pairs(technology_prerequisites) do
-            table.insert(requisite_prerequisites, prerequisite_name)
+          for i = 1, #technology_prerequisites do
+            unique_insert(requisite_prerequisites, technology_prerequisites[i])
           end
         end
         -- Add this technology to the requisite's prerequisites
-        table.insert(requisite_prerequisites, technology_name)
+        unique_insert(requisite_prerequisites, technology_name)
       end
       checked[technology_name] = true
       for _, requisite_name in pairs(tech_requisites) do

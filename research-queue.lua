@@ -59,7 +59,7 @@ function research_queue.get_highest_level(self, tech_data)
   local highest = 0
   while node do
     if node.data == tech_data then
-      highest = math.max(node.level, highest or 0)
+      highest = math.max(node.level, highest)
     end
     node = node.next
   end
@@ -93,7 +93,7 @@ local function push(self, tech_data, level, to_front)
   end
   -- Update research states
   research_queue.update_research_state_reqs(self.force_table, tech_data)
-  if self.head.data == tech_data then
+  if self.head.data == tech_data and self.head.level == level then
     research_queue.update_active_research(self)
   end
 end
@@ -131,8 +131,9 @@ function research_queue.push(self, tech_data, level, to_front)
     -- Add all prerequisites to research this tech ASAP
     local technology = tech_data.technology
     local technologies = self.force_table.technologies
-    for _, prerequisite_name in pairs(global.technology_prerequisites[technology.name]) do
-      local prerequisite_data = technologies[prerequisite_name]
+    local technology_prerequisites = global.technology_prerequisites[technology.name]
+    for i = 1, #technology_prerequisites do
+      local prerequisite_data = technologies[technology_prerequisites[i]]
       if
         not research_queue.contains(self, prerequisite_data, true)
         and prerequisite_data.research_state ~= constants.research_state.researched
@@ -171,8 +172,9 @@ end
 --- @param self ResearchQueue
 --- @param tech_data TechnologyData
 --- @param level uint
+--- @param is_recursive boolean?
 --- @return boolean?
-function research_queue.remove(self, tech_data, level)
+function research_queue.remove(self, tech_data, level, is_recursive)
   local key = util.get_queue_key(tech_data, level)
   if not self.lookup[key] then
     return
@@ -212,12 +214,12 @@ function research_queue.remove(self, tech_data, level)
         research_queue.contains(self, requisite_data, level)
         and requisite_data.research_state == constants.research_state.not_available
       then
-        research_queue.remove(self, requisite_data, level)
+        research_queue.remove(self, requisite_data, level, true)
       end
     end
   end
   -- TODO: Remove higher-level techs
-  if not self.head or self.head.data == tech_data then
+  if not is_recursive then
     research_queue.update_active_research(self)
   end
 end
