@@ -217,7 +217,16 @@ function research_queue.remove(self, tech_data, level, is_recursive)
       end
     end
   end
-  -- TODO: Remove higher-level techs
+  -- Remove all levels above this one
+  if tech_data.is_multilevel then
+    local node = self.head
+    while node do
+      if node.data == tech_data and node.level > level then
+        research_queue.remove(self, node.data, node.level, true)
+      end
+      node = node.next
+    end
+  end
   if not is_recursive then
     research_queue.update_active_research(self)
   end
