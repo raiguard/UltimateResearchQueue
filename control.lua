@@ -144,7 +144,10 @@ script.on_event(defines.events.on_research_cancelled, function(e)
   local technologies = force_table.technologies
   for tech_name in pairs(e.research) do
     local tech_data = technologies[tech_name]
-    research_queue.remove(force_queue, tech_data, tech_data.technology.level)
+    local level = tech_data.technology.level
+    if research_queue.contains(force_queue, tech_data, level) then
+      research_queue.remove(force_queue, tech_data, level)
+    end
   end
   gui.schedule_update(force_table)
 end)
