@@ -125,13 +125,12 @@ function gui.hide(self)
 end
 
 --- @param self Gui
---- @param e EventData.on_gui_click
-function gui.on_start_research_click(self, e)
+function gui.on_start_research_click(self)
   local selected = self.state.selected
   if not selected then
     return
   end
-  gui.start_research(self, selected.data, selected.level, e.control and util.is_cheating(self.player))
+  gui.start_research(self, selected.data, selected.level)
 end
 
 --- @param self Gui
@@ -402,7 +401,7 @@ function gui.update_queue(self)
     -- FIXME: Selected styles
     if button then
       gui_util.move_to(button, queue_table, i)
-      gui_util.update_tech_slot(button, tech_data, node.level)
+      gui_util.update_tech_slot(button, tech_data, node.level, queue)
     else
       local button_template = gui_util.technology_slot(gui.on_tech_slot_click, tech_data, level, nil, true)
       button_template.index = i
@@ -444,7 +443,7 @@ function gui.update_tech_info_footer(self, progress_only)
 
   local elems = self.elems
   local is_researched = tech_data.research_state == constants.research_state.researched
-  local in_queue = tech_data.in_queue
+  local in_queue = research_queue.contains(self.force_table.queue, tech_data, level)
   local progress = util.get_research_progress(tech_data.technology)
   local is_cheating = util.is_cheating(self.player)
 
@@ -474,6 +473,8 @@ end
 function gui.update_tech_list(self)
   local profiler = game.create_profiler()
   local techs_table = self.elems.techs_table
+  local queue = self.force_table.queue
+  local selected = self.state.selected or {}
   local i = 0
   for _, group in pairs(self.force_table.technology_groups) do
     for j = 1, global.num_technologies do
@@ -482,6 +483,7 @@ function gui.update_tech_list(self)
       if tech_data then
         i = i + 1
         -- FIXME: Selected styles
+        local is_selected = tech_data == selected.data
         local button = techs_table[tech_data.name]
         if button then
           gui_util.move_to(button, techs_table, i)
@@ -492,10 +494,11 @@ function gui.update_tech_list(self)
               tech_data.technology.level
             )
           end
-          gui_util.update_tech_slot(button, tech_data, level)
+          gui_util.update_tech_slot(button, tech_data, level, queue, is_selected)
         else
           -- FIXME: Infinite research level
-          local button_template = gui_util.technology_slot(gui.on_tech_slot_click, tech_data, tech_data.base_level)
+          local button_template =
+            gui_util.technology_slot(gui.on_tech_slot_click, tech_data, tech_data.base_level, is_selected)
           button_template.index = i
           flib_gui.add(techs_table, { button_template })
         end

@@ -74,7 +74,6 @@ end
 --- @return LocalisedString?
 local function push(self, tech_data, level, to_front)
   -- Update flag and length
-  tech_data.in_queue = true
   self.len = self.len + 1
   -- Add to linked list
   local key = util.get_queue_key(tech_data, level)
@@ -134,7 +133,10 @@ function research_queue.push(self, tech_data, level, to_front)
     local technologies = self.force_table.technologies
     for _, prerequisite_name in pairs(global.technology_prerequisites[technology.name]) do
       local prerequisite_data = technologies[prerequisite_name]
-      if not prerequisite_data.in_queue and prerequisite_data.research_state ~= constants.research_state.researched then
+      if
+        not research_queue.contains(self, prerequisite_data, true)
+        and prerequisite_data.research_state ~= constants.research_state.researched
+      then
         add_tech(to_research, prerequisite_data)
       end
     end
@@ -192,12 +194,6 @@ function research_queue.remove(self, tech_data, level)
   else
     prev.next = node.next
   end
-  -- Update in_queue status
-  if tech_data.is_multilevel then
-    tech_data.in_queue = research_queue.contains(self, tech_data, true)
-  else
-    tech_data.in_queue = false
-  end
   -- Update research states
   research_queue.update_research_state(self.force_table, tech_data)
   -- Remove requisites
@@ -208,11 +204,14 @@ function research_queue.remove(self, tech_data, level)
     for _, requisite_name in pairs(requisites) do
       local requisite_data = technologies[requisite_name]
       research_queue.update_research_state(force_table, requisite_data)
-      if requisite_data.in_queue and requisite_data.research_state == constants.research_state.not_available then
-        local level = requisite_data.technology.level
-        if requisite_data.is_multilevel then
-          level = level + 1
-        end
+      local level = requisite_data.technology.level
+      if requisite_data.is_multilevel then
+        level = level + 1
+      end
+      if
+        research_queue.contains(self, requisite_data, level)
+        and requisite_data.research_state == constants.research_state.not_available
+      then
         research_queue.remove(self, requisite_data, level)
       end
     end
@@ -340,7 +339,7 @@ end
 local function are_prereqs_satisfied_or_queued(tech_data, force_table)
   for _, prereq in pairs(tech_data.technology.prerequisites) do
     local prereq_data = force_table.technologies[prereq.name]
-    if not prereq.researched and not prereq_data.in_queue then
+    if not prereq.researched and not research_queue.contains(force_table.queue, prereq_data, true) then
       return false
     end
   end

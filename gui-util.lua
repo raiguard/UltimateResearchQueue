@@ -2,6 +2,7 @@ local math = require("__flib__/math")
 local table = require("__flib__/table")
 
 local constants = require("__UltimateResearchQueue__/constants")
+local research_queue = require("__UltimateResearchQueue__/research-queue")
 local util = require("__UltimateResearchQueue__/util")
 
 local gui_util = {}
@@ -225,8 +226,9 @@ end
 --- @param button LuaGuiElement
 --- @param tech_data TechnologyData
 --- @param level uint
+--- @param queue ResearchQueue
 --- @param is_selected boolean?
-function gui_util.update_tech_slot(button, tech_data, level, is_selected)
+function gui_util.update_tech_slot(button, tech_data, level, queue, is_selected)
   local properties = gui_util.get_technology_slot_properties(tech_data, is_selected)
   local tags = button.tags
   local research_state = tech_data.research_state
@@ -255,7 +257,7 @@ function gui_util.update_tech_slot(button, tech_data, level, is_selected)
       level_label.caption = tostring(level or tech_data.technology.level)
     end
   end
-  button.duration_label.visible = tech_data.in_queue
+  button.duration_label.visible = research_queue.contains(queue, tech_data, level)
 end
 
 --- @param elem LuaGuiElement

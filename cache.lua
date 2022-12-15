@@ -139,7 +139,6 @@ function cache.build_force_technologies(force)
     local data = {
       base_level = prototype.level,
       base_name = base_name,
-      in_queue = false,
       is_multilevel = is_multilevel,
       is_upgrade = technology.upgrade,
       max_level = prototype.max_level,
@@ -149,7 +148,6 @@ function cache.build_force_technologies(force)
       research_state = nil,
       technology = technology,
     }
-    data.in_queue = research_queue.contains(force_table.queue, data, true)
 
     technologies[name] = data
   end
