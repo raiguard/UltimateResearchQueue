@@ -34,6 +34,7 @@ local util = require("__UltimateResearchQueue__/util")
 --- @field tech_info_ingredients_count_label LuaGuiElement
 --- @field tech_info_ingredients_time_label LuaGuiElement
 --- @field tech_info_effects_table LuaGuiElement
+--- @field tech_info_upgrade_group_table LuaGuiElement
 --- @field tech_info_footer_frame LuaGuiElement
 --- @field tech_info_footer_progressbar LuaGuiElement
 --- @field tech_info_footer_pusher LuaGuiElement
@@ -470,6 +471,25 @@ function gui.update_tech_info(self)
   local effects_table = self.elems.tech_info_effects_table
   effects_table.clear()
   flib_gui.add(effects_table, table.map(technology.effects, gui_util.effect_button))
+  -- Upgrade path
+  local upgrade_group_table = self.elems.tech_info_upgrade_group_table
+  upgrade_group_table.clear()
+  if tech_data.is_upgrade then
+    local group_buttons = {}
+    local upgrade_group = self.force_table.upgrade_groups[tech_data.base_name]
+    for _, upgrade_data in pairs(upgrade_group) do
+      table.insert(
+        group_buttons,
+        gui_util.technology_slot(
+          gui.on_tech_slot_click,
+          upgrade_data,
+          upgrade_data.technology.level,
+          selected.data == upgrade_data and selected.level == upgrade_data.technology.level
+        )
+      )
+    end
+    flib_gui.add(upgrade_group_table, group_buttons)
+  end
   -- Footer
   gui.update_tech_info_footer(self)
 end
@@ -737,6 +757,25 @@ function gui.new(player)
                 name = "tech_info_effects_table",
                 style_mods = { horizontal_spacing = 8 },
                 column_count = 12,
+              },
+              -- TODO: Make a template
+              {
+                type = "line",
+                direction = "horizontal",
+                style_mods = { left_margin = -2, right_margin = -2, top_margin = 4 },
+              },
+              { type = "label", style = "heading_2_label", caption = { "gui.urq-upgrade-group" } },
+              {
+                type = "frame",
+                style = "deep_frame_in_shallow_frame",
+                {
+                  type = "scroll-pane",
+                  style = "urq_tech_list_scroll_pane",
+                  style_mods = { width = 72 * 6 },
+                  vertical_scroll_policy = "never",
+                  horizontal_scroll_policy = "auto",
+                  { type = "flow", name = "tech_info_upgrade_group_table", style_mods = { horizontal_spacing = 0 } },
+                },
               },
             },
             {
