@@ -370,16 +370,17 @@ function gui.update_durations_and_progress(self)
   local queue = self.force_table.queue
   local node = queue.head
   while node do
-    local progress = util.get_research_progress(node.data, node.level)
-    local queue_button = queue_table[util.get_queue_key(node.data, node.level)]
+    local tech_data, level = node.data, node.level
+    local progress = util.get_research_progress(tech_data, level)
+    local queue_button = queue_table[util.get_queue_key(tech_data, level)]
     if queue_button then
       queue_button.duration_label.caption = node.duration
       queue_button.progressbar.value = progress
       queue_button.progressbar.visible = progress > 0
     end
-    local techs_button = techs_table[node.data.name]
+    local techs_button = techs_table[tech_data.name]
     -- Only update the techs list button once
-    if techs_button and node.data.technology.level + 1 == level then
+    if techs_button and (not tech_data.is_multilevel or tech_data.technology.level + 1 == level) then
       techs_button.duration_label.caption = node.duration
       techs_button.progressbar.value = progress
       techs_button.progressbar.visible = progress > 0
