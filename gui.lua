@@ -371,7 +371,7 @@ function gui.update_durations_and_progress(self)
   local node = queue.head
   while node do
     local tech_data, level = node.data, node.level
-    local progress = util.get_research_progress(tech_data, level)
+    local progress = math.floored(util.get_research_progress(tech_data, level), 0.01)
     local queue_button = queue_table[util.get_queue_key(tech_data, level)]
     if queue_button then
       queue_button.duration_label.caption = node.duration
