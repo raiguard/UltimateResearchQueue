@@ -274,7 +274,7 @@ end
 --- @param instant_research boolean?
 function gui.start_research(self, tech_data, level, to_front, instant_research)
   if instant_research then
-    local prereqs = global.technology_prerequisites[tech_data.name]
+    local prereqs = global.technology_prerequisites[tech_data.name] or {}
     local technologies = self.force_table.technologies
     for i = 1, #prereqs do
       local prereq_data = technologies[prereqs[i]]
@@ -846,6 +846,7 @@ end
 function gui.update_force(force)
   for _, player in pairs(force.players) do
     local player_gui = gui.get(player.index)
+    -- TODO: Only update when open
     if player_gui then
       gui.update_queue(player_gui)
       gui.update_tech_info_footer(player_gui)

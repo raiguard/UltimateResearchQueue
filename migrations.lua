@@ -23,8 +23,9 @@ function migrations.init_force(force)
   --- @field queue ResearchQueue
   local force_table = {
     force = force,
-    --- @type ProgressSample[]
-    research_progress_samples = {},
+    last_research_progress = 0,
+    last_research_progress_tick = 0,
+    research_speed = 0,
     --- @type table<ResearchState, table<uint, TechnologyData>>
     technology_groups = {},
     --- @type table<string, TechnologyData>

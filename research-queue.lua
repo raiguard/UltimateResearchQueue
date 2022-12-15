@@ -236,15 +236,18 @@ function research_queue.update_active_research(self)
     local current_research = self.force.current_research
     if not current_research or head.data.name ~= current_research.name then
       self.force.add_research(head.data.technology)
+      self.force_table.last_research_progress = util.get_research_progress(head.data, head.level)
     end
   else
     self.force.cancel_current_research()
+    self.force_table.last_research_progress = 0
   end
+  self.force_table.last_research_progress_tick = game.tick
 end
 
 --- @param self ResearchQueue
---- @param speed number
-function research_queue.update_durations(self, speed)
+function research_queue.update_durations(self)
+  local speed = self.force_table.research_speed
   local duration = 0
   local node = self.head
   while node do

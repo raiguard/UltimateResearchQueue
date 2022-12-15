@@ -224,52 +224,30 @@ script.on_event(defines.events.on_tick, function(e)
   end
 end)
 
--- FIXME: This is not accurate enough
+--- @param force LuaForce
+--- @param force_table ForceTable
+--- @param current_research LuaTechnology
+local function update_force_durations(force, force_table, current_research)
+  local current_progress = force.research_progress
+  local tick_delta = game.tick - force_table.last_research_progress_tick
+  -- TODO: This doesn't work quite right when the tech finishes close to the update time
+  local delta = (current_progress - force_table.last_research_progress) * (60 / tick_delta)
+  local research_time = (current_research.research_unit_energy / 60) * util.get_research_unit_count(current_research)
+
+  force_table.last_research_progress = current_progress
+  force_table.last_research_progress_tick = game.tick
+  force_table.research_speed = delta * research_time
+
+  research_queue.update_durations(force_table.queue)
+  gui.update_force(force)
+end
+
 script.on_nth_tick(60, function()
   for force_index, force_table in pairs(global.forces) do
     local force = game.forces[force_index]
-    local current = force.current_research
-    if current then
-      local current_data = force_table.technologies[current.name]
-      local samples = force_table.research_progress_samples
-      --- @class ProgressSample
-      local sample = { progress = force.research_progress, tech = current.name }
-      table.insert(samples, sample)
-      if #samples > 3 then
-        table.remove(samples, 1)
-      end
-
-      local speed = 0
-      local num_samples = 0
-      if #samples > 1 then
-        for i = 2, #samples do
-          local previous_sample = samples[i - 1]
-          local current_sample = samples[i]
-          if previous_sample.tech == current_sample.tech then
-            -- How much the progress increased per tick
-            local diff = (current_sample.progress - previous_sample.progress) / 60
-            -- Don't add if the speed is negative for whatever reason
-            if diff > 0 then
-              speed = speed
-                + diff * util.get_research_unit_count(current_data.technology) * current.research_unit_energy
-              num_samples = num_samples + 1
-            end
-          end
-        end
-        -- Rolling average
-        if num_samples > 0 then
-          speed = speed / num_samples
-        end
-      end
-
-      research_queue.update_durations(force_table.queue, speed)
-
-      for _, player in pairs(force.players) do
-        local player_gui = gui.get(player.index)
-        if player_gui then
-          gui.update_durations_and_progress(player_gui)
-        end
-      end
+    local current_research = force.current_research
+    if current_research then
+      update_force_durations(force, force_table, current_research)
     end
   end
 end)
