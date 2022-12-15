@@ -234,7 +234,7 @@ function research_queue.update_active_research(self)
   local head = self.head
   if not self.paused and head then
     local current_research = self.force.current_research
-    if not current_research or head.data.name ~= current_research then
+    if not current_research or head.data.name ~= current_research.name then
       self.force.add_research(head.data.technology)
     end
   else
@@ -290,7 +290,6 @@ end
 function research_queue.new(force, force_table)
   --- @class ResearchQueue
   local self = {
-    --- @type table<string, string>
     force = force,
     force_table = force_table,
     --- @type ResearchQueueNode?

@@ -258,7 +258,7 @@ end
 function gui.show(self, select_tech)
   if select_tech then
     local select_data = self.force_table.technologies[select_tech]
-    gui.select_tech(self, { data = select_data })
+    gui.select_tech(self, select_data)
   end
   self.elems.urq_window.visible = true
   self.elems.urq_window.bring_to_front()
