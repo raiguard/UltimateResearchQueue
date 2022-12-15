@@ -857,6 +857,16 @@ function gui.update_force(force)
   end
 end
 
+--- @param force LuaForce
+function gui.update_force_progress(force)
+  for _, player in pairs(force.players) do
+    local player_gui = gui.get(player.index)
+    if player_gui and player_gui.elems.urq_window.visible then
+      gui.update_durations_and_progress(player_gui)
+    end
+  end
+end
+
 --- @param force_table ForceTable
 function gui.schedule_update(force_table)
   if game.tick_paused then

@@ -229,17 +229,19 @@ end)
 --- @param current_research LuaTechnology
 local function update_force_durations(force, force_table, current_research)
   local current_progress = force.research_progress
+  local research_time = current_research.research_unit_energy * util.get_research_unit_count(current_research)
+
+  local progress_delta = current_progress - force_table.last_research_progress
   local tick_delta = game.tick - force_table.last_research_progress_tick
-  -- TODO: This doesn't work quite right when the tech finishes close to the update time
-  local delta = (current_progress - force_table.last_research_progress) * (60 / tick_delta)
-  local research_time = (current_research.research_unit_energy / 60) * util.get_research_unit_count(current_research)
+
+  local normalized_speed = (progress_delta * research_time) / tick_delta
 
   force_table.last_research_progress = current_progress
   force_table.last_research_progress_tick = game.tick
-  force_table.research_speed = delta * research_time
+  force_table.research_speed = normalized_speed
 
   research_queue.update_durations(force_table.queue)
-  gui.update_force(force)
+  gui.update_force_progress(force)
 end
 
 script.on_nth_tick(60, function()
