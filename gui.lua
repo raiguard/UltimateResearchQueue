@@ -379,8 +379,7 @@ function gui.update_durations_and_progress(self)
       queue_button.progressbar.visible = progress > 0
     end
     local techs_button = techs_table[tech_data.name]
-    -- Only update the techs list button once
-    if techs_button and (not tech_data.is_multilevel or tech_data.technology.level + 1 == level) then
+    if techs_button then
       techs_button.duration_label.caption = node.duration
       techs_button.progressbar.value = progress
       techs_button.progressbar.visible = progress > 0
