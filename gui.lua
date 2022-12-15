@@ -221,60 +221,7 @@ function gui.select_tech(self, tech_data, level)
 
   gui.update_queue(self)
   gui.update_tech_list(self)
-  gui.update_tech_info_footer(self)
-
-  -- -- Queue and techs list
-  -- for _, table in pairs({ self.elems.queue_table, self.elems.techs_table }) do
-  --   if former_selected then
-  --     local former_slot = table[former_selected.data.name] --[[@as LuaGuiElement?]]
-  --     if former_slot then
-  --       former_slot.style = string.gsub(former_slot.style.name, "_selected", "")
-  --       table.parent.scroll_to_element(former_slot)
-  --     end
-  --   end
-  --   local new_slot = table[tech_data.name] --[[@as LuaGuiElement?]]
-  --   if new_slot then
-  --     new_slot.style = new_slot.style.name .. "_selected"
-  --     table.parent.scroll_to_element(new_slot)
-  --   end
-  -- end
-
-  -- -- Tech information
-
-  -- local technology = tech_data.technology
-  -- -- Slot
-  -- local main_slot_frame = self.elems.tech_info_main_slot_frame
-  -- main_slot_frame.clear() -- The best thing to do is clear it, otherwise we'd need to diff all the sub-elements
-  -- if tech_data then
-  --   local button_template = gui_util.technology_slot(gui.on_tech_slot_click, tech_data, level)
-  --   button_template.enabled = false
-  --   flib_gui.add(main_slot_frame, button_template)
-  -- end
-  -- -- Name and description
-  -- self.elems.tech_info_name_label.caption = technology.localised_name
-  -- self.elems.tech_info_description_label.caption = technology.localised_description
-  -- -- Ingredients
-  -- local ingredients_table = self.elems.tech_info_ingredients_table
-  -- ingredients_table.clear()
-  -- local ingredients_children = table.map(technology.research_unit_ingredients, function(ingredient)
-  --   return {
-  --     type = "sprite-button",
-  --     style = "transparent_slot",
-  --     sprite = "item/" .. ingredient.name,
-  --     number = ingredient.amount,
-  --     tooltip = game.item_prototypes[ingredient.name].localised_name,
-  --   }
-  -- end)
-  -- flib_gui.add(ingredients_table, ingredients_children)
-  -- self.elems.tech_info_ingredients_time_label.caption = "[img=quantity-time] "
-  --   .. math.round(technology.research_unit_energy / 60, 0.1)
-  -- self.elems.tech_info_ingredients_count_label.caption = "[img=quantity-multiplier] " .. technology.research_unit_count
-  -- -- Effects
-  -- local effects_table = self.elems.tech_info_effects_table
-  -- effects_table.clear()
-  -- flib_gui.add(effects_table, table.map(technology.effects, gui_util.effect_button))
-  -- -- Footer
-  -- gui.update_tech_info_footer(self)
+  gui.update_tech_info(self)
 end
 
 --- @param self Gui
@@ -474,6 +421,57 @@ function gui.update_search_query(self)
   else
     global.filter_tech_list[self.player.index] = game.tick + 30
   end
+end
+
+--- @param self Gui
+function gui.update_tech_info(self)
+  local selected = self.state.selected
+  if not selected then
+    return
+  end
+  local tech_data, level = selected.data, selected.level
+
+  local technology = tech_data.technology
+  -- Slot
+  local main_slot_frame = self.elems.tech_info_main_slot_frame
+  main_slot_frame.clear() -- The best thing to do is clear it, otherwise we'd need to diff all the sub-elements
+  if tech_data then
+    local button_template = gui_util.technology_slot(gui.on_tech_slot_click, tech_data, level)
+    button_template.ignored_by_interaction = true
+    button_template[5].visible = false
+    button_template[6].visible = false
+    flib_gui.add(main_slot_frame, button_template)
+  end
+  -- Name and description
+  local caption = technology.localised_name
+  if tech_data.is_multilevel then
+    caption = { "", caption, " ", level }
+  end
+  self.elems.tech_info_name_label.caption = caption
+  self.elems.tech_info_description_label.caption = technology.localised_description
+  -- Ingredients
+  local ingredients_table = self.elems.tech_info_ingredients_table
+  ingredients_table.clear()
+  local ingredients_children = table.map(technology.research_unit_ingredients, function(ingredient)
+    return {
+      type = "sprite-button",
+      style = "transparent_slot",
+      sprite = "item/" .. ingredient.name,
+      number = ingredient.amount,
+      tooltip = game.item_prototypes[ingredient.name].localised_name,
+    }
+  end)
+  flib_gui.add(ingredients_table, ingredients_children)
+  self.elems.tech_info_ingredients_time_label.caption = "[img=quantity-time] "
+    .. math.round(technology.research_unit_energy / 60, 0.1)
+  self.elems.tech_info_ingredients_count_label.caption = "[img=quantity-multiplier] "
+    .. util.get_research_unit_count(technology, level)
+  -- Effects
+  local effects_table = self.elems.tech_info_effects_table
+  effects_table.clear()
+  flib_gui.add(effects_table, table.map(technology.effects, gui_util.effect_button))
+  -- Footer
+  gui.update_tech_info_footer(self)
 end
 
 --- @param self Gui
@@ -873,7 +871,7 @@ function gui.update_force(force)
     -- TODO: Only update when open
     if player_gui then
       gui.update_queue(player_gui)
-      gui.update_tech_info_footer(player_gui)
+      gui.update_tech_info(player_gui)
       gui.update_tech_list(player_gui)
       gui.filter_tech_list(player_gui)
       gui.update_durations_and_progress(player_gui)
