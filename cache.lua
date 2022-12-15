@@ -126,14 +126,19 @@ function cache.build_force_technologies(force)
   --- @type table<string, TechnologyData>
   local technologies = {}
   force_table.technologies = technologies
+  -- TODO: Move this to root global?
+  --- @type table<string, TechnologyData[]>
+  local upgrade_groups = {}
+  force_table.upgrade_groups = upgrade_groups
   -- Loop 1: Assemble data
   for name, technology in pairs(force.technologies) do
     local prototype = technology.prototype
     local is_multilevel = prototype.level ~= prototype.max_level
+    local is_upgrade = prototype.upgrade
     local order = global.technology_order[name]
     local base_name = name
-    if is_multilevel then
-      base_name = string.match(base_name, "^(.*)%-%d*$")
+    if is_multilevel or is_upgrade then
+      base_name = string.match(base_name, "^(.*)%-%d*$") or name
     end
 
     -- TODO: Consider going back to LuaTechnologies, because most of this is unneeded
@@ -142,7 +147,7 @@ function cache.build_force_technologies(force)
       base_level = prototype.level,
       base_name = base_name,
       is_multilevel = is_multilevel,
-      is_upgrade = technology.upgrade,
+      is_upgrade = is_upgrade,
       max_level = prototype.max_level,
       name = name,
       order = order,
@@ -152,6 +157,11 @@ function cache.build_force_technologies(force)
     }
 
     technologies[name] = data
+
+    if is_upgrade then
+      local group = table.get_or_insert(upgrade_groups, base_name, {})
+      table.insert(group, data)
+    end
   end
   -- Loop 2: Add research states and references to other techs
   for _, tech_data in pairs(technologies) do

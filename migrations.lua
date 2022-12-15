@@ -30,6 +30,8 @@ function migrations.init_force(force)
     technology_groups = {},
     --- @type table<string, TechnologyData>
     technologies = {},
+    --- @type table<string, TechnologyData[]>
+    upgrade_groups = {},
   }
   force_table.queue = research_queue.new(force, force_table)
   global.forces[force.index] = force_table

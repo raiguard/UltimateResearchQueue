@@ -70,6 +70,28 @@ function gui.clear_queue(self)
   gui.schedule_update(self.force_table)
 end
 
+--- @param tech_data TechnologyData
+--- @param upgrade_group TechnologyData[]
+local function check_upgrade_group(tech_data, upgrade_group)
+  if tech_data.research_state == constants.research_state.researched then
+    -- Show if highest researched
+    for i = #upgrade_group, 1, -1 do
+      local other_tech_data = upgrade_group[i]
+      if other_tech_data.research_state == constants.research_state.researched then
+        return other_tech_data == tech_data
+      end
+    end
+  else
+    -- Show if lowest unresearched
+    for i = 1, #upgrade_group do
+      local other_tech_data = upgrade_group[i]
+      if other_tech_data.research_state ~= constants.research_state.researched then
+        return other_tech_data == tech_data
+      end
+    end
+  end
+end
+
 --- @param self Gui
 -- Updates tech list button visibility based on search query and other settings
 function gui.filter_tech_list(self)
@@ -86,8 +108,10 @@ function gui.filter_tech_list(self)
       research_state_matched = false
     end
     -- Show/hide upgrade techs
-    -- FIXME:
     local upgrade_matched = true
+    if tech_data.is_upgrade and tech_data.research_state ~= constants.research_state.conditionally_available then
+      upgrade_matched = check_upgrade_group(tech_data, self.force_table.upgrade_groups[tech_data.base_name])
+    end
     -- Search query
     local search_matched = #query == 0 -- Automatically pass search on empty query
     if research_state_matched and not search_matched then
