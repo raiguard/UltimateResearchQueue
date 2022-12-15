@@ -851,6 +851,7 @@ function gui.update_force(force)
       gui.update_tech_info_footer(player_gui)
       gui.update_tech_list(player_gui)
       gui.filter_tech_list(player_gui)
+      gui.update_durations_and_progress(player_gui)
     end
   end
 end

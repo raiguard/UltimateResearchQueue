@@ -78,7 +78,7 @@ local function push(self, tech_data, level, to_front)
   -- Add to linked list
   local key = util.get_queue_key(tech_data, level)
   --- @type ResearchQueueNode
-  local new_node = { data = tech_data, level = level, duration = "", key = key }
+  local new_node = { data = tech_data, level = level, duration = "[img=infinity]", key = key }
   self.lookup[key] = new_node
   if to_front or not self.head then
     new_node.next = self.head

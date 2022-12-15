@@ -136,6 +136,7 @@ function cache.build_force_technologies(force)
       base_name = string.match(base_name, "^(.*)%-%d*$")
     end
 
+    -- TODO: Consider going back to LuaTechnologies, because most of this is unneeded
     --- @class TechnologyData
     local data = {
       base_level = prototype.level,
