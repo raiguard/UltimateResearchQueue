@@ -45,16 +45,21 @@ function util.format_time_short(ticks)
   return result
 end
 
---- @param tech LuaTechnology
+--- @param tech_data TechnologyData
+--- @param level uint
 --- @return double
-function util.get_research_progress(tech)
-  local force = tech.force
+function util.get_research_progress(tech_data, level)
+  local technology = tech_data.technology
+  local force = technology.force
   local current_research = force.current_research
-  if current_research and current_research.name == tech.name then
-    return force.research_progress
-    -- TODO: Handle infinite researches
+  if current_research and current_research.name == technology.name then
+    if not tech_data.is_multilevel or tech_data.technology.level == level then
+      return force.research_progress
+    else
+      return 0
+    end
   else
-    return force.get_saved_technology_progress(tech) or 0
+    return force.get_saved_technology_progress(technology) or 0
   end
 end
 

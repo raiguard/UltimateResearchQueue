@@ -107,7 +107,7 @@ end
 --- @return GuiElemDef
 function gui_util.technology_slot(handler, tech_data, level, is_selected, is_queue)
   local properties = gui_util.get_technology_slot_properties(tech_data, is_selected)
-  local progress = util.get_research_progress(tech_data.technology)
+  local progress = util.get_research_progress(tech_data, level)
 
   local ingredients = {}
   local ingredients_len = 0
@@ -232,8 +232,8 @@ function gui_util.update_tech_slot(button, tech_data, level, queue, is_selected)
   local properties = gui_util.get_technology_slot_properties(tech_data, is_selected)
   local tags = button.tags
   local research_state = tech_data.research_state
+  button.style = properties.style
   if tags.research_state ~= research_state then
-    button.style = properties.style
     if research_state == constants.research_state.researched then
       button.progressbar.visible = false
       button.progressbar.value = 0

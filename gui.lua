@@ -195,58 +195,62 @@ function gui.select_tech(self, tech_data, level)
   end
   self.state.selected = { data = tech_data, level = level }
 
-  -- Queue and techs list
-  for _, table in pairs({ self.elems.queue_table, self.elems.techs_table }) do
-    if former_selected then
-      local former_slot = table[former_selected.data.name] --[[@as LuaGuiElement?]]
-      if former_slot then
-        former_slot.style = string.gsub(former_slot.style.name, "_selected", "")
-        table.parent.scroll_to_element(former_slot)
-      end
-    end
-    local new_slot = table[tech_data.name] --[[@as LuaGuiElement?]]
-    if new_slot then
-      new_slot.style = new_slot.style.name .. "_selected"
-      table.parent.scroll_to_element(new_slot)
-    end
-  end
-
-  -- Tech information
-
-  local technology = tech_data.technology
-  -- Slot
-  local main_slot_frame = self.elems.tech_info_main_slot_frame
-  main_slot_frame.clear() -- The best thing to do is clear it, otherwise we'd need to diff all the sub-elements
-  if tech_data then
-    local button_template = gui_util.technology_slot(gui.on_tech_slot_click, tech_data, level)
-    button_template.enabled = false
-    flib_gui.add(main_slot_frame, button_template)
-  end
-  -- Name and description
-  self.elems.tech_info_name_label.caption = technology.localised_name
-  self.elems.tech_info_description_label.caption = technology.localised_description
-  -- Ingredients
-  local ingredients_table = self.elems.tech_info_ingredients_table
-  ingredients_table.clear()
-  local ingredients_children = table.map(technology.research_unit_ingredients, function(ingredient)
-    return {
-      type = "sprite-button",
-      style = "transparent_slot",
-      sprite = "item/" .. ingredient.name,
-      number = ingredient.amount,
-      tooltip = game.item_prototypes[ingredient.name].localised_name,
-    }
-  end)
-  flib_gui.add(ingredients_table, ingredients_children)
-  self.elems.tech_info_ingredients_time_label.caption = "[img=quantity-time] "
-    .. math.round(technology.research_unit_energy / 60, 0.1)
-  self.elems.tech_info_ingredients_count_label.caption = "[img=quantity-multiplier] " .. technology.research_unit_count
-  -- Effects
-  local effects_table = self.elems.tech_info_effects_table
-  effects_table.clear()
-  flib_gui.add(effects_table, table.map(technology.effects, gui_util.effect_button))
-  -- Footer
+  gui.update_queue(self)
+  gui.update_tech_list(self)
   gui.update_tech_info_footer(self)
+
+  -- -- Queue and techs list
+  -- for _, table in pairs({ self.elems.queue_table, self.elems.techs_table }) do
+  --   if former_selected then
+  --     local former_slot = table[former_selected.data.name] --[[@as LuaGuiElement?]]
+  --     if former_slot then
+  --       former_slot.style = string.gsub(former_slot.style.name, "_selected", "")
+  --       table.parent.scroll_to_element(former_slot)
+  --     end
+  --   end
+  --   local new_slot = table[tech_data.name] --[[@as LuaGuiElement?]]
+  --   if new_slot then
+  --     new_slot.style = new_slot.style.name .. "_selected"
+  --     table.parent.scroll_to_element(new_slot)
+  --   end
+  -- end
+
+  -- -- Tech information
+
+  -- local technology = tech_data.technology
+  -- -- Slot
+  -- local main_slot_frame = self.elems.tech_info_main_slot_frame
+  -- main_slot_frame.clear() -- The best thing to do is clear it, otherwise we'd need to diff all the sub-elements
+  -- if tech_data then
+  --   local button_template = gui_util.technology_slot(gui.on_tech_slot_click, tech_data, level)
+  --   button_template.enabled = false
+  --   flib_gui.add(main_slot_frame, button_template)
+  -- end
+  -- -- Name and description
+  -- self.elems.tech_info_name_label.caption = technology.localised_name
+  -- self.elems.tech_info_description_label.caption = technology.localised_description
+  -- -- Ingredients
+  -- local ingredients_table = self.elems.tech_info_ingredients_table
+  -- ingredients_table.clear()
+  -- local ingredients_children = table.map(technology.research_unit_ingredients, function(ingredient)
+  --   return {
+  --     type = "sprite-button",
+  --     style = "transparent_slot",
+  --     sprite = "item/" .. ingredient.name,
+  --     number = ingredient.amount,
+  --     tooltip = game.item_prototypes[ingredient.name].localised_name,
+  --   }
+  -- end)
+  -- flib_gui.add(ingredients_table, ingredients_children)
+  -- self.elems.tech_info_ingredients_time_label.caption = "[img=quantity-time] "
+  --   .. math.round(technology.research_unit_energy / 60, 0.1)
+  -- self.elems.tech_info_ingredients_count_label.caption = "[img=quantity-multiplier] " .. technology.research_unit_count
+  -- -- Effects
+  -- local effects_table = self.elems.tech_info_effects_table
+  -- effects_table.clear()
+  -- flib_gui.add(effects_table, table.map(technology.effects, gui_util.effect_button))
+  -- -- Footer
+  -- gui.update_tech_info_footer(self)
 end
 
 --- @param self Gui
@@ -366,16 +370,17 @@ function gui.update_durations_and_progress(self)
   local queue = self.force_table.queue
   local node = queue.head
   while node do
-    local name = util.get_queue_key(node.data, node.level)
-    local queue_button = queue_table[name]
-    local techs_button = techs_table[name]
-    if queue_button and techs_button then
+    local progress = util.get_research_progress(node.data, node.level)
+    local queue_button = queue_table[util.get_queue_key(node.data, node.level)]
+    if queue_button then
       queue_button.duration_label.caption = node.duration
-      techs_button.duration_label.caption = node.duration
-
-      local progress = util.get_research_progress(node.data.technology)
       queue_button.progressbar.value = progress
       queue_button.progressbar.visible = progress > 0
+    end
+    local techs_button = techs_table[node.data.name]
+    -- Only update the techs list button once
+    if techs_button and node.data.technology.level + 1 == level then
+      techs_button.duration_label.caption = node.duration
       techs_button.progressbar.value = progress
       techs_button.progressbar.visible = progress > 0
     end
@@ -404,6 +409,8 @@ function gui.update_queue(self)
   self.elems.queue_population_label.caption =
     { "gui.urq-queue-population", self.force_table.queue.len, constants.queue_limit }
 
+  local selected = self.state.selected or {}
+
   local queue_table = self.elems.queue_table
   local i = 0
   local node = queue.head
@@ -412,12 +419,12 @@ function gui.update_queue(self)
     local tech_data, level = node.data, node.level
     local name = util.get_queue_key(tech_data, level)
     local button = queue_table[name]
-    -- FIXME: Selected styles
+    local is_selected = selected.data == tech_data and selected.level == level
     if button then
       gui_util.move_to(button, queue_table, i)
-      gui_util.update_tech_slot(button, tech_data, node.level, queue)
+      gui_util.update_tech_slot(button, tech_data, node.level, queue, is_selected)
     else
-      local button_template = gui_util.technology_slot(gui.on_tech_slot_click, tech_data, level, nil, true)
+      local button_template = gui_util.technology_slot(gui.on_tech_slot_click, tech_data, level, is_selected, true)
       button_template.index = i
       flib_gui.add(queue_table, button_template)
     end
@@ -458,7 +465,7 @@ function gui.update_tech_info_footer(self, progress_only)
   local elems = self.elems
   local is_researched = tech_data.research_state == constants.research_state.researched
   local in_queue = research_queue.contains(self.force_table.queue, tech_data, level)
-  local progress = util.get_research_progress(tech_data.technology)
+  local progress = util.get_research_progress(tech_data, level)
   local is_cheating = util.is_cheating(self.player)
 
   elems.tech_info_footer_frame.visible = not (is_researched and not is_cheating)
@@ -494,29 +501,32 @@ function gui.update_tech_list(self)
     for j = 1, global.num_technologies do
       --- @cast j uint
       local tech_data = group[j]
-      if tech_data then
-        i = i + 1
-        -- FIXME: Selected styles
-        local is_selected = tech_data == selected.data
-        local button = techs_table[tech_data.name]
-        if button then
-          gui_util.move_to(button, techs_table, i)
-          local level = tech_data.base_level
-          if tech_data.is_multilevel then
-            level = math.max(
-              research_queue.get_highest_level(self.force_table.queue, tech_data) + 1,
-              tech_data.technology.level
-            )
-          end
-          gui_util.update_tech_slot(button, tech_data, level, queue, is_selected)
-        else
-          -- FIXME: Infinite research level
-          local button_template =
-            gui_util.technology_slot(gui.on_tech_slot_click, tech_data, tech_data.base_level, is_selected)
-          button_template.index = i
-          flib_gui.add(techs_table, { button_template })
-        end
+      if not tech_data then
+        goto continue
       end
+      local level = tech_data.base_level
+      if tech_data.is_multilevel then
+        level =
+          math.max(research_queue.get_highest_level(self.force_table.queue, tech_data) + 1, tech_data.technology.level)
+      end
+      i = i + 1
+      local button = techs_table[tech_data.name]
+      if button then
+        gui_util.move_to(button, techs_table, i)
+        gui_util.update_tech_slot(
+          button,
+          tech_data,
+          level,
+          queue,
+          selected.data == tech_data and selected.level == level
+        )
+      else
+        -- TODO: Do all of the creation at the start
+        local button_template = gui_util.technology_slot(gui.on_tech_slot_click, tech_data, level)
+        button_template.index = i
+        flib_gui.add(techs_table, button_template)
+      end
+      ::continue::
     end
   end
   local children = techs_table.children

@@ -253,7 +253,7 @@ function research_queue.update_durations(self, speed)
       node.duration = "[img=infinity]"
     else
       local tech_data = node.data
-      local progress = util.get_research_progress(tech_data.technology)
+      local progress = util.get_research_progress(tech_data, level)
       duration = duration
         + (1 - progress)
           * util.get_research_unit_count(tech_data.technology, node.level)
