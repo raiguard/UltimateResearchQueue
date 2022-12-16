@@ -73,13 +73,15 @@ function gui.clear_queue(self)
   gui.schedule_update(self.force_table)
 end
 
+--- @param force_table ForceTable
 --- @param tech_data TechnologyData
---- @param upgrade_group TechnologyData[]
-local function check_upgrade_group(tech_data, upgrade_group)
+--- @param upgrade_group LuaTechnologyPrototype[]
+local function check_upgrade_group(force_table, tech_data, upgrade_group)
   if tech_data.research_state == constants.research_state.researched then
     -- Show if highest researched
     for i = #upgrade_group, 1, -1 do
-      local other_tech_data = upgrade_group[i]
+      local other_tech_prototype = upgrade_group[i]
+      local other_tech_data = force_table.technologies[other_tech_prototype.name]
       if other_tech_data.research_state == constants.research_state.researched then
         return other_tech_data == tech_data
       end
@@ -87,7 +89,8 @@ local function check_upgrade_group(tech_data, upgrade_group)
   else
     -- Show if lowest unresearched
     for i = 1, #upgrade_group do
-      local other_tech_data = upgrade_group[i]
+      local other_tech_prototype = upgrade_group[i]
+      local other_tech_data = force_table.technologies[other_tech_prototype.name]
       if other_tech_data.research_state ~= constants.research_state.researched then
         return other_tech_data == tech_data
       end
@@ -113,7 +116,8 @@ function gui.filter_tech_list(self)
     -- Show/hide upgrade techs
     local upgrade_matched = true
     if tech_data.is_upgrade and tech_data.research_state ~= constants.research_state.conditionally_available then
-      upgrade_matched = check_upgrade_group(tech_data, self.force_table.upgrade_groups[tech_data.base_name])
+      upgrade_matched =
+        check_upgrade_group(self.force_table, tech_data, global.technology_upgrade_groups[tech_data.base_name])
     end
     -- Search query
     local search_matched = #query == 0 -- Automatically pass search on empty query
@@ -525,8 +529,9 @@ function gui.update_tech_info(self)
   if tech_data.is_upgrade then
     upgrade_group_table.parent.parent.visible = true
     local group_buttons = {}
-    local upgrade_group = self.force_table.upgrade_groups[tech_data.base_name]
-    for _, upgrade_data in pairs(upgrade_group) do
+    local upgrade_group = global.technology_upgrade_groups[tech_data.base_name]
+    for _, upgrade_prototype in pairs(upgrade_group) do
+      local upgrade_data = self.force_table.technologies[upgrade_prototype.name]
       table.insert(
         group_buttons,
         gui_util.technology_slot(

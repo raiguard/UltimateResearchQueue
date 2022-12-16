@@ -126,10 +126,6 @@ function cache.build_force_technologies(force)
   --- @type table<string, TechnologyData>
   local technologies = {}
   force_table.technologies = technologies
-  -- TODO: Move this to root global?
-  --- @type table<string, TechnologyData[]>
-  local upgrade_groups = {}
-  force_table.upgrade_groups = upgrade_groups
   -- Loop 1: Assemble data
   for name, technology in pairs(force.technologies) do
     local prototype = technology.prototype
@@ -157,11 +153,6 @@ function cache.build_force_technologies(force)
     }
 
     technologies[name] = data
-
-    if is_upgrade then
-      local group = table.get_or_insert(upgrade_groups, base_name, {})
-      table.insert(group, data)
-    end
   end
   -- Loop 2: Add research states and references to other techs
   for _, tech_data in pairs(technologies) do
@@ -221,12 +212,26 @@ function cache.sort_technologies()
     return tech_a.name < tech_b.name
   end)
 
-  -- Create lookup for the order of a given technology
+  -- Create order lookup and assemble upgrade groups
+  --- @type table<string, LuaTechnologyPrototype[]>
+  local upgrade_groups = {}
   --- @type table<string, number>
   local order = {}
   for i, prototype in pairs(technologies) do
     order[prototype.name] = i
+    if prototype.upgrade then
+      local base_name = string.match(prototype.name, "^(.*)%-%d*$") or prototype.name
+      local group = table.get_or_insert(upgrade_groups, base_name, {})
+      table.insert(group, prototype)
+    end
   end
+  -- Sort upgrade groups
+  for _, group in pairs(upgrade_groups) do
+    table.sort(group, function(a, b)
+      return a.level < b.level
+    end)
+  end
+
   profiler.stop()
   if DEBUG then
     log({ "", "Tech Sorting ", profiler })
@@ -312,6 +317,7 @@ function cache.sort_technologies()
   global.technology_order = order
   global.technology_prerequisites = prerequisites
   global.technology_requisites = requisites
+  global.technology_upgrade_groups = upgrade_groups
 end
 
 return cache
