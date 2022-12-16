@@ -35,6 +35,7 @@ local util = require("__UltimateResearchQueue__/util")
 --- @field tech_info_ingredients_time_label LuaGuiElement
 --- @field tech_info_effects_table LuaGuiElement
 --- @field tech_info_prerequisites_table LuaGuiElement
+--- @field tech_info_requisites_table LuaGuiElement
 --- @field tech_info_upgrade_group_table LuaGuiElement
 --- @field tech_info_footer_frame LuaGuiElement
 --- @field tech_info_footer_progressbar LuaGuiElement
@@ -479,7 +480,6 @@ function gui.update_tech_info(self)
   if table_size(prerequisites) > 0 then
     prerequisites_table.parent.parent.visible = true
     local group_buttons = {}
-    local prerequisites = technology.prerequisites
     for prerequisite_name in pairs(prerequisites) do
       local prerequisite_data = self.force_table.technologies[prerequisite_name]
       table.insert(
@@ -495,6 +495,29 @@ function gui.update_tech_info(self)
     flib_gui.add(prerequisites_table, group_buttons)
   else
     prerequisites_table.parent.parent.visible = false
+  end
+  -- Requisites
+  local requisites_table = self.elems.tech_info_requisites_table
+  requisites_table.clear()
+  local requisites = global.technology_requisites[tech_data.name]
+  if requisites then
+    requisites_table.parent.parent.visible = true
+    local group_buttons = {}
+    for _, requisite_name in pairs(requisites) do
+      local requisite_data = self.force_table.technologies[requisite_name]
+      table.insert(
+        group_buttons,
+        gui_util.technology_slot(
+          gui.on_tech_slot_click,
+          requisite_data,
+          requisite_data.technology.level,
+          selected.data == requisite_data and selected.level == requisite_data.technology.level
+        )
+      )
+    end
+    flib_gui.add(requisites_table, group_buttons)
+  else
+    requisites_table.parent.parent.visible = false
   end
   -- Upgrade path
   local upgrade_group_table = self.elems.tech_info_upgrade_group_table
@@ -726,9 +749,9 @@ function gui.new(player)
             {
               type = "scroll-pane",
               style = "flib_naked_scroll_pane",
-              style_mods = { horizontally_stretchable = true, vertically_stretchable = true, right_padding = 0 },
+              style_mods = { horizontally_stretchable = true, vertically_stretchable = true },
               direction = "vertical",
-              vertical_scroll_policy = "auto-and-reserve-space",
+              vertical_scroll_policy = "always",
               {
                 type = "flow",
                 style_mods = { horizontal_spacing = 12 },
@@ -763,7 +786,7 @@ function gui.new(player)
                   {
                     type = "table",
                     name = "tech_info_ingredients_table",
-                    column_count = 12,
+                    column_count = 11,
                   },
                 },
                 {
@@ -787,6 +810,7 @@ function gui.new(player)
                 column_count = 12,
               },
               gui_util.tech_info_sublist({ "gui.urq-prerequisites" }, "tech_info_prerequisites_table"),
+              gui_util.tech_info_sublist({ "gui.urq-requisites" }, "tech_info_requisites_table"),
               gui_util.tech_info_sublist({ "gui.urq-upgrade-group" }, "tech_info_upgrade_group_table"),
             },
             {
