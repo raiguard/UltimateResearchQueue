@@ -237,8 +237,8 @@ function research_queue.remove(self, technology, level, is_recursive)
 end
 
 --- @param self ResearchQueue
-function research_queue.requeue_infinite(self)
-  if not self.requeue_infinite then
+function research_queue.requeue_multilevel(self)
+  if not self.requeue_multilevel then
     return
   end
   local head = self.head
@@ -246,10 +246,14 @@ function research_queue.requeue_infinite(self)
     return
   end
   local technology = head.technology
-  if not util.is_multilevel(technology) or technology.prototype.max_level ~= math.max_uint then
+  if not util.is_multilevel(technology) then
     return
   end
-  research_queue.push(self, technology, research_queue.get_highest_level(self, technology) + 1)
+  local next_level = research_queue.get_highest_level(self, technology) + 1
+  if next_level > technology.prototype.max_level then
+    return
+  end
+  research_queue.push(self, technology, next_level)
 end
 
 --- @param self ResearchQueue
@@ -259,8 +263,8 @@ function research_queue.toggle_paused(self)
 end
 
 --- @param self ResearchQueue
-function research_queue.toggle_requeue_infinite(self)
-  self.requeue_infinite = not self.requeue_infinite
+function research_queue.toggle_requeue_multilevel(self)
+  self.requeue_multilevel = not self.requeue_multilevel
 end
 
 --- @param self ResearchQueue
@@ -310,14 +314,10 @@ function research_queue.verify_integrity(self)
   while node do
     local old_technology, old_level = node.technology, node.level
     local technology = technologies[old_technology.name]
-    if
-      util.is_multilevel(old_technology)
-      and (old_level < technology.prototype.level or old_level > technology.prototype.max_level)
-    then
-      goto continue
+    if old_level >= technology.prototype.level and old_level <= technology.prototype.max_level then
+      research_queue.push(self, technology, level)
     end
-    research_queue.push(self, technology, level)
-    ::continue::
+    node = node.next
   end
 end
 
@@ -335,7 +335,7 @@ function research_queue.new(force, force_table)
     --- @type table<string, ResearchQueueNode>
     lookup = {},
     paused = false,
-    requeue_infinite = false,
+    requeue_multilevel = false,
   }
   return self
 end

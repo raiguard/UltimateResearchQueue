@@ -158,11 +158,12 @@ script.on_event(defines.events.on_research_finished, function(e)
   util.ensure_queue_disabled(force)
   local level = technology.level
   -- For multi-level techs, we want to remove the level that was just finished, not the new level
-  if util.is_multilevel(technology) then
+  -- If researched is true, then this was the last level and it won't have incremented
+  if util.is_multilevel(technology) and not technology.researched then
     level = level - 1
   end
   if research_queue.contains(force_table.queue, technology, level) then
-    research_queue.requeue_infinite(force_table.queue)
+    research_queue.requeue_multilevel(force_table.queue)
     research_queue.remove(force_table.queue, technology, level)
   else
     -- This was insta-researched
