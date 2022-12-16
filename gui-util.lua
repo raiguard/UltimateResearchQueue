@@ -274,8 +274,8 @@ function gui_util.toggle_frame_action_button(elem, sprite_base, value)
 end
 
 --- @param caption LocalisedString
---- @param flow_name string
-function gui_util.tech_info_sublist(caption, flow_name)
+--- @param table_name string
+function gui_util.tech_info_sublist(caption, table_name)
   return {
     type = "flow",
     direction = "vertical",
@@ -287,15 +287,8 @@ function gui_util.tech_info_sublist(caption, flow_name)
     { type = "label", style = "heading_2_label", caption = caption },
     {
       type = "frame",
-      style = "deep_frame_in_shallow_frame",
-      {
-        type = "scroll-pane",
-        style = "urq_tech_list_scroll_pane",
-        style_mods = { width = 72 * 6 },
-        vertical_scroll_policy = "never",
-        horizontal_scroll_policy = "auto",
-        { type = "flow", name = flow_name, style_mods = { horizontal_spacing = 0 } },
-      },
+      style = "urq_tech_list_frame",
+      { type = "table", name = table_name, style = "slot_table", column_count = 6 },
     },
   }
 end

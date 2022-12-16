@@ -477,7 +477,7 @@ function gui.update_tech_info(self)
   prerequisites_table.clear()
   local prerequisites = technology.prerequisites
   if table_size(prerequisites) > 0 then
-    prerequisites_table.parent.parent.parent.visible = true
+    prerequisites_table.parent.parent.visible = true
     local group_buttons = {}
     local prerequisites = technology.prerequisites
     for prerequisite_name in pairs(prerequisites) do
@@ -494,13 +494,13 @@ function gui.update_tech_info(self)
     end
     flib_gui.add(prerequisites_table, group_buttons)
   else
-    prerequisites_table.parent.parent.parent.visible = false
+    prerequisites_table.parent.parent.visible = false
   end
   -- Upgrade path
   local upgrade_group_table = self.elems.tech_info_upgrade_group_table
   upgrade_group_table.clear()
   if tech_data.is_upgrade then
-    upgrade_group_table.parent.parent.parent.visible = true
+    upgrade_group_table.parent.parent.visible = true
     local group_buttons = {}
     local upgrade_group = self.force_table.upgrade_groups[tech_data.base_name]
     for _, upgrade_data in pairs(upgrade_group) do
@@ -516,7 +516,7 @@ function gui.update_tech_info(self)
     end
     flib_gui.add(upgrade_group_table, group_buttons)
   else
-    upgrade_group_table.parent.parent.parent.visible = false
+    upgrade_group_table.parent.parent.visible = false
   end
   -- Footer
   gui.update_tech_info_footer(self)

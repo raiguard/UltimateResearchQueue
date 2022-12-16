@@ -245,6 +245,12 @@ styles.urq_tech_list_scroll_pane = {
   background_graphical_set = styles.technology_list_scroll_pane.background_graphical_set,
 }
 
+styles.urq_tech_list_frame = {
+  type = "frame_style",
+  parent = "deep_frame_in_shallow_frame",
+  background_graphical_set = styles.technology_list_scroll_pane.background_graphical_set,
+}
+
 styles.urq_search_textfield = {
   type = "textbox_style",
   top_margin = -3,
