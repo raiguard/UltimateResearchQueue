@@ -11,9 +11,10 @@ local util = require("__UltimateResearchQueue__/util")
 --- @field key string
 --- @field next ResearchQueueNode?
 
---- @class ResearchQueue
+--- @class ResearchQueueMod
 local research_queue = {}
 
+--- @param self ResearchQueue
 function research_queue.clear(self)
   while self.head do
     research_queue.remove(self, self.head.technology, self.head.level)
@@ -236,9 +237,30 @@ function research_queue.remove(self, technology, level, is_recursive)
 end
 
 --- @param self ResearchQueue
+function research_queue.requeue_infinite(self)
+  if not self.requeue_infinite then
+    return
+  end
+  local head = self.head
+  if not head then
+    return
+  end
+  local technology = head.technology
+  if not util.is_multilevel(technology) or technology.prototype.max_level ~= math.max_uint then
+    return
+  end
+  research_queue.push(self, technology, research_queue.get_highest_level(self, technology) + 1)
+end
+
+--- @param self ResearchQueue
 function research_queue.toggle_paused(self)
   self.paused = not self.paused
   research_queue.update_active_research(self)
+end
+
+--- @param self ResearchQueue
+function research_queue.toggle_requeue_infinite(self)
+  self.requeue_infinite = not self.requeue_infinite
 end
 
 --- @param self ResearchQueue
@@ -313,6 +335,7 @@ function research_queue.new(force, force_table)
     --- @type table<string, ResearchQueueNode>
     lookup = {},
     paused = false,
+    requeue_infinite = false,
   }
   return self
 end

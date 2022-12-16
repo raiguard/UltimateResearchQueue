@@ -1,4 +1,5 @@
 local dictionary = require("__flib__/dictionary-lite")
+local format = require("__flib__/format")
 local flib_gui = require("__flib__/gui-lite")
 local math = require("__flib__/math")
 local table = require("__flib__/table")
@@ -22,6 +23,7 @@ local util = require("__UltimateResearchQueue__/util")
 --- @field techs_scroll_pane LuaGuiElement
 --- @field techs_table LuaGuiElement
 --- @field queue_population_label LuaGuiElement
+--- @field queue_requeue_infinite_button LuaGuiElement
 --- @field queue_pause_button LuaGuiElement
 --- @field queue_trash_button LuaGuiElement
 --- @field queue_scroll_pane LuaGuiElement
@@ -313,6 +315,12 @@ function gui.toggle_queue_paused(self)
 end
 
 --- @param self Gui
+function gui.toggle_queue_requeue_infinite(self)
+  research_queue.toggle_requeue_infinite(self.force_table.queue)
+  gui.schedule_update(self.force_table)
+end
+
+--- @param self Gui
 function gui.toggle_visible(self)
   if self.elems.urq_window.visible then
     gui.hide(self)
@@ -377,7 +385,17 @@ end
 function gui.update_queue(self)
   local profiler = game.create_profiler()
 
-  local paused = self.force_table.queue.paused
+  local queue = self.force_table.queue
+
+  local requeue_infinite = queue.requeue_infinite
+  local requeue_infinite_button = self.elems.queue_requeue_infinite_button
+  if requeue_infinite then
+    requeue_infinite_button.style = "flib_selected_tool_button"
+  else
+    requeue_infinite_button.style = "tool_button"
+  end
+
+  local paused = queue.paused
   local pause_button = self.elems.queue_pause_button
   if paused then
     pause_button.style = "flib_selected_tool_button"
@@ -387,7 +405,6 @@ function gui.update_queue(self)
     pause_button.tooltip = { "gui.urq-pause-queue" }
   end
 
-  local queue = self.force_table.queue
   self.elems.queue_trash_button.enabled = queue.len > 0
 
   self.elems.queue_population_label.caption =
@@ -685,6 +702,14 @@ function gui.new(player)
                 caption = { "gui.urq-queue-population", 0, constants.queue_limit },
               },
               { type = "line", direction = "vertical" },
+              {
+                type = "sprite-button",
+                name = "queue_requeue_infinite_button",
+                style = "tool_button",
+                sprite = "utility/variations_tool_icon",
+                tooltip = { "gui.urq-requeue-infinite-technologies" },
+                handler = { [defines.events.on_gui_click] = gui.toggle_queue_requeue_infinite },
+              },
               {
                 type = "sprite-button",
                 name = "queue_pause_button",

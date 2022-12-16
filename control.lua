@@ -162,6 +162,7 @@ script.on_event(defines.events.on_research_finished, function(e)
     level = level - 1
   end
   if research_queue.contains(force_table.queue, technology, level) then
+    research_queue.requeue_infinite(force_table.queue)
     research_queue.remove(force_table.queue, technology, level)
   else
     -- This was insta-researched
