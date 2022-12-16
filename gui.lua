@@ -507,8 +507,9 @@ function gui.update_tech_info(self)
   flib_gui.add(ingredients_table, ingredients_children)
   self.elems.tech_info_ingredients_time_label.caption = "[img=quantity-time] "
     .. math.round(technology.research_unit_energy / 60, 0.1)
+  local research_unit_count = util.get_research_unit_count(technology, level)
   self.elems.tech_info_ingredients_count_label.caption = "[img=quantity-multiplier] "
-    .. util.get_research_unit_count(technology, level)
+    .. format.number(research_unit_count, research_unit_count > 9999)
   -- Effects
   local effects_table = self.elems.tech_info_effects_table
   effects_table.clear()
