@@ -432,10 +432,10 @@ function gui.update_queue(self)
         technology,
         level,
         research_states[technology.name],
-        is_selected,
-        true
+        is_selected
       )
       button_template.index = i
+      button_template.name = util.get_queue_key(technology, level)
       flib_gui.add(queue_table, button_template)
     end
     node = node.next

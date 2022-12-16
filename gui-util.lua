@@ -105,9 +105,8 @@ end
 --- @param level uint
 --- @param research_state ResearchState
 --- @param is_selected boolean?
---- @param is_queue boolean?
 --- @return GuiElemDef
-function gui_util.technology_slot(handler, technology, level, research_state, is_selected, is_queue)
+function gui_util.technology_slot(handler, technology, level, research_state, is_selected)
   local properties = gui_util.get_technology_slot_properties(technology, research_state, is_selected)
   local progress = util.get_research_progress(technology, level)
 
@@ -133,7 +132,7 @@ function gui_util.technology_slot(handler, technology, level, research_state, is
 
   return {
     type = "sprite-button",
-    name = is_queue and util.get_queue_key(technology, level) or technology.name,
+    name = technology.name,
     style = properties.style,
     tooltip = tooltip,
     tags = { research_state = research_state, tech_name = technology.name, level = level },
