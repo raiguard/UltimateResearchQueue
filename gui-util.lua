@@ -1,3 +1,4 @@
+local flib_gui = require("__flib__/gui-lite")
 local math = require("__flib__/math")
 local table = require("__flib__/table")
 
@@ -100,18 +101,19 @@ function gui_util.frame_action_button(name, sprite, tooltip, action)
 end
 
 --- @param handler function
---- @param tech_data TechnologyData
+--- @param technology LuaTechnology
 --- @param level uint
+--- @param research_state ResearchState
 --- @param is_selected boolean?
 --- @param is_queue boolean?
 --- @return GuiElemDef
-function gui_util.technology_slot(handler, tech_data, level, is_selected, is_queue)
-  local properties = gui_util.get_technology_slot_properties(tech_data, is_selected)
-  local progress = util.get_research_progress(tech_data, level)
+function gui_util.technology_slot(handler, technology, level, research_state, is_selected, is_queue)
+  local properties = gui_util.get_technology_slot_properties(technology, research_state, is_selected)
+  local progress = util.get_research_progress(technology, level)
 
   local ingredients = {}
   local ingredients_len = 0
-  for i, ingredient in pairs(tech_data.technology.research_unit_ingredients) do
+  for i, ingredient in pairs(technology.research_unit_ingredients) do
     ingredients_len = i
     table.insert(ingredients, {
       type = "sprite",
@@ -124,17 +126,17 @@ function gui_util.technology_slot(handler, tech_data, level, is_selected, is_que
   -- TODO: Add remainder to always fill available space
   local ingredients_spacing = math.clamp((68 - 16) / (ingredients_len - 1) - 16, -15, -5)
 
-  local tooltip = tech_data.technology.localised_name
+  local tooltip = technology.localised_name
   if DEBUG then
-    tooltip = { "", tooltip, "\norder=" .. global.technology_order[tech_data.name] }
+    tooltip = { "", tooltip, "\norder=" .. global.technology_order[technology.name] }
   end
 
   return {
     type = "sprite-button",
-    name = is_queue and util.get_queue_key(tech_data, level) or tech_data.name,
+    name = is_queue and util.get_queue_key(technology, level) or technology.name,
     style = properties.style,
     tooltip = tooltip,
-    tags = { research_state = tech_data.research_state, tech_name = tech_data.name, level = level },
+    tags = { research_state = research_state, tech_name = technology.name, level = level },
     handler = { [defines.events.on_gui_click] = handler },
     {
       type = "flow",
@@ -143,21 +145,21 @@ function gui_util.technology_slot(handler, tech_data, level, is_selected, is_que
       {
         type = "sprite",
         style = "urq_technology_slot_sprite",
-        sprite = "technology/" .. tech_data.name,
+        sprite = "technology/" .. technology.name,
       },
     },
-    (tech_data.is_upgrade or tech_data.is_multilevel or tech_data.base_level > 1) and {
+    (technology.upgrade or util.is_multilevel(technology) or technology.prototype.level > 1) and {
       type = "label",
       name = "level_label",
       style = "urq_technology_slot_level_label_" .. properties.research_state_str,
       caption = level,
       ignored_by_interaction = true,
     } or {},
-    tech_data.is_multilevel and {
+    util.is_multilevel(technology) and {
       type = "label",
       name = "level_range_label",
       style = "urq_technology_slot_level_range_label_" .. properties.research_state_str,
-      caption = tech_data.base_level .. " - " .. properties.max_level_str,
+      caption = technology.prototype.level .. " - " .. properties.max_level_str,
       ignored_by_interaction = true,
     } or {},
     {
@@ -208,15 +210,17 @@ function gui_util.move_to(element, parent, index)
   dummy.destroy()
 end
 
---- @param tech_data TechnologyData
+--- @param technology LuaTechnology
+--- @param research_state ResearchState
 --- @param is_selected boolean?
 --- @return TechnologySlotProperties
-function gui_util.get_technology_slot_properties(tech_data, is_selected)
-  local research_state_str = table.find(constants.research_state, tech_data.research_state)
-  local max_level_str = tech_data.max_level == math.max_uint and "[img=infinity]" or tostring(tech_data.max_level)
+function gui_util.get_technology_slot_properties(technology, research_state, is_selected)
+  local research_state_str = table.find(constants.research_state, research_state)
+  local max_level_str = technology.prototype.max_level == math.max_uint and "[img=infinity]"
+    or tostring(technology.prototype.max_level)
   local style = "urq_technology_slot_"
     .. research_state_str
-    .. ((tech_data.is_upgrade or tech_data.is_multilevel or tech_data.base_level > 1) and "_leveled" or "")
+    .. ((technology.upgrade or util.is_multilevel(technology) or technology.prototype.level > 1) and "_leveled" or "")
     .. (is_selected and "_selected" or "")
 
   --- @class TechnologySlotProperties
@@ -224,30 +228,30 @@ function gui_util.get_technology_slot_properties(tech_data, is_selected)
 end
 
 --- @param button LuaGuiElement
---- @param tech_data TechnologyData
+--- @param technology LuaTechnology
 --- @param level uint
+--- @param research_state ResearchState
 --- @param queue ResearchQueue
 --- @param is_selected boolean?
-function gui_util.update_tech_slot(button, tech_data, level, queue, is_selected)
-  local properties = gui_util.get_technology_slot_properties(tech_data, is_selected)
+function gui_util.update_tech_slot(button, technology, level, research_state, queue, is_selected)
+  local properties = gui_util.get_technology_slot_properties(technology, research_state, is_selected)
   local tags = button.tags
-  local research_state = tech_data.research_state
   button.style = properties.style
   if tags.research_state ~= research_state then
     if research_state == constants.research_state.researched then
       button.progressbar.visible = false
       button.progressbar.value = 0
     end
-    if tech_data.is_upgrade or tech_data.is_multilevel or tech_data.base_level > 1 then
+    if technology.upgrade or util.is_multilevel(technology) or technology.prototype.level > 1 then
       button.level_label.style = "urq_technology_slot_level_label_" .. properties.research_state_str
     end
-    if tech_data.is_multilevel then
+    if util.is_multilevel(technology) then
       button.level_range_label.style = "urq_technology_slot_level_range_label_" .. properties.research_state_str
     end
     tags.research_state = research_state --[[@as AnyBasic]]
     button.tags = tags
   end
-  if tech_data.is_multilevel then
+  if util.is_multilevel(technology) then
     if tags.level ~= level then
       tags.level = level
       button.tags = tags
@@ -257,7 +261,7 @@ function gui_util.update_tech_slot(button, tech_data, level, queue, is_selected)
       level_label.caption = tostring(level)
     end
   end
-  button.duration_label.visible = research_queue.contains(queue, tech_data, level)
+  button.duration_label.visible = research_queue.contains(queue, technology, level)
 end
 
 --- @param elem LuaGuiElement
@@ -291,6 +295,35 @@ function gui_util.tech_info_sublist(caption, table_name)
       { type = "table", name = table_name, style = "slot_table", column_count = 6 },
     },
   }
+end
+
+--- @param self Gui
+--- @param elem_table LuaGuiElement
+--- @param handler function
+--- @param technologies LuaTechnology[]
+function gui_util.update_tech_info_sublist(self, elem_table, handler, technologies)
+  local selected = self.state.selected or {}
+  local research_states = self.force_table.research_states
+  elem_table.clear()
+  if #technologies > 0 then
+    elem_table.parent.parent.visible = true
+    local group_buttons = {}
+    for _, technology in pairs(technologies) do
+      table.insert(
+        group_buttons,
+        gui_util.technology_slot(
+          handler,
+          technology,
+          technology.level,
+          research_states[technology.name],
+          selected.technology == technology and selected.level == technology.level
+        )
+      )
+    end
+    flib_gui.add(elem_table, group_buttons)
+  else
+    elem_table.parent.parent.visible = false
+  end
 end
 
 return gui_util

@@ -45,15 +45,14 @@ function util.format_time_short(ticks)
   return result
 end
 
---- @param tech_data TechnologyData
+--- @param technology LuaTechnology
 --- @param level uint
 --- @return double
-function util.get_research_progress(tech_data, level)
-  local technology = tech_data.technology
+function util.get_research_progress(technology, level)
   local force = technology.force
   local current_research = force.current_research
   if current_research and current_research.name == technology.name then
-    if not tech_data.is_multilevel or tech_data.technology.level == level then
+    if not util.is_multilevel(technology) or technology.level == level then
       return force.research_progress
     else
       return 0
@@ -81,15 +80,30 @@ function util.is_cheating(player)
   return player.cheat_mode or player.controller_type == defines.controllers.editor
 end
 
---- @param tech_data TechnologyData
+--- @param technology LuaTechnology
 --- @param level uint
 --- @return string
-function util.get_queue_key(tech_data, level)
-  if tech_data.is_multilevel then
-    return tech_data.base_name .. "-" .. level
+function util.get_queue_key(technology, level)
+  if util.is_multilevel(technology) then
+    return util.get_base_name(technology) .. "-" .. level
   else
-    return tech_data.name
+    return technology.name
   end
+end
+
+--- @param technology LuaTechnology|LuaTechnologyPrototype
+--- @return string
+function util.get_base_name(technology)
+  local result = string.gsub(technology.name, "%-%d*$", "")
+  return result
+end
+
+--- @param technology LuaTechnology|LuaTechnologyPrototype
+function util.is_multilevel(technology)
+  if technology.object_name == "LuaTechnology" then
+    technology = technology.prototype
+  end
+  return technology.level ~= technology.max_level
 end
 
 return util

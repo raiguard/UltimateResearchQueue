@@ -8,8 +8,8 @@ local gui_util = require("__UltimateResearchQueue__/gui-util")
 local research_queue = require("__UltimateResearchQueue__/research-queue")
 local util = require("__UltimateResearchQueue__/util")
 
---- @class TechnologyDataAndLevel
---- @field data TechnologyData
+--- @class TechnologyAndLevel
+--- @field technology LuaTechnology
 --- @field level uint
 
 --- @class GuiElems
@@ -52,8 +52,8 @@ local gui = {}
 function gui.cancel_research(self, e)
   local tags = e.element.tags
   local tech_name, level = tags.tech_name --[[@as string]], tags.level --[[@as uint]]
-  local tech_data = self.force_table.technologies[tech_name]
-  research_queue.remove(self.force_table.queue, tech_data, level)
+  local technology = self.force.technologies[tech_name]
+  research_queue.remove(self.force_table.queue, technology, level)
   gui.schedule_update(self.force_table)
 end
 
@@ -63,7 +63,7 @@ function gui.cancel_selected_research(self)
   if not selected then
     return
   end
-  research_queue.remove(self.force_table.queue, selected.data, selected.level)
+  research_queue.remove(self.force_table.queue, selected.technology, selected.level)
   gui.schedule_update(self.force_table)
 end
 
@@ -74,25 +74,25 @@ function gui.clear_queue(self)
 end
 
 --- @param force_table ForceTable
---- @param tech_data TechnologyData
+--- @param technology LuaTechnology
 --- @param upgrade_group LuaTechnologyPrototype[]
-local function check_upgrade_group(force_table, tech_data, upgrade_group)
-  if tech_data.research_state == constants.research_state.researched then
+local function check_upgrade_group(force_table, technology, upgrade_group)
+  local research_states = force_table.research_states
+  local technologies = force_table.force.technologies
+  if research_states[technology.name] == constants.research_state.researched then
     -- Show if highest researched
     for i = #upgrade_group, 1, -1 do
-      local other_tech_prototype = upgrade_group[i]
-      local other_tech_data = force_table.technologies[other_tech_prototype.name]
-      if other_tech_data.research_state == constants.research_state.researched then
-        return other_tech_data == tech_data
+      local other_tech = technologies[upgrade_group[i].name]
+      if research_states[other_tech.name] == constants.research_state.researched then
+        return other_tech == technology
       end
     end
   else
     -- Show if lowest unresearched
     for i = 1, #upgrade_group do
-      local other_tech_prototype = upgrade_group[i]
-      local other_tech_data = force_table.technologies[other_tech_prototype.name]
-      if other_tech_data.research_state ~= constants.research_state.researched then
-        return other_tech_data == tech_data
+      local other_tech = technologies[upgrade_group[i].name]
+      if research_states[other_tech.name] ~= constants.research_state.researched then
+        return other_tech == technology
       end
     end
   end
@@ -103,35 +103,40 @@ end
 function gui.filter_tech_list(self)
   local query = self.state.search_query
   local dictionaries = dictionary.get_all(self.player.index)
-  local technologies = self.force_table.technologies
+  local technologies = self.force.technologies
+  local research_states = self.force_table.research_states
   local show_disabled = self.player.mod_settings["urq-show-disabled-techs"].value
   for _, button in pairs(self.elems.techs_table.children) do
-    local tech_name = button.name
-    local tech_data = technologies[tech_name]
+    local technology_name = button.name
+    local technology = technologies[technology_name]
+    local research_state = research_states[technology_name]
     -- Show/hide disabled
     local research_state_matched = true
-    if tech_data.research_state == constants.research_state.disabled and not show_disabled then
+    if research_state == constants.research_state.disabled and not show_disabled then
       research_state_matched = false
     end
     -- Show/hide upgrade techs
     local upgrade_matched = true
-    if tech_data.is_upgrade and tech_data.research_state ~= constants.research_state.conditionally_available then
-      upgrade_matched =
-        check_upgrade_group(self.force_table, tech_data, global.technology_upgrade_groups[tech_data.base_name])
+    if technology.upgrade and research_state ~= constants.research_state.conditionally_available then
+      upgrade_matched = check_upgrade_group(
+        self.force_table,
+        technology,
+        global.technology_upgrade_groups[util.get_base_name(technology)]
+      )
     end
     -- Search query
     local search_matched = #query == 0 -- Automatically pass search on empty query
     if research_state_matched and not search_matched then
       local to_search = {}
       if dictionaries then
-        table.insert(to_search, dictionaries.technology[tech_name])
-        for _, effect in pairs(tech_data.technology.effects) do
+        table.insert(to_search, dictionaries.technology[technology_name])
+        for _, effect in pairs(technology.effects) do
           if effect.type == "unlock-recipe" then
             table.insert(to_search, dictionaries.recipe[effect.recipe])
           end
         end
       else
-        table.insert(to_search, tech_name)
+        table.insert(to_search, technology_name)
       end
       for _, str in pairs(to_search) do
         if string.find(string.lower(str), query, 1, true) then
@@ -162,7 +167,7 @@ function gui.on_start_research_click(self, e)
   if not selected then
     return
   end
-  gui.start_research(self, selected.data, selected.level, false, e.control and util.is_cheating(self.player))
+  gui.start_research(self, selected.technology, selected.level, false, e.control and util.is_cheating(self.player))
 end
 
 --- @param self Gui
@@ -173,17 +178,17 @@ function gui.on_tech_slot_click(self, e)
   end
   local tags = e.element.tags
   local tech_name, level = tags.tech_name --[[@as string]], tags.level --[[@as uint]]
-  local tech_data = self.force_table.technologies[tech_name]
+  local technology = self.force.technologies[tech_name]
   if e.button == defines.mouse_button_type.right then
-    research_queue.remove(self.force_table.queue, tech_data, level)
+    research_queue.remove(self.force_table.queue, technology, level)
     gui.schedule_update(self.force_table)
     return
   end
   if gui_util.is_double_click(e.element) then
-    gui.start_research(self, tech_data, level, false, e.control and util.is_cheating(self.player))
+    gui.start_research(self, technology, level, false, e.control and util.is_cheating(self.player))
     return
   end
-  gui.select_tech(self, tech_data, level)
+  gui.select_tech(self, technology, level)
 end
 
 --- @param self Gui
@@ -212,19 +217,19 @@ function gui.open_in_graph(self)
   local selected = self.state.selected
   if selected then
     self.state.opening_graph = true
-    self.player.open_technology_gui(selected.data.technology)
+    self.player.open_technology_gui(selected.technology)
     self.state.opening_graph = false
   end
 end
 
 --- @param self Gui
---- @param tech_data TechnologyData
-function gui.select_tech(self, tech_data, level)
+--- @param technology LuaTechnology
+function gui.select_tech(self, technology, level)
   local former_selected = self.state.selected
-  if former_selected and former_selected.data == tech_data and former_selected.level == level then
+  if former_selected and former_selected.technology == technology and former_selected.level == level then
     return
   end
-  self.state.selected = { data = tech_data, level = level }
+  self.state.selected = { technology = technology, level = level }
 
   gui.update_queue(self)
   gui.update_tech_list(self)
@@ -235,7 +240,7 @@ end
 --- @param select_tech string?
 function gui.show(self, select_tech)
   if select_tech then
-    local select_data = self.force_table.technologies[select_tech]
+    local select_data = self.force.technologies[select_tech]
     gui.select_tech(self, select_data)
   end
   self.elems.urq_window.visible = true
@@ -246,23 +251,23 @@ function gui.show(self, select_tech)
 end
 
 --- @param self Gui
---- @param tech_data TechnologyData
+--- @param technology LuaTechnology
 --- @param level uint
 --- @param to_front boolean?
 --- @param instant_research boolean?
-function gui.start_research(self, tech_data, level, to_front, instant_research)
+function gui.start_research(self, technology, level, to_front, instant_research)
   if instant_research then
-    local prereqs = global.technology_prerequisites[tech_data.name] or {}
-    local technologies = self.force_table.technologies
-    for i = 1, #prereqs do
-      local prereq_data = technologies[prereqs[i]]
-      if prereq_data.research_state ~= constants.research_state.researched then
-        prereq_data.technology.researched = true
+    local prerequisites = global.technology_prerequisites[technology.name] or {}
+    local technologies = self.force.technologies
+    for i = 1, #prerequisites do
+      local prerequisite = technologies[prerequisites[i]]
+      if not prerequisite.researched then
+        prerequisite.researched = true
       end
     end
-    tech_data.technology.researched = true
+    technology.researched = true
   else
-    local push_error = research_queue.push(self.force_table.queue, tech_data, level, to_front)
+    local push_error = research_queue.push(self.force_table.queue, technology, level, to_front)
     if push_error then
       util.flying_text(self.player, push_error)
       return
@@ -322,23 +327,24 @@ function gui.unresearch(self)
   if not selected then
     return
   end
-  local technologies = self.force_table.technologies
+  local technologies = self.force.technologies
+  local research_states = self.force_table.research_states
 
-  --- @param tech_data TechnologyData
-  local function propagate(tech_data)
-    local requisites = global.technology_requisites[tech_data.name]
+  --- @param technology LuaTechnology
+  local function propagate(technology)
+    local requisites = global.technology_requisites[technology.name]
     if requisites then
       for _, requisite_name in pairs(requisites) do
         local requisite_data = technologies[requisite_name]
-        if requisite_data.research_state == constants.research_state.researched then
+        if research_states[requisite_name] == constants.research_state.researched then
           propagate(requisite_data)
         end
       end
     end
-    tech_data.technology.researched = false
+    technology.researched = false
   end
 
-  propagate(selected.data)
+  propagate(selected.technology)
 end
 
 --- @param self Gui
@@ -348,15 +354,15 @@ function gui.update_durations_and_progress(self)
   local queue = self.force_table.queue
   local node = queue.head
   while node do
-    local tech_data, level = node.data, node.level
-    local progress = math.floored(util.get_research_progress(tech_data, level), 0.01)
-    local queue_button = queue_table[util.get_queue_key(tech_data, level)]
+    local technology, level = node.technology, node.level
+    local progress = math.floored(util.get_research_progress(technology, level), 0.01)
+    local queue_button = queue_table[util.get_queue_key(technology, level)]
     if queue_button then
       queue_button.duration_label.caption = node.duration
       queue_button.progressbar.value = progress
       queue_button.progressbar.visible = progress > 0
     end
-    local techs_button = techs_table[tech_data.name]
+    local techs_button = techs_table[technology.name]
     if techs_button then
       techs_button.duration_label.caption = node.duration
       techs_button.progressbar.value = progress
@@ -389,20 +395,29 @@ function gui.update_queue(self)
 
   local selected = self.state.selected or {}
 
+  local research_states = self.force_table.research_states
+
   local queue_table = self.elems.queue_table
   local i = 0
   local node = queue.head
   while node do
     i = i + 1
-    local tech_data, level = node.data, node.level
-    local name = util.get_queue_key(tech_data, level)
+    local technology, level = node.technology, node.level
+    local name = util.get_queue_key(technology, level)
     local button = queue_table[name]
-    local is_selected = selected.data == tech_data and selected.level == level
+    local is_selected = selected.technology == technology and selected.level == level
     if button then
       gui_util.move_to(button, queue_table, i)
-      gui_util.update_tech_slot(button, tech_data, node.level, queue, is_selected)
+      gui_util.update_tech_slot(button, technology, node.level, research_states[technology.name], queue, is_selected)
     else
-      local button_template = gui_util.technology_slot(gui.on_tech_slot_click, tech_data, level, is_selected, true)
+      local button_template = gui_util.technology_slot(
+        gui.on_tech_slot_click,
+        technology,
+        level,
+        research_states[technology.name],
+        is_selected,
+        true
+      )
       button_template.index = i
       flib_gui.add(queue_table, button_template)
     end
@@ -436,14 +451,18 @@ function gui.update_tech_info(self)
   if not selected then
     return
   end
-  local tech_data, level = selected.data, selected.level
+  local technology, level = selected.technology, selected.level
 
-  local technology = tech_data.technology
   -- Slot
   local main_slot_frame = self.elems.tech_info_main_slot_frame
   main_slot_frame.clear() -- The best thing to do is clear it, otherwise we'd need to diff all the sub-elements
-  if tech_data then
-    local button_template = gui_util.technology_slot(gui.on_tech_slot_click, tech_data, level)
+  if technology then
+    local button_template = gui_util.technology_slot(
+      gui.on_tech_slot_click,
+      technology,
+      level,
+      self.force_table.research_states[technology.name]
+    )
     button_template.ignored_by_interaction = true
     button_template[5].visible = false
     button_template[6].visible = false
@@ -451,7 +470,7 @@ function gui.update_tech_info(self)
   end
   -- Name and description
   local caption = technology.localised_name
-  if tech_data.is_multilevel then
+  if util.is_multilevel(technology) then
     caption = { "", caption, " ", level }
   end
   self.elems.tech_info_name_label.caption = caption
@@ -478,74 +497,36 @@ function gui.update_tech_info(self)
   effects_table.clear()
   flib_gui.add(effects_table, table.map(technology.effects, gui_util.effect_button))
   -- Prerequisites
-  local prerequisites_table = self.elems.tech_info_prerequisites_table
-  prerequisites_table.clear()
-  local prerequisites = technology.prerequisites
-  if table_size(prerequisites) > 0 then
-    prerequisites_table.parent.parent.visible = true
-    local group_buttons = {}
-    for prerequisite_name in pairs(prerequisites) do
-      local prerequisite_data = self.force_table.technologies[prerequisite_name]
-      table.insert(
-        group_buttons,
-        gui_util.technology_slot(
-          gui.on_tech_slot_click,
-          prerequisite_data,
-          prerequisite_data.technology.level,
-          selected.data == prerequisite_data and selected.level == prerequisite_data.technology.level
-        )
-      )
-    end
-    flib_gui.add(prerequisites_table, group_buttons)
-  else
-    prerequisites_table.parent.parent.visible = false
+  local prerequisites = {}
+  for _, prerequisite in pairs(technology.prerequisites) do
+    table.insert(prerequisites, prerequisite)
   end
+  gui_util.update_tech_info_sublist(
+    self,
+    self.elems.tech_info_prerequisites_table,
+    gui.on_tech_slot_click,
+    prerequisites
+  )
   -- Requisites
-  local requisites_table = self.elems.tech_info_requisites_table
-  requisites_table.clear()
-  local requisites = global.technology_requisites[tech_data.name]
-  if requisites then
-    requisites_table.parent.parent.visible = true
-    local group_buttons = {}
-    for _, requisite_name in pairs(requisites) do
-      local requisite_data = self.force_table.technologies[requisite_name]
-      table.insert(
-        group_buttons,
-        gui_util.technology_slot(
-          gui.on_tech_slot_click,
-          requisite_data,
-          requisite_data.technology.level,
-          selected.data == requisite_data and selected.level == requisite_data.technology.level
-        )
-      )
-    end
-    flib_gui.add(requisites_table, group_buttons)
-  else
-    requisites_table.parent.parent.visible = false
-  end
-  -- Upgrade path
-  local upgrade_group_table = self.elems.tech_info_upgrade_group_table
-  upgrade_group_table.clear()
-  if tech_data.is_upgrade then
-    upgrade_group_table.parent.parent.visible = true
-    local group_buttons = {}
-    local upgrade_group = global.technology_upgrade_groups[tech_data.base_name]
-    for _, upgrade_prototype in pairs(upgrade_group) do
-      local upgrade_data = self.force_table.technologies[upgrade_prototype.name]
-      table.insert(
-        group_buttons,
-        gui_util.technology_slot(
-          gui.on_tech_slot_click,
-          upgrade_data,
-          upgrade_data.technology.level,
-          selected.data == upgrade_data and selected.level == upgrade_data.technology.level
-        )
-      )
-    end
-    flib_gui.add(upgrade_group_table, group_buttons)
-  else
-    upgrade_group_table.parent.parent.visible = false
-  end
+  local technologies = self.force.technologies
+  gui_util.update_tech_info_sublist(
+    self,
+    self.elems.tech_info_requisites_table,
+    gui.on_tech_slot_click,
+    table.map(global.technology_requisites[technology.name] or {}, function(requisite_name)
+      return technologies[requisite_name]
+    end)
+  )
+  -- Upgrade group
+  local technologies = self.force.technologies
+  gui_util.update_tech_info_sublist(
+    self,
+    self.elems.tech_info_upgrade_group_table,
+    gui.on_tech_slot_click,
+    table.map(global.technology_upgrade_groups[util.get_base_name(technology)] or {}, function(prototype)
+      return technologies[prototype.name]
+    end)
+  )
   -- Footer
   gui.update_tech_info_footer(self)
 end
@@ -557,13 +538,14 @@ function gui.update_tech_info_footer(self, progress_only)
   if not selected then
     return
   end
-  local tech_data, level = selected.data, selected.level
-  local selected_name = util.get_queue_key(tech_data, level)
+  local technology, level = selected.technology, selected.level
+  local research_state = self.force_table.research_states[technology.name]
+  local selected_name = util.get_queue_key(technology, level)
 
   local elems = self.elems
-  local is_researched = tech_data.research_state == constants.research_state.researched
-  local in_queue = research_queue.contains(self.force_table.queue, tech_data, level)
-  local progress = util.get_research_progress(tech_data, level)
+  local is_researched = research_state == constants.research_state.researched
+  local in_queue = research_queue.contains(self.force_table.queue, technology, level)
+  local progress = util.get_research_progress(technology, level)
   local is_cheating = util.is_cheating(self.player)
 
   elems.tech_info_footer_frame.visible = not (is_researched and not is_cheating)
@@ -594,25 +576,32 @@ function gui.update_tech_list(self)
   local techs_table = self.elems.techs_table
   local queue = self.force_table.queue
   local selected = self.state.selected or {}
+  local research_states = self.force_table.research_states
   local i = 0
   for _, group in pairs(self.force_table.technology_groups) do
     for j = 1, global.num_technologies do
       --- @cast j uint
-      local tech_data = group[j]
-      if not tech_data then
+      local technology = group[j]
+      if not technology then
         goto continue
       end
-      local level = tech_data.base_level
-      if tech_data.is_multilevel then
-        level =
-          math.max(research_queue.get_highest_level(self.force_table.queue, tech_data) + 1, tech_data.technology.level)
+      local level = technology.prototype.level
+      if util.is_multilevel(technology) then
+        level = math.max(research_queue.get_highest_level(self.force_table.queue, technology) + 1, technology.level)
       end
       i = i + 1
-      local button = techs_table[tech_data.name] --[[@as LuaGuiElement]]
+      local button = techs_table[technology.name] --[[@as LuaGuiElement]]
       if i ~= button.get_index_in_parent() then
         gui_util.move_to(button, techs_table, i)
       end
-      gui_util.update_tech_slot(button, tech_data, level, queue, selected.data == tech_data and selected.level == level)
+      gui_util.update_tech_slot(
+        button,
+        technology,
+        level,
+        research_states[technology.name],
+        queue,
+        selected.technology == technology and selected.level == level
+      )
       ::continue::
     end
   end
@@ -884,8 +873,16 @@ function gui.new(player)
   -- Build techs list
   local force_table = global.forces[player.force.index]
   local buttons = {}
-  for _, tech_data in pairs(force_table.technologies) do
-    table.insert(buttons, gui_util.technology_slot(gui.on_tech_slot_click, tech_data, tech_data.base_level))
+  for _, technology in pairs(player.force.technologies) do
+    table.insert(
+      buttons,
+      gui_util.technology_slot(
+        gui.on_tech_slot_click,
+        technology,
+        technology.prototype.level,
+        force_table.research_states[technology.name]
+      )
+    )
   end
   flib_gui.add(elems.techs_table, buttons)
 
@@ -903,7 +900,7 @@ function gui.new(player)
       research_state_counts = {},
       search_open = false,
       search_query = "",
-      --- @type TechnologyDataAndLevel?
+      --- @type TechnologyAndLevel?
       selected = nil,
     },
   }

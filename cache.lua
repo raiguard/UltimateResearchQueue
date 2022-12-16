@@ -117,47 +117,19 @@ end
 --- @param force LuaForce
 function cache.build_force_technologies(force)
   local force_table = global.forces[force.index]
-  --- @type table<ResearchState, table<uint, TechnologyData>>
+  --- @type table<ResearchState, table<uint, LuaTechnology>>
   local technology_groups = {}
   for _, research_state in pairs(constants.research_state) do
     technology_groups[research_state] = {}
   end
   force_table.technology_groups = technology_groups
-  --- @type table<string, TechnologyData>
-  local technologies = {}
-  force_table.technologies = technologies
-  -- Loop 1: Assemble data
+  --- @type table<string, ResearchState>
+  local research_states = {}
+  force_table.research_states = research_states
   for name, technology in pairs(force.technologies) do
-    local prototype = technology.prototype
-    local is_multilevel = prototype.level ~= prototype.max_level
-    local is_upgrade = prototype.upgrade
-    local order = global.technology_order[name]
-    local base_name = name
-    if is_multilevel or is_upgrade then
-      base_name = string.match(base_name, "^(.*)%-%d*$") or name
-    end
-
-    -- TODO: Consider going back to LuaTechnologies, because most of this is unneeded
-    --- @class TechnologyData
-    local data = {
-      base_level = prototype.level,
-      base_name = base_name,
-      is_multilevel = is_multilevel,
-      is_upgrade = is_upgrade,
-      max_level = prototype.max_level,
-      name = name,
-      order = order,
-      --- @type ResearchState?
-      research_state = nil,
-      technology = technology,
-    }
-
-    technologies[name] = data
-  end
-  -- Loop 2: Add research states and references to other techs
-  for _, tech_data in pairs(technologies) do
-    tech_data.research_state = research_queue.get_research_state(force_table, tech_data)
-    technology_groups[tech_data.research_state][tech_data.order] = tech_data
+    local research_state = research_queue.get_research_state(force_table, technology)
+    research_states[name] = research_state
+    technology_groups[research_state][global.technology_order[technology.name]] = technology
   end
 end
 

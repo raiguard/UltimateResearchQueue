@@ -20,16 +20,15 @@ end
 --- @param force LuaForce
 function migrations.init_force(force)
   --- @class ForceTable
-  --- @field queue ResearchQueue
   local force_table = {
     force = force,
     last_research_progress = 0,
     last_research_progress_tick = 0,
     research_speed = 0,
-    --- @type table<ResearchState, table<uint, TechnologyData>>
+    --- @type table<string, ResearchState>
+    research_states = {},
+    --- @type table<ResearchState, table<uint, LuaTechnology>>
     technology_groups = {},
-    --- @type table<string, TechnologyData>
-    technologies = {},
   }
   force_table.queue = research_queue.new(force, force_table)
   global.forces[force.index] = force_table

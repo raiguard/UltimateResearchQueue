@@ -65,7 +65,7 @@ if not DEBUG then
     if player.opened_gui_type == defines.gui_type.research then
       local player_gui = gui.get(e.player_index)
       if player_gui and not player_gui.state.opening_graph then
-        local opened = player.opened --[[@as TechnologyData?]]
+        local opened = player.opened --[[@as LuaTechnology?]]
         player.opened = nil
         gui.show(player_gui, opened and opened.name or nil)
       end
@@ -117,15 +117,14 @@ script.on_event(defines.events.on_research_started, function(e)
   end
   util.ensure_queue_disabled(force)
 
-  local tech_data = force_table.technologies[technology.name]
   local level = technology.level
-  if research_queue.contains(force_table.queue, tech_data, level) then
-    if force_table.queue.head.data == tech_data then
+  if research_queue.contains(force_table.queue, technology, level) then
+    if force_table.queue.head.technology == technology then
       return
     end
-    research_queue.remove(force_table.queue, tech_data, level)
+    research_queue.remove(force_table.queue, technology, level)
   end
-  research_queue.push(force_table.queue, tech_data, level)
+  research_queue.push(force_table.queue, technology, level)
   gui.schedule_update(force_table)
 end)
 
@@ -141,10 +140,10 @@ script.on_event(defines.events.on_research_cancelled, function(e)
   if force_queue.paused then
     return
   end
-  local technologies = force_table.technologies
+  local technologies = force.technologies
   for tech_name in pairs(e.research) do
-    local tech_data = technologies[tech_name]
-    research_queue.remove(force_queue, tech_data, tech_data.technology.level)
+    local technology = technologies[tech_name]
+    research_queue.remove(force_queue, technology, technology.level)
   end
   gui.schedule_update(force_table)
 end)
@@ -157,17 +156,16 @@ script.on_event(defines.events.on_research_finished, function(e)
     return
   end
   util.ensure_queue_disabled(force)
-  local tech_data = force_table.technologies[technology.name]
   local level = technology.level
   -- For multi-level techs, we want to remove the level that was just finished, not the new level
-  if tech_data.is_multilevel then
+  if util.is_multilevel(technology) then
     level = level - 1
   end
-  if research_queue.contains(force_table.queue, tech_data, level) then
-    research_queue.remove(force_table.queue, tech_data, level)
+  if research_queue.contains(force_table.queue, technology, level) then
+    research_queue.remove(force_table.queue, technology, level)
   else
     -- This was insta-researched
-    research_queue.update_research_state_reqs(force_table, tech_data)
+    research_queue.update_research_state_reqs(force_table, technology)
   end
   gui.schedule_update(force_table)
   for _, player in pairs(force.players) do
@@ -185,7 +183,7 @@ script.on_event(defines.events.on_research_reversed, function(e)
     return
   end
   util.ensure_queue_disabled(force)
-  research_queue.update_research_state_reqs(force_table, force_table.technologies[e.research.name])
+  research_queue.update_research_state_reqs(force_table, technology)
   gui.schedule_update(force_table)
 end)
 
