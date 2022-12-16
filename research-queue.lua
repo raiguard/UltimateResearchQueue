@@ -41,6 +41,7 @@ function research_queue.contains(self, technology, level)
         return false
       end
     end
+    return true
   else
     -- Any level
     for key in pairs(self.lookup) do
@@ -48,9 +49,8 @@ function research_queue.contains(self, technology, level)
         return true
       end
     end
+    return false
   end
-
-  return false
 end
 
 --- @param self ResearchQueue

@@ -605,7 +605,11 @@ function gui.update_tech_list(self)
       end
       local level = technology.prototype.level
       if util.is_multilevel(technology) then
-        level = math.max(research_queue.get_highest_level(self.force_table.queue, technology) + 1, technology.level)
+        level = math.clamp(
+          research_queue.get_highest_level(self.force_table.queue, technology) + 1,
+          technology.level,
+          technology.prototype.max_level
+        ) --[[@as uint]]
       end
       i = i + 1
       local button = techs_table[technology.name] --[[@as LuaGuiElement]]
