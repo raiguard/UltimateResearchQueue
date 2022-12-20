@@ -437,3 +437,16 @@ styles.urq_invalid_search_textfield = {
 
 -- data.raw["technology"]["gun-turret"].enabled = false
 -- data.raw["technology"]["gun-turret"].visible_when_disabled = true
+
+-- data:extend({
+--   {
+--     type = "technology",
+--     name = "urq-test-technology",
+--     icon = data.raw["technology"]["automation-2"].icon,
+--     icon_size = data.raw["technology"]["automation-2"].icon_size,
+--     icon_mipmaps = data.raw["technology"]["automation-2"].icon_mipmaps,
+--     prerequisites = { "automation" },
+--     unit = { count = 10, time = 60, ingredients = { { "automation-science-pack", 1 } } },
+--     effects = {},
+--   },
+-- })

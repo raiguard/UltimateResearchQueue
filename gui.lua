@@ -564,6 +564,7 @@ function gui.update_tech_info(self)
       return template
     end)
   )
+  effects_table.parent.visible = #effects_table.children > 0
 
   -- Prerequisites
   local prerequisites = {}
@@ -878,16 +879,20 @@ function gui.new(player)
                 },
               },
               {
-                type = "line",
-                direction = "horizontal",
-                style_mods = { left_margin = -2, right_margin = -2, top_margin = 4 },
-              },
-              { type = "label", style = "heading_2_label", caption = { "gui-technology-preview.effects" } },
-              {
-                type = "table",
-                name = "tech_info_effects_table",
-                style_mods = { horizontal_spacing = 8 },
-                column_count = 12,
+                type = "flow",
+                direction = "vertical",
+                {
+                  type = "line",
+                  direction = "horizontal",
+                  style_mods = { left_margin = -2, right_margin = -2, top_margin = 4 },
+                },
+                { type = "label", style = "heading_2_label", caption = { "gui-technology-preview.effects" } },
+                {
+                  type = "table",
+                  name = "tech_info_effects_table",
+                  style_mods = { horizontal_spacing = 8 },
+                  column_count = 12,
+                },
               },
               gui_util.tech_info_sublist({ "gui.urq-prerequisites" }, "tech_info_prerequisites_table"),
               gui_util.tech_info_sublist({ "gui.urq-requisites" }, "tech_info_requisites_table"),
