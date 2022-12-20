@@ -118,9 +118,8 @@ end
 --- @param self ResearchQueue
 --- @param technology LuaTechnology
 --- @param level uint
---- @param to_front boolean?
 --- @return LocalisedString?
-function research_queue.push(self, technology, level, to_front)
+function research_queue.push(self, technology, level)
   local research_state = self.force_table.research_states[technology.name]
   if research_state == constants.research_state.researched then
     return { "message.urq-already-researched" }
@@ -159,15 +158,9 @@ function research_queue.push(self, technology, level, to_front)
       return { "message.urq-too-many-prerequisites-queue-full" }
     end
   end
-  local start, stop, step
-  if to_front then
-    start, stop, step = num_to_research, 1, -1
-  else
-    start, stop, step = 1, num_to_research, 1
-  end
-  for i = start, stop, step do
+  for i = 1, #to_research do
     local to_research = to_research[i]
-    push(self, to_research.technology, to_research.level, to_front)
+    push(self, to_research.technology, to_research.level)
   end
 end
 
