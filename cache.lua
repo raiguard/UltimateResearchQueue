@@ -1,5 +1,4 @@
 local dictionary = require("__flib__/dictionary-lite")
-local table = require("__flib__/table")
 
 local constants = require("__UltimateResearchQueue__/constants")
 local research_queue = require("__UltimateResearchQueue__/research-queue")
@@ -175,8 +174,12 @@ function cache.build_technologies()
     order[technology.name] = i
     if technology.upgrade then
       local base_name = string.match(technology.name, "^(.*)%-%d*$") or technology.name
-      local group = table.get_or_insert(upgrade_groups, base_name, {})
-      group[#group + 1] = technology
+      local upgrade_group = upgrade_groups[base_name]
+      if not upgrade_group then
+        upgrade_group = {}
+        upgrade_groups[base_name] = upgrade_group
+      end
+      upgrade_group[#upgrade_group + 1] = technology
     end
   end
   -- Sort upgrade groups
