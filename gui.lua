@@ -419,6 +419,8 @@ function gui.update_queue(self)
 
   local research_states = self.force_table.research_states
 
+  local show_controls = self.player.mod_settings["urq-show-control-hints"].value --[[@as boolean]]
+
   local queue_table = self.elems.queue_table
   local i = 0
   local node = queue.head
@@ -430,13 +432,21 @@ function gui.update_queue(self)
     local is_selected = selected.technology == technology and selected.level == level
     if button then
       gui_util.move_to(button, queue_table, i)
-      gui_util.update_tech_slot(button, technology, node.level, research_states[technology.name], queue, is_selected)
+      gui_util.update_tech_slot(
+        button,
+        technology,
+        node.level,
+        research_states[technology.name],
+        research_queue.contains(queue, technology, level),
+        is_selected
+      )
     else
       local button_template = gui_util.technology_slot(
         gui.on_tech_slot_click,
         technology,
         level,
         research_states[technology.name],
+        show_controls,
         is_selected
       )
       button_template.index = i
@@ -483,7 +493,8 @@ function gui.update_tech_info(self)
       gui.on_tech_slot_click,
       technology,
       level,
-      self.force_table.research_states[technology.name]
+      self.force_table.research_states[technology.name],
+      self.player.mod_settings["urq-show-control-hints"].value --[[@as boolean]]
     )
     button_template.ignored_by_interaction = true
     button_template[5].visible = false
@@ -501,12 +512,17 @@ function gui.update_tech_info(self)
   local ingredients_table = self.elems.tech_info_ingredients_table
   ingredients_table.clear()
   local ingredients_children = table.map(technology.research_unit_ingredients, function(ingredient)
+    local prototype = game.item_prototypes[ingredient.name]
     return {
       type = "sprite-button",
       style = "transparent_slot",
       sprite = "item/" .. ingredient.name,
       number = ingredient.amount,
-      tooltip = game.item_prototypes[ingredient.name].localised_name,
+      tooltip = {
+        "",
+        { "gui.urq-tooltip-title", { "?", prototype.localised_name, prototype.name } },
+        { "?", { "", "\n", prototype.localised_description }, "" },
+      },
     }
   end)
   flib_gui.add(ingredients_table, ingredients_children)
@@ -626,7 +642,7 @@ function gui.update_tech_list(self)
         technology,
         level,
         research_states[technology.name],
-        queue,
+        research_queue.contains(queue, technology, level),
         selected.technology == technology and selected.level == level
       )
       ::continue::
@@ -650,6 +666,8 @@ end)
 --- @param player LuaPlayer
 --- @return Gui
 function gui.new(player)
+  gui.destroy(player.index)
+
   --- @type GuiElems
   local elems = flib_gui.add(player.gui.screen, {
     {
@@ -906,6 +924,7 @@ function gui.new(player)
   })
 
   -- Build techs list
+  local show_controls = player.mod_settings["urq-show-control-hints"].value --[[@as boolean]]
   local force_table = global.forces[player.force.index]
   local buttons = {}
   for _, technology in pairs(player.force.technologies) do
@@ -915,7 +934,8 @@ function gui.new(player)
         gui.on_tech_slot_click,
         technology,
         technology.prototype.level,
-        force_table.research_states[technology.name]
+        force_table.research_states[technology.name],
+        show_controls
       )
     )
   end

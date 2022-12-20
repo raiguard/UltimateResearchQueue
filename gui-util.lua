@@ -3,7 +3,6 @@ local math = require("__flib__/math")
 local table = require("__flib__/table")
 
 local constants = require("__UltimateResearchQueue__/constants")
-local research_queue = require("__UltimateResearchQueue__/research-queue")
 local util = require("__UltimateResearchQueue__/util")
 
 local gui_util = {}
@@ -18,7 +17,14 @@ function gui_util.effect_button(effect)
       { "modifier-description." .. effect.ammo_category .. "-damage-bonus", tostring(effect.modifier * 100) .. "%" }
   elseif effect.type == "give-item" then
     sprite = "item/" .. effect.item
-    tooltip = { "", effect.count .. "x  ", game.item_prototypes[effect.item].localised_name }
+    tooltip = {
+      "gui.urq-tooltip-title",
+      {
+        "",
+        effect.count .. " × ",
+        { "?", game.item_prototypes[effect.item].localised_name, effect.item },
+      },
+    }
   elseif effect.type == "gun-speed" then
     sprite = global.effect_icons[effect.ammo_category]
     tooltip = {
@@ -35,7 +41,23 @@ function gui_util.effect_button(effect)
     }
   elseif effect.type == "unlock-recipe" then
     sprite = "recipe/" .. effect.recipe
-    tooltip = game.recipe_prototypes[effect.recipe].localised_name
+
+    local prototype = game.recipe_prototypes[effect.recipe]
+    tooltip = {
+      "",
+      {
+        "gui.urq-tooltip-title",
+        {
+          "",
+          { "?", prototype.localised_name, prototype.name },
+          " (",
+          { "description.recipe" },
+          ")",
+        },
+      },
+      { "?", { "", "\n", prototype.localised_description }, "" },
+      -- TODO: Ingredients, etc... maybe?
+    }
   else
     sprite = global.effect_icons[effect.type] or ("utility/" .. string.gsub(effect.type, "%-", "_") .. "_modifier_icon")
     local modifier = effect.modifier
@@ -62,14 +84,6 @@ function gui_util.effect_button(effect)
   if overlay_constant then
     overlay_elem =
       { type = "sprite-button", style = "transparent_slot", sprite = overlay_constant, ignored_by_interaction = true }
-  end
-
-  if DEBUG then
-    if tooltip then
-      tooltip = { "", tooltip, "\n", serpent.block(effect) }
-    else
-      tooltip = serpent.block(effect)
-    end
   end
 
   return {
@@ -104,9 +118,10 @@ end
 --- @param technology LuaTechnology
 --- @param level uint
 --- @param research_state ResearchState
+--- @param show_controls boolean
 --- @param is_selected boolean?
 --- @return GuiElemDef
-function gui_util.technology_slot(handler, technology, level, research_state, is_selected)
+function gui_util.technology_slot(handler, technology, level, research_state, show_controls, is_selected)
   local properties = gui_util.get_technology_slot_properties(technology, research_state, is_selected)
   local progress = util.get_research_progress(technology, level)
 
@@ -122,12 +137,31 @@ function gui_util.technology_slot(handler, technology, level, research_state, is
     })
   end
 
-  -- TODO: Add remainder to always fill available space
   local ingredients_spacing = math.clamp((68 - 16) / (ingredients_len - 1) - 16, -15, -5)
 
-  local tooltip = technology.localised_name
-  if DEBUG then
-    tooltip = { "", tooltip, "\norder=" .. global.technology_order[technology.name] }
+  local tooltip = { "" }
+  -- Title
+  local name = { "?", technology.localised_name, technology.name }
+  if util.is_multilevel(technology) then
+    name = { "", name, " ", level }
+  end
+  table.insert(tooltip, { "gui.urq-tooltip-title", name })
+  -- Description
+  table.insert(tooltip, { "?", { "", "\n", technology.localised_description }, "" })
+  -- Cost
+  table.insert(tooltip, "\n[ ")
+  for _, ingredient in pairs(technology.research_unit_ingredients) do
+    table.insert(tooltip, "[img=item/" .. ingredient.name .. "]" .. ingredient.amount)
+  end
+  table.insert(tooltip, " [img=quantity-time][font=default-semibold]")
+  table.insert(tooltip, util.format_time_short(technology.research_unit_energy))
+  table.insert(tooltip, " [/font]] × " .. technology.research_unit_count)
+  -- Controls
+  if show_controls then
+    table.insert(tooltip, { "gui.urq-tech-slot-tooltip-view-details" })
+    table.insert(tooltip, { "gui.urq-tech-slot-tooltip-add-to-queue" })
+    table.insert(tooltip, { "gui.urq-tech-slot-tooltip-add-to-queue-front" })
+    table.insert(tooltip, { "gui.urq-tech-slot-tooltip-remove-from-queue" })
   end
 
   return {
@@ -230,9 +264,9 @@ end
 --- @param technology LuaTechnology
 --- @param level uint
 --- @param research_state ResearchState
---- @param queue ResearchQueue
+--- @param in_queue boolean
 --- @param is_selected boolean?
-function gui_util.update_tech_slot(button, technology, level, research_state, queue, is_selected)
+function gui_util.update_tech_slot(button, technology, level, research_state, in_queue, is_selected)
   local properties = gui_util.get_technology_slot_properties(technology, research_state, is_selected)
   local tags = button.tags
   button.style = properties.style
@@ -260,7 +294,7 @@ function gui_util.update_tech_slot(button, technology, level, research_state, qu
       level_label.caption = tostring(level)
     end
   end
-  button.duration_label.visible = research_queue.contains(queue, technology, level)
+  button.duration_label.visible = in_queue
 end
 
 --- @param elem LuaGuiElement
@@ -303,6 +337,7 @@ end
 function gui_util.update_tech_info_sublist(self, elem_table, handler, technologies)
   local selected = self.state.selected or {}
   local research_states = self.force_table.research_states
+  local show_controls = self.player.mod_settings["urq-show-control-hints"].value --[[@as boolean]]
   elem_table.clear()
   if #technologies > 0 then
     elem_table.parent.parent.visible = true
@@ -315,6 +350,7 @@ function gui_util.update_tech_info_sublist(self, elem_table, handler, technologi
           technology,
           technology.level,
           research_states[technology.name],
+          show_controls,
           selected.technology == technology and selected.level == technology.level
         )
       )

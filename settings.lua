@@ -11,4 +11,10 @@ data:extend({
     setting_type = "runtime-per-user",
     default_value = false,
   },
+  {
+    type = "bool-setting",
+    name = "urq-show-control-hints",
+    setting_type = "runtime-per-user",
+    default_value = true,
+  },
 })
