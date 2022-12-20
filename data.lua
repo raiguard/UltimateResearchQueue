@@ -255,13 +255,6 @@ styles.urq_search_textfield = {
   right_padding = 3,
 }
 
-styles.urq_invalid_search_textfield = {
-  type = "textbox_style",
-  parent = "invalid_value_textfield",
-  top_margin = -3,
-  right_padding = 3,
-}
-
 -- Effect testing:
 -- data.raw["technology"]["gun-turret"].effects = {
 --   { type = "unlock-recipe", recipe = "gun-turret" },
@@ -434,10 +427,10 @@ styles.urq_invalid_search_textfield = {
 --     modifier = true,
 --   },
 -- }
-
+--
 -- data.raw["technology"]["gun-turret"].enabled = false
 -- data.raw["technology"]["gun-turret"].visible_when_disabled = true
-
+--
 -- data:extend({
 --   {
 --     type = "technology",
