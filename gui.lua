@@ -169,7 +169,7 @@ function gui.on_start_research_click(self, e)
   if not selected then
     return
   end
-  gui.start_research(self, selected.technology, selected.level, false, e.control and util.is_cheating(self.player))
+  gui.start_research(self, selected.technology, selected.level, e.shift, e.control and util.is_cheating(self.player))
 end
 
 --- @param self Gui
@@ -187,7 +187,7 @@ function gui.on_tech_slot_click(self, e)
     return
   end
   if gui_util.is_double_click(e.element) then
-    gui.start_research(self, technology, level, false, e.control and util.is_cheating(self.player))
+    gui.start_research(self, technology, level, e.shift, e.control and util.is_cheating(self.player))
     return
   end
   gui.select_tech(self, technology, level)
@@ -269,7 +269,12 @@ function gui.start_research(self, technology, level, to_front, instant_research)
     end
     technology.researched = true
   else
-    local push_error = research_queue.push(self.force_table.queue, technology, level, to_front)
+    local push_error
+    if to_front then
+      push_error = research_queue.push_front(self.force_table.queue, technology, level)
+    else
+      push_error = research_queue.push(self.force_table.queue, technology, level)
+    end
     if push_error then
       util.flying_text(self.player, push_error)
       return

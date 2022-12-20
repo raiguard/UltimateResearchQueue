@@ -72,9 +72,9 @@ end
 --- @param self ResearchQueue
 --- @param technology LuaTechnology
 --- @param level uint
---- @param to_front boolean?
+--- @param index integer?
 --- @return LocalisedString?
-local function push(self, technology, level, to_front)
+local function push(self, technology, level, index)
   -- Update flag and length
   self.len = self.len + 1
   -- Add to linked list
@@ -82,9 +82,20 @@ local function push(self, technology, level, to_front)
   --- @type ResearchQueueNode
   local new_node = { technology = technology, level = level, duration = "[img=infinity]", key = key }
   self.lookup[key] = new_node
-  if to_front or not self.head then
+  if not self.head or index == 1 then
     new_node.next = self.head
     self.head = new_node
+  elseif index then
+    local node = self.head
+    while node and node.next and index > 2 do
+      index = index - 1
+      node = node.next
+    end
+    -- This shouldn't ever fail...
+    if node then
+      new_node.next = node.next
+      node.next = new_node
+    end
   else
     local node = self.head
     while node and node.next do
@@ -162,6 +173,79 @@ function research_queue.push(self, technology, level)
     local to_research = to_research[i]
     push(self, to_research.technology, to_research.level)
   end
+end
+
+--- Add a technology and its prerequisites to the front of the queue, moving prerequisites if required.
+--- @param self ResearchQueue
+--- @param technology LuaTechnology
+--- @param level uint
+function research_queue.push_front(self, technology, level)
+  local research_state = self.force_table.research_states[technology.name]
+  if research_state == constants.research_state.researched then
+    return { "message.urq-already-researched" }
+  elseif research_queue.contains(self, technology, level) then
+    -- TODO: Move to front of queue
+    return { "message.urq-already-in-queue" }
+  end
+  --- @type TechnologyAndLevel[]
+  local to_research = {}
+  --- @type TechnologyAndLevel[]
+  local to_move = {}
+  -- Add all prerequisites to research this tech ASAP
+  local technologies = self.force.technologies
+  local technology_prerequisites = global.technology_prerequisites[technology.name]
+  for i = 1, #technology_prerequisites do
+    local prerequisite_name = technology_prerequisites[i]
+    local prerequisite = technologies[prerequisite_name]
+    local prerequisite_research_state = self.force_table.research_states[prerequisite_name]
+    local in_queue = research_queue.contains(self, prerequisite, true)
+    if in_queue then
+      add_tech(to_move, prerequisite)
+    elseif prerequisite_research_state ~= constants.research_state.researched then
+      add_tech(to_research, prerequisite)
+    end
+  end
+  add_tech(to_research, technology, level, self.force_table.queue)
+  -- Check for errors
+  local num_to_research = #to_research
+  if num_to_research > constants.queue_limit then
+    return { "message.urq-too-many-unresearched-prerequisites" }
+  else
+    local len = self.force_table.queue.len
+    -- It shouldn't ever be greater... right?
+    if len >= constants.queue_limit then
+      return { "message.urq-queue-is-full" }
+    elseif len + num_to_research > constants.queue_limit then
+      return { "message.urq-too-many-prerequisites-queue-full" }
+    end
+  end
+  local num_to_move = #to_move
+  for i = num_to_move, 1, -1 do
+    local to_move = to_move[i]
+    research_queue.move_to_front(self, to_move.technology, to_move.level)
+  end
+  for i = 1, #to_research do
+    local to_research = to_research[i]
+    push(self, to_research.technology, to_research.level, num_to_move + i)
+  end
+end
+
+--- This does not account for prerequisites
+--- @param self ResearchQueue
+--- @param technology LuaTechnology
+--- @param level uint
+function research_queue.move_to_front(self, technology, level)
+  local node, prev = self.head, nil
+  while node and (node.technology ~= technology or node.level ~= level) do
+    prev = node
+    node = node.next
+  end
+  if not node or not prev then
+    return
+  end
+  prev.next = node.next
+  node.next = self.head
+  self.head = node
 end
 
 --- @param self ResearchQueue
