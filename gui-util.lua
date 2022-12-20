@@ -158,7 +158,7 @@ function gui_util.technology_slot(handler, technology, level, research_state, sh
     "\n[",
     ingredients_tt,
     " [img=quantity-time][font=default-semibold]",
-    util.format_time_short(technology.research_unit_energy),
+    math.round(technology.research_unit_energy / 60, 0.1),
     "[/font]] × ",
     technology.research_unit_count,
   })
