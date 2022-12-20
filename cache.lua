@@ -192,7 +192,8 @@ function cache.build_technologies()
   profiler.stop()
   log({ "", "Tech Sorting ", profiler })
 
-  local profiler = game.create_profiler()
+  profiler.reset()
+
   -- Build all prerequisites and direct requisites of each technology
   --- @type table<string, string[]>
   local prerequisites = {}
@@ -263,7 +264,7 @@ function cache.build_technologies()
   for _, technology in pairs(base_techs) do
     propagate(technology)
   end
-  -- Profiling
+
   profiler.stop()
   log({ "", "Prerequisite Generation ", profiler })
 

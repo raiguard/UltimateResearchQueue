@@ -441,8 +441,6 @@ end
 
 --- @param self Gui
 function gui.update_queue(self)
-  local profiler = game.create_profiler()
-
   local queue = self.force_table.queue
 
   local requeue_multilevel = queue.requeue_multilevel
@@ -507,8 +505,6 @@ function gui.update_queue(self)
   for i = i + 1, #children do
     children[i].destroy()
   end
-  profiler.stop()
-  log({ "", "update_queue ", profiler })
 end
 
 --- @param self Gui
@@ -679,7 +675,6 @@ end
 
 --- @param self Gui
 function gui.update_tech_list(self)
-  local profiler = game.create_profiler()
   local techs_table = self.elems.techs_table
   local queue = self.force_table.queue
   local selected = self.state.selected or {}
@@ -716,8 +711,6 @@ function gui.update_tech_list(self)
       ::continue::
     end
   end
-  profiler.stop()
-  log({ "", "update_tech_list ", profiler })
 end
 
 gui.base_template = {
