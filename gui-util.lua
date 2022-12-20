@@ -33,6 +33,7 @@ end
 --- @param effect TechnologyModifier
 --- @param show_controls boolean
 function gui_util.effect_button(effect, show_controls)
+  --- @type LocalisedString?, LocalisedString?
   local sprite, tooltip
 
   if effect.type == "ammo-damage" then
@@ -50,7 +51,7 @@ function gui_util.effect_button(effect, show_controls)
       },
     }
     if show_controls and script.active_mods["RecipeBook"] then
-      table.insert(tooltip, { "gui.urq-tooltip-view-in-recipe-book" })
+      tooltip[#tooltip + 1] = { "gui.urq-tooltip-view-in-recipe-book" }
     end
   elseif effect.type == "gun-speed" then
     sprite = global.effect_icons[effect.ammo_category]
@@ -85,7 +86,7 @@ function gui_util.effect_button(effect, show_controls)
       { "?", { "", "\n", prototype.localised_description }, "" },
     }
     if show_controls and script.active_mods["RecipeBook"] then
-      table.insert(tooltip, { "gui.urq-tooltip-view-in-recipe-book" })
+      tooltip[#tooltip + 1] = { "gui.urq-tooltip-view-in-recipe-book" }
     end
   else
     sprite = global.effect_icons[effect.type] or ("utility/" .. string.gsub(effect.type, "%-", "_") .. "_modifier_icon")
@@ -244,31 +245,32 @@ function gui_util.technology_slot(technology, level, research_state, show_contro
   local ingredients_len = 0
   for i, ingredient in pairs(technology.research_unit_ingredients) do
     ingredients_len = i
-    table.insert(ingredients, {
+    ingredients[#ingredients + 1] = {
       type = "sprite",
       style = "urq_technology_slot_ingredient",
       sprite = ingredient.type .. "/" .. ingredient.name,
       ignored_by_interaction = true,
-    })
+    }
   end
 
   local ingredients_spacing = math.clamp((68 - 16) / (ingredients_len - 1) - 16, -15, -5)
 
+  --- @type LocalisedString
   local tooltip = { "" }
   -- Title
   local name = technology.localised_name
   if util.is_multilevel(technology) then
     name = { "", name, " ", level }
   end
-  table.insert(tooltip, { "gui.urq-tooltip-title", name })
+  tooltip[#tooltip + 1] = { "gui.urq-tooltip-title", name }
   -- Description
-  table.insert(tooltip, { "?", { "", "\n", technology.localised_description }, "" })
+  tooltip[#tooltip + 1] = { "?", { "", "\n", technology.localised_description }, "" }
   -- Cost
   local ingredients_tt = ""
   for _, ingredient in pairs(technology.research_unit_ingredients) do
     ingredients_tt = ingredients_tt .. "[img=item/" .. ingredient.name .. "]" .. ingredient.amount
   end
-  table.insert(tooltip, {
+  tooltip[#tooltip + 1] = {
     "",
     "\n[",
     ingredients_tt,
@@ -276,15 +278,15 @@ function gui_util.technology_slot(technology, level, research_state, show_contro
     math.round(technology.research_unit_energy / 60, 0.1),
     "[/font]] × ",
     technology.research_unit_count,
-  })
+  }
   -- Controls
   if show_controls then
-    table.insert(tooltip, { "gui.urq-tooltip-view-details" })
-    table.insert(tooltip, { "gui.urq-tooltip-add-to-queue" })
-    table.insert(tooltip, { "gui.urq-tooltip-add-to-queue-front" })
-    table.insert(tooltip, { "gui.urq-tooltip-remove-from-queue" })
+    tooltip[#tooltip + 1] = { "gui.urq-tooltip-view-details" }
+    tooltip[#tooltip + 1] = { "gui.urq-tooltip-add-to-queue" }
+    tooltip[#tooltip + 1] = { "gui.urq-tooltip-add-to-queue-front" }
+    tooltip[#tooltip + 1] = { "gui.urq-tooltip-remove-from-queue" }
     if script.active_mods["RecipeBook"] then
-      table.insert(tooltip, { "gui.urq-tooltip-view-in-recipe-book" })
+      tooltip[#tooltip + 1] = { "gui.urq-tooltip-view-in-recipe-book" }
     end
   end
 
@@ -377,7 +379,7 @@ function gui_util.update_technology_info_sublist(self, elem_table, handler, tech
       )
       button_template.handler = handler
 
-      table.insert(group_buttons, button_template)
+      group_buttons[#group_buttons + 1] = button_template
     end
     flib_gui.add(elem_table, group_buttons)
   else

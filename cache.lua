@@ -120,7 +120,7 @@ function cache.build_technologies()
   --- @type LuaTechnologyPrototype[]
   local technologies = {}
   for _, prototype in pairs(game.technology_prototypes) do
-    table.insert(technologies, prototype)
+    technologies[#technologies + 1] = prototype
   end
 
   -- Sort the technologies array

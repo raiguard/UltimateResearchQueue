@@ -226,7 +226,8 @@ local function add_technology(to_research, technology, level, queue)
     lower = math.max(research_queue.get_highest_level(queue, technology) + 1, lower)
   end
   for i = lower, level or technology.prototype.max_level do
-    table.insert(to_research, { technology = technology, level = i })
+    --- @cast i uint
+    to_research[#to_research + 1] = { technology = technology, level = i }
   end
 end
 

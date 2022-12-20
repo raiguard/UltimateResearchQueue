@@ -151,7 +151,7 @@ function gui.new(player)
     )
     button_template.handler = { [defines.events.on_gui_click] = gui.on_tech_slot_click }
 
-    table.insert(buttons, button_template)
+    buttons[#buttons + 1] = button_template
   end
   flib_gui.add(elems.techs_table, buttons)
 
@@ -603,7 +603,7 @@ function gui.update_tech_info(self)
   -- Prerequisites
   local prerequisites = {}
   for _, prerequisite in pairs(technology.prerequisites) do
-    table.insert(prerequisites, prerequisite)
+    prerequisites[#prerequisites + 1] = prerequisite
   end
   gui_util.update_technology_info_sublist(
     self,
