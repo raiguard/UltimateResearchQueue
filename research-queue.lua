@@ -39,9 +39,10 @@ function research_queue.contains(self, technology, level)
     -- This level
     return not not self.lookup[base_name .. "-" .. level]
   elseif level and technology.prototype.max_level ~= math.max_uint then
+    local base_key = base_name .. "-"
     -- All levels
     for i = technology.level, technology.prototype.max_level do
-      if not self.lookup[base_name .. "-" .. i] then
+      if not self.lookup[base_key .. i] then
         return false
       end
     end
@@ -70,6 +71,46 @@ function research_queue.get_highest_level(self, technology)
     node = node.next
   end
   return highest
+end
+
+--- @param technology LuaTechnology
+local function are_prereqs_satisfied(technology)
+  for _, prerequisite in pairs(technology.prerequisites) do
+    if not prerequisite.researched then
+      return false
+    end
+  end
+  return true
+end
+
+--- @param technology LuaTechnology
+--- @param queue ResearchQueue
+local function are_prereqs_satisfied_or_queued(technology, queue)
+  for _, prerequisite in pairs(technology.prerequisites) do
+    if not prerequisite.researched and not research_queue.contains(queue, prerequisite, true) then
+      return false
+    end
+  end
+  return true
+end
+
+--- @param self ResearchQueue
+--- @param technology LuaTechnology
+--- @return ResearchState
+function research_queue.get_research_state(self, technology)
+  if technology.researched then
+    return constants.research_state.researched
+  end
+  if not technology.enabled then
+    return constants.research_state.disabled
+  end
+  if are_prereqs_satisfied(technology) then
+    return constants.research_state.available
+  end
+  if are_prereqs_satisfied_or_queued(technology, self) then
+    return constants.research_state.conditionally_available
+  end
+  return constants.research_state.not_available
 end
 
 --- Add a technology and its prerequisites to the queue.
@@ -109,17 +150,77 @@ local function push(self, technology, level, index)
     node.next = new_node
   end
   -- Update research states
-  research_queue.update_research_state_reqs(self.force_table, technology)
+  research_queue.update_research_state_reqs(self, technology)
   if self.head.technology == technology and self.head.level == level then
     research_queue.update_active_research(self)
   end
+end
+
+--- @param self ResearchQueue
+--- @param technology LuaTechnology
+--- @return LocalisedString?
+function research_queue.instant_research(self, technology)
+  local research_state = self.force_table.research_states[technology.name]
+  if research_state == constants.research_state.researched then
+    return { "message.urq-already-researched" }
+  end
+  if research_state == constants.research_state.available then
+    technology.researched = true
+    return
+  end
+  local prerequisites = global.technology_prerequisites[technology.name] or {}
+  local technologies = self.force.technologies
+  for i = 1, #prerequisites do
+    local prerequisite = technologies[prerequisites[i]]
+    if not prerequisite.researched then
+      prerequisite.researched = true
+    end
+  end
+  technology.researched = true
+end
+
+--- This does not account for prerequisites
+--- @param self ResearchQueue
+--- @param technology LuaTechnology
+--- @param level uint
+function research_queue.move_to_front(self, technology, level)
+  local node, prev = self.head, nil
+  while node and (node.technology ~= technology or node.level ~= level) do
+    prev = node
+    node = node.next
+  end
+  if not node or not prev then
+    return
+  end
+  prev.next = node.next
+  node.next = self.head
+  self.head = node
+end
+
+--- @param force LuaForce
+--- @param force_table ForceTable
+--- @return ResearchQueue
+function research_queue.new(force, force_table)
+  --- @class ResearchQueue
+  local self = {
+    force = force,
+    force_table = force_table,
+    --- @type ResearchQueueNode?
+    head = nil,
+    len = 0,
+    --- @type table<string, ResearchQueueNode>
+    lookup = {},
+    paused = false,
+    requeue_multilevel = false,
+  }
+  return self
 end
 
 --- @param to_research TechnologyAndLevel[]
 --- @param technology LuaTechnology
 --- @param level uint?
 --- @param queue ResearchQueue?
-local function add_tech(to_research, technology, level, queue)
+local function add_technology(to_research, technology, level, queue)
   local lower = technology.level
   if queue then
     lower = math.max(research_queue.get_highest_level(queue, technology) + 1, lower)
@@ -155,11 +256,11 @@ function research_queue.push(self, technology, level)
         not research_queue.contains(self, prerequisite, true)
         and prerequisite_research_state ~= constants.research_state.researched
       then
-        add_tech(to_research, prerequisite)
+        add_technology(to_research, prerequisite)
       end
     end
   end
-  add_tech(to_research, technology, level, self.force_table.queue)
+  add_technology(to_research, technology, level, self.force_table.queue)
   -- Check for errors
   local num_to_research = #to_research
   if num_to_research > constants.queue_limit then
@@ -204,12 +305,12 @@ function research_queue.push_front(self, technology, level)
     local prerequisite_research_state = self.force_table.research_states[prerequisite_name]
     local in_queue = research_queue.contains(self, prerequisite, true)
     if in_queue then
-      add_tech(to_move, prerequisite)
+      add_technology(to_move, prerequisite)
     elseif prerequisite_research_state ~= constants.research_state.researched then
-      add_tech(to_research, prerequisite)
+      add_technology(to_research, prerequisite)
     end
   end
-  add_tech(to_research, technology, level, self.force_table.queue)
+  add_technology(to_research, technology, level, self.force_table.queue)
   -- Check for errors
   local num_to_research = #to_research
   if num_to_research > constants.queue_limit then
@@ -232,24 +333,6 @@ function research_queue.push_front(self, technology, level)
     local to_research = to_research[i]
     push(self, to_research.technology, to_research.level, num_to_move + i)
   end
-end
-
---- This does not account for prerequisites
---- @param self ResearchQueue
---- @param technology LuaTechnology
---- @param level uint
-function research_queue.move_to_front(self, technology, level)
-  local node, prev = self.head, nil
-  while node and (node.technology ~= technology or node.level ~= level) do
-    prev = node
-    node = node.next
-  end
-  if not node or not prev then
-    return
-  end
-  prev.next = node.next
-  node.next = self.head
-  self.head = node
 end
 
 --- @param self ResearchQueue
@@ -280,18 +363,19 @@ function research_queue.remove(self, technology, level, is_recursive)
     prev.next = node.next
   end
   -- Update research states
-  research_queue.update_research_state(self.force_table, technology)
+  research_queue.update_research_state(self, technology)
   -- Remove requisites
   local technologies = self.force.technologies
   local force_table = self.force_table
   local research_states = force_table.research_states
   local requisites = global.technology_requisites[technology.name]
+  local is_multilevel = util.is_multilevel(technology)
   if requisites then
     for _, requisite_name in pairs(requisites) do
       local requisite = technologies[requisite_name]
-      research_queue.update_research_state(force_table, requisite)
+      research_queue.update_research_state(self, requisite)
       local level = requisite.level
-      if util.is_multilevel(technology) then
+      if is_multilevel then
         level = level + 1
       end
       if
@@ -303,7 +387,7 @@ function research_queue.remove(self, technology, level, is_recursive)
     end
   end
   -- Remove all levels above this one
-  if util.is_multilevel(technology) and technology.level <= level then
+  if is_multilevel and technology.level <= level then
     local node = self.head
     while node do
       if node.technology == technology and node.level > level then
@@ -349,6 +433,28 @@ function research_queue.toggle_requeue_multilevel(self)
 end
 
 --- @param self ResearchQueue
+--- @param technology LuaTechnology
+function research_queue.unresearch(self, technology)
+  local technologies = self.force.technologies
+  local research_states = self.force_table.research_states
+
+  --- @param technology LuaTechnology
+  local function propagate(technology)
+    local requisites = global.technology_requisites[technology.name] or {}
+    for i = 1, #requisites do
+      local requisite_name = requisites[i]
+      if research_states[requisite_name] == constants.research_state.researched then
+        local requisite_data = technologies[requisite_name]
+        propagate(requisite_data)
+      end
+    end
+    technology.researched = false
+  end
+
+  propagate(technology)
+end
+
+--- @param self ResearchQueue
 function research_queue.update_active_research(self)
   local head = self.head
   if not self.paused and head then
@@ -387,6 +493,34 @@ function research_queue.update_durations(self)
 end
 
 --- @param self ResearchQueue
+--- @param technology LuaTechnology
+function research_queue.update_research_state(self, technology)
+  local order = global.technology_order[technology.name]
+  local groups = self.force_table.technology_groups
+  local research_states = self.force_table.research_states
+  local previous_state = research_states[technology.name]
+  local new_state = research_queue.get_research_state(self, technology)
+  if new_state ~= previous_state then
+    groups[previous_state][order] = nil
+    groups[new_state][order] = technology
+    research_states[technology.name] = new_state
+  end
+end
+
+--- @param self ResearchQueue
+--- @param technology LuaTechnology
+function research_queue.update_research_state_reqs(self, technology)
+  research_queue.update_research_state(self, technology)
+  local requisites = global.technology_requisites[technology.name]
+  if requisites then
+    local technologies = self.force.technologies
+    for _, requisite_name in pairs(requisites) do
+      research_queue.update_research_state(self, technologies[requisite_name])
+    end
+  end
+end
+
+--- @param self ResearchQueue
 function research_queue.verify_integrity(self)
   local old_head = self.head
   self.head, self.lookup, self.len = nil, {}, 0
@@ -400,139 +534,6 @@ function research_queue.verify_integrity(self)
     end
     node = node.next
   end
-end
-
---- @param force LuaForce
---- @param force_table ForceTable
---- @return ResearchQueue
-function research_queue.new(force, force_table)
-  --- @class ResearchQueue
-  local self = {
-    force = force,
-    force_table = force_table,
-    --- @type ResearchQueueNode?
-    head = nil,
-    len = 0,
-    --- @type table<string, ResearchQueueNode>
-    lookup = {},
-    paused = false,
-    requeue_multilevel = false,
-  }
-  return self
-end
-
---- @param force_table ForceTable
---- @param technology LuaTechnology
-function research_queue.update_research_state(force_table, technology)
-  local order = global.technology_order[technology.name]
-  local tech_groups = force_table.technology_groups
-  local previous_state = force_table.research_states[technology.name]
-  local new_state = research_queue.get_research_state(force_table, technology)
-  -- Change research state
-  if new_state ~= previous_state then
-    tech_groups[previous_state][order] = nil
-    tech_groups[new_state][order] = technology
-    force_table.research_states[technology.name] = new_state
-  end
-end
-
---- @param force_table ForceTable
---- @param technology LuaTechnology
-function research_queue.update_research_state_reqs(force_table, technology)
-  research_queue.update_research_state(force_table, technology)
-  local requisites = global.technology_requisites[technology.name]
-  if requisites then
-    local technologies = force_table.force.technologies
-    for _, requisite_name in pairs(requisites) do
-      research_queue.update_research_state(force_table, technologies[requisite_name])
-    end
-  end
-end
-
---- @param technology LuaTechnology
-local function are_prereqs_satisfied(technology)
-  for _, prereq in pairs(technology.prerequisites) do
-    if not prereq.researched then
-      return false
-    end
-  end
-  return true
-end
-
---- @param technology LuaTechnology
---- @param force_table ForceTable
-local function are_prereqs_satisfied_or_queued(technology, force_table)
-  for _, prerequisite in pairs(technology.prerequisites) do
-    if not prerequisite.researched and not research_queue.contains(force_table.queue, prerequisite, true) then
-      return false
-    end
-  end
-  return true
-end
-
---- @param force_table ForceTable
---- @param technology LuaTechnology
---- @return ResearchState
-function research_queue.get_research_state(force_table, technology)
-  if technology.researched then
-    return constants.research_state.researched
-  end
-  if not technology.enabled then
-    return constants.research_state.disabled
-  end
-  if are_prereqs_satisfied(technology) then
-    return constants.research_state.available
-  end
-  if are_prereqs_satisfied_or_queued(technology, force_table) then
-    return constants.research_state.conditionally_available
-  end
-  return constants.research_state.not_available
-end
-
---- @param self ResearchQueue
---- @param technology LuaTechnology
---- @return LocalisedString?
-function research_queue.instant_research(self, technology)
-  local research_state = self.force_table.research_states[technology.name]
-  if research_state == constants.research_state.researched then
-    return { "message.urq-already-researched" }
-  end
-  if research_state == constants.research_state.available then
-    technology.researched = true
-    return
-  end
-  local prerequisites = global.technology_prerequisites[technology.name] or {}
-  local technologies = self.force.technologies
-  for i = 1, #prerequisites do
-    local prerequisite = technologies[prerequisites[i]]
-    if not prerequisite.researched then
-      prerequisite.researched = true
-    end
-  end
-  technology.researched = true
-end
-
---- @param self ResearchQueue
---- @param technology LuaTechnology
-function research_queue.unresearch(self, technology)
-  local technologies = self.force.technologies
-  local research_states = self.force_table.research_states
-
-  --- @param technology LuaTechnology
-  local function propagate(technology)
-    local requisites = global.technology_requisites[technology.name]
-    if requisites then
-      for _, requisite_name in pairs(requisites) do
-        local requisite_data = technologies[requisite_name]
-        if research_states[requisite_name] == constants.research_state.researched then
-          propagate(requisite_data)
-        end
-      end
-    end
-    technology.researched = false
-  end
-
-  propagate(technology)
 end
 
 return research_queue

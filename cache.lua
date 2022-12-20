@@ -284,7 +284,7 @@ function cache.init_force(force)
   local research_states = {}
   force_table.research_states = research_states
   for name, technology in pairs(force.technologies) do
-    local research_state = research_queue.get_research_state(force_table, technology)
+    local research_state = research_queue.get_research_state(force_table.queue, technology)
     research_states[name] = research_state
     technology_groups[research_state][global.technology_order[technology.name]] = technology
   end

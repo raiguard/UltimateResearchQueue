@@ -175,7 +175,7 @@ script.on_event(defines.events.on_research_finished, function(e)
     research_queue.remove(force_table.queue, technology, level)
   else
     -- This was insta-researched
-    research_queue.update_research_state_reqs(force_table, technology)
+    research_queue.update_research_state_reqs(force_table.queue, technology)
   end
 
   gui.schedule_update(force_table)
@@ -196,7 +196,7 @@ script.on_event(defines.events.on_research_reversed, function(e)
   end
   util.ensure_queue_disabled(force)
 
-  research_queue.update_research_state_reqs(force_table, technology)
+  research_queue.update_research_state_reqs(force_table.queue, technology)
 
   gui.schedule_update(force_table)
 end)

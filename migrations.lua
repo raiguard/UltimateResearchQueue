@@ -47,7 +47,6 @@ end
 
 --- @param player LuaPlayer
 function migrations.migrate_player(player)
-  gui.destroy(player.index)
   gui.new(player)
 end
 
