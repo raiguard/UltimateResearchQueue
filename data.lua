@@ -439,7 +439,7 @@ styles.urq_search_textfield = {
 --     icon_size = data.raw["technology"]["automation-2"].icon_size,
 --     icon_mipmaps = data.raw["technology"]["automation-2"].icon_mipmaps,
 --     prerequisites = { "automation" },
---     unit = { count = 10, time = 60, ingredients = { { "automation-science-pack", 1 } } },
+--     unit = { count = 10, time = 60, ingredients = {} },
 --     effects = {},
 --   },
 -- })

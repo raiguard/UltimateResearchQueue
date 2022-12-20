@@ -229,7 +229,7 @@ script.on_event(defines.events.on_tick, function(e)
     end
     global.update_force_guis = {}
   end
-  -- Filter tech lists
+  -- Filter technology lists
   for player_index, tick in pairs(global.filter_tech_list) do
     if tick <= e.tick then
       local player_gui = gui.get(player_index)

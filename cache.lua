@@ -150,7 +150,7 @@ function cache.build_technologies()
           return order_a < order_b
         end
       end
-      -- Sort the tech with fewer ingredients in front
+      -- Sort the technology with fewer ingredients in front
       if len_a ~= len_b then
         return len_a < len_b
       end
@@ -197,7 +197,7 @@ function cache.build_technologies()
   local requisites = {}
   --- @type LuaTechnologyPrototype[]
   local base_techs = {}
-  -- Step 1: Assemble requisites for each tech and determine base technologies
+  -- Step 1: Assemble requisites for each technology and determine base technologies
   for i = 1, #technologies do
     local technology = technologies[i]
     local prerequisites = technology.prerequisites
@@ -215,7 +215,7 @@ function cache.build_technologies()
       base_techs[#base_techs + 1] = technology
     end
   end
-  -- Step 2: Recursively assemble prerequisites for each tech
+  -- Step 2: Recursively assemble prerequisites for each technology
   local tech_prototypes = game.technology_prototypes
   local checked = {}
   --- @param tbl {[string]: boolean, [integer]: string}

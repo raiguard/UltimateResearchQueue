@@ -7,6 +7,29 @@ local util = require("__UltimateResearchQueue__/util")
 
 local gui_util = {}
 
+--- @param technology_name string
+--- @param upgrade_group LuaTechnologyPrototype[]
+--- @param research_states table<string, ResearchState>
+function gui_util.check_upgrade_group(technology_name, upgrade_group, research_states)
+  if research_states[technology_name] == constants.research_state.researched then
+    -- Show if highest researched
+    for i = #upgrade_group, 1, -1 do
+      local other_tech_name = upgrade_group[i].name
+      if research_states[other_tech_name] == constants.research_state.researched then
+        return other_tech_name == technology_name
+      end
+    end
+  else
+    -- Show if lowest unresearched
+    for i = 1, #upgrade_group do
+      local other_tech_name = upgrade_group[i].name
+      if research_states[other_tech_name] ~= constants.research_state.researched then
+        return other_tech_name == technology_name
+      end
+    end
+  end
+end
+
 --- @param effect TechnologyModifier
 --- @param show_controls boolean
 function gui_util.effect_button(effect, show_controls)
@@ -120,14 +143,100 @@ function gui_util.frame_action_button(name, sprite, tooltip, action)
   }
 end
 
---- @param handler function
+--- @param technology LuaTechnology
+--- @param research_state ResearchState
+--- @param is_selected boolean?
+--- @return TechnologySlotProperties
+function gui_util.get_technology_slot_properties(technology, research_state, is_selected)
+  local research_state_str = table.find(constants.research_state, research_state)
+  local max_level_str = technology.prototype.max_level == math.max_uint and "[img=infinity]"
+    or tostring(technology.prototype.max_level)
+  local style = "urq_technology_slot_"
+    .. research_state_str
+    .. ((technology.upgrade or util.is_multilevel(technology) or technology.prototype.level > 1) and "_leveled" or "")
+    .. (is_selected and "_selected" or "")
+
+  --- @class TechnologySlotProperties
+  return { max_level_str = max_level_str, research_state_str = research_state_str, style = style }
+end
+
+--- @param elem LuaGuiElement
+function gui_util.is_double_click(elem)
+  local tags = elem.tags
+  local last_click_tick = tags.last_click_tick or 0
+  local is_double_click = game.ticks_played - last_click_tick < 12
+  if is_double_click then
+    tags.last_click_tick = nil
+  else
+    tags.last_click_tick = game.ticks_played
+  end
+  elem.tags = tags
+  return is_double_click
+end
+
+--- @param technology LuaTechnology
+--- @param query string
+--- @param dictionaries table<string, TranslatedDictionary>?
+--- @return boolean
+function gui_util.match_search_strings(technology, query, dictionaries)
+  local to_search = {}
+  if dictionaries then
+    to_search[#to_search + 1] = dictionaries.technology[technology.name]
+    local effects = technology.effects
+    for i = 1, #effects do
+      local effect = effects[i]
+      if effect.type == "unlock-recipe" then
+        to_search[#to_search + 1] = dictionaries.recipe[effect.recipe]
+      end
+    end
+  else
+    to_search[#to_search + 1] = technology.name
+  end
+  for _, str in pairs(to_search) do
+    if string.find(string.lower(str), query, 1, true) then
+      return true
+    end
+  end
+  return false
+end
+
+--- @param element LuaGuiElement
+--- @param parent LuaGuiElement
+--- @param index number
+function gui_util.move_to(element, parent, index)
+  --- @cast index uint
+  local dummy = parent.add({ type = "empty-widget", index = index })
+  parent.swap_children(element.get_index_in_parent(), index)
+  dummy.destroy()
+end
+
+--- @param caption LocalisedString
+--- @param table_name string
+function gui_util.tech_info_sublist(caption, table_name)
+  return {
+    type = "flow",
+    direction = "vertical",
+    {
+      type = "line",
+      direction = "horizontal",
+      style_mods = { left_margin = -2, right_margin = -2, top_margin = 4 },
+    },
+    { type = "label", style = "heading_2_label", caption = caption },
+    {
+      type = "frame",
+      style = "urq_tech_list_frame",
+      { type = "table", name = table_name, style = "slot_table", column_count = 6 },
+    },
+  }
+end
+
 --- @param technology LuaTechnology
 --- @param level uint
 --- @param research_state ResearchState
 --- @param show_controls boolean
 --- @param is_selected boolean?
 --- @return GuiElemDef
-function gui_util.technology_slot(handler, technology, level, research_state, show_controls, is_selected)
+function gui_util.technology_slot(technology, level, research_state, show_controls, is_selected)
   local properties = gui_util.get_technology_slot_properties(technology, research_state, is_selected)
   local progress = util.get_research_progress(technology, level)
 
@@ -185,7 +294,6 @@ function gui_util.technology_slot(handler, technology, level, research_state, sh
     style = properties.style,
     tooltip = tooltip,
     tags = { research_state = research_state, tech_name = technology.name, level = level },
-    handler = { [defines.events.on_gui_click] = handler },
     {
       type = "flow",
       style = "urq_technology_slot_sprite_flow",
@@ -235,44 +343,46 @@ function gui_util.technology_slot(handler, technology, level, research_state, sh
 end
 
 --- @param elem LuaGuiElement
-function gui_util.is_double_click(elem)
-  local tags = elem.tags
-  local last_click_tick = tags.last_click_tick or 0
-  local is_double_click = game.ticks_played - last_click_tick < 12
-  if is_double_click then
-    tags.last_click_tick = nil
+--- @param value boolean
+--- @param sprite_base string
+function gui_util.toggle_frame_action_button(elem, sprite_base, value)
+  if value then
+    elem.style = "flib_selected_frame_action_button"
+    elem.sprite = sprite_base .. "_black"
   else
-    tags.last_click_tick = game.ticks_played
+    elem.style = "frame_action_button"
+    elem.sprite = sprite_base .. "_white"
   end
-  elem.tags = tags
-  return is_double_click
 end
 
---- @param element LuaGuiElement
---- @param parent LuaGuiElement
---- @param index number
-function gui_util.move_to(element, parent, index)
-  --- @cast index uint
-  local dummy = parent.add({ type = "empty-widget", index = index })
-  parent.swap_children(element.get_index_in_parent(), index)
-  dummy.destroy()
-end
+--- @param self Gui
+--- @param elem_table LuaGuiElement
+--- @param handler function
+--- @param technologies LuaTechnology[]
+function gui_util.update_technology_info_sublist(self, elem_table, handler, technologies)
+  local selected = self.state.selected or {}
+  local research_states = self.force_table.research_states
+  local show_controls = self.player.mod_settings["urq-show-control-hints"].value --[[@as boolean]]
+  elem_table.clear()
+  if #technologies > 0 then
+    elem_table.parent.parent.visible = true
+    local group_buttons = {}
+    for _, technology in pairs(technologies) do
+      local button_template = gui_util.technology_slot(
+        technology,
+        technology.level,
+        research_states[technology.name],
+        show_controls,
+        selected.technology == technology and selected.level == technology.level
+      )
+      button_template.handler = handler
 
---- @param technology LuaTechnology
---- @param research_state ResearchState
---- @param is_selected boolean?
---- @return TechnologySlotProperties
-function gui_util.get_technology_slot_properties(technology, research_state, is_selected)
-  local research_state_str = table.find(constants.research_state, research_state)
-  local max_level_str = technology.prototype.max_level == math.max_uint and "[img=infinity]"
-    or tostring(technology.prototype.max_level)
-  local style = "urq_technology_slot_"
-    .. research_state_str
-    .. ((technology.upgrade or util.is_multilevel(technology) or technology.prototype.level > 1) and "_leveled" or "")
-    .. (is_selected and "_selected" or "")
-
-  --- @class TechnologySlotProperties
-  return { max_level_str = max_level_str, research_state_str = research_state_str, style = style }
+      table.insert(group_buttons, button_template)
+    end
+    flib_gui.add(elem_table, group_buttons)
+  else
+    elem_table.parent.parent.visible = false
+  end
 end
 
 --- @param button LuaGuiElement
@@ -281,7 +391,7 @@ end
 --- @param research_state ResearchState
 --- @param in_queue boolean
 --- @param is_selected boolean?
-function gui_util.update_tech_slot(button, technology, level, research_state, in_queue, is_selected)
+function gui_util.update_technology_slot(button, technology, level, research_state, in_queue, is_selected)
   local properties = gui_util.get_technology_slot_properties(technology, research_state, is_selected)
   local tags = button.tags
   button.style = properties.style
@@ -310,70 +420,6 @@ function gui_util.update_tech_slot(button, technology, level, research_state, in
     end
   end
   button.duration_label.visible = in_queue
-end
-
---- @param elem LuaGuiElement
---- @param value boolean
---- @param sprite_base string
-function gui_util.toggle_frame_action_button(elem, sprite_base, value)
-  if value then
-    elem.style = "flib_selected_frame_action_button"
-    elem.sprite = sprite_base .. "_black"
-  else
-    elem.style = "frame_action_button"
-    elem.sprite = sprite_base .. "_white"
-  end
-end
-
---- @param caption LocalisedString
---- @param table_name string
-function gui_util.tech_info_sublist(caption, table_name)
-  return {
-    type = "flow",
-    direction = "vertical",
-    {
-      type = "line",
-      direction = "horizontal",
-      style_mods = { left_margin = -2, right_margin = -2, top_margin = 4 },
-    },
-    { type = "label", style = "heading_2_label", caption = caption },
-    {
-      type = "frame",
-      style = "urq_tech_list_frame",
-      { type = "table", name = table_name, style = "slot_table", column_count = 6 },
-    },
-  }
-end
-
---- @param self Gui
---- @param elem_table LuaGuiElement
---- @param handler function
---- @param technologies LuaTechnology[]
-function gui_util.update_tech_info_sublist(self, elem_table, handler, technologies)
-  local selected = self.state.selected or {}
-  local research_states = self.force_table.research_states
-  local show_controls = self.player.mod_settings["urq-show-control-hints"].value --[[@as boolean]]
-  elem_table.clear()
-  if #technologies > 0 then
-    elem_table.parent.parent.visible = true
-    local group_buttons = {}
-    for _, technology in pairs(technologies) do
-      table.insert(
-        group_buttons,
-        gui_util.technology_slot(
-          handler,
-          technology,
-          technology.level,
-          research_states[technology.name],
-          show_controls,
-          selected.technology == technology and selected.level == technology.level
-        )
-      )
-    end
-    flib_gui.add(elem_table, group_buttons)
-  else
-    elem_table.parent.parent.visible = false
-  end
 end
 
 return gui_util

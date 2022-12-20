@@ -80,16 +80,16 @@ function util.get_research_progress(technology, level)
   end
 end
 
---- @param tech LuaTechnology
+--- @param technology LuaTechnology
 --- @param level uint?
 --- @return double
-function util.get_research_unit_count(tech, level)
-  local formula = tech.research_unit_count_formula
+function util.get_research_unit_count(technology, level)
+  local formula = technology.research_unit_count_formula
   if formula then
-    local level = level or tech.level
+    local level = level or technology.level
     return game.evaluate_expression(formula, { l = level, L = level })
   else
-    return tech.research_unit_count --[[@as double]]
+    return technology.research_unit_count --[[@as double]]
   end
 end
 
