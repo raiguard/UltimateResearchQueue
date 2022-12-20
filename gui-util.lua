@@ -23,7 +23,7 @@ function gui_util.effect_button(effect, show_controls)
       {
         "",
         effect.count .. " × ",
-        { "?", game.item_prototypes[effect.item].localised_name, effect.item },
+        game.item_prototypes[effect.item].localised_name,
       },
     }
     if show_controls and script.active_mods["RecipeBook"] then
@@ -53,7 +53,7 @@ function gui_util.effect_button(effect, show_controls)
         "gui.urq-tooltip-title",
         {
           "",
-          { "?", prototype.localised_name, prototype.name },
+          prototype.localised_name,
           " (",
           { "description.recipe" },
           ")",
@@ -147,7 +147,7 @@ function gui_util.technology_slot(handler, technology, level, research_state, sh
 
   local tooltip = { "" }
   -- Title
-  local name = { "?", technology.localised_name, technology.name }
+  local name = technology.localised_name
   if util.is_multilevel(technology) then
     name = { "", name, " ", level }
   end
