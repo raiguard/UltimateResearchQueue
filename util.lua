@@ -1,5 +1,4 @@
 local math = require("__flib__/math")
-local table = require("__flib__/table")
 
 local util = {}
 
@@ -32,15 +31,16 @@ function util.format_time_short(ticks)
   local hours = math.floor(ticks / 60 / 60 / 60)
   local minutes = math.floor(ticks / 60 / 60) % 60
   local seconds = math.floor(ticks / 60) % 60
+  --- @type LocalisedString
   local result = { "" }
   if hours ~= 0 then
-    table.insert(result, { "time-symbol-hours-short", hours })
+    result[#result + 1] = { "time-symbol-hours-short", hours }
   end
   if minutes ~= 0 then
-    table.insert(result, { "time-symbol-minutes-short", minutes })
+    result[#result + 1] = { "time-symbol-minutes-short", minutes }
   end
   if seconds ~= 0 then
-    table.insert(result, { "time-symbol-seconds-short", seconds })
+    result[#result + 1] = { "time-symbol-seconds-short", seconds }
   end
   return result
 end
