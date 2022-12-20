@@ -149,13 +149,19 @@ function gui_util.technology_slot(handler, technology, level, research_state, sh
   -- Description
   table.insert(tooltip, { "?", { "", "\n", technology.localised_description }, "" })
   -- Cost
-  table.insert(tooltip, "\n[ ")
+  local ingredients_tt = ""
   for _, ingredient in pairs(technology.research_unit_ingredients) do
-    table.insert(tooltip, "[img=item/" .. ingredient.name .. "]" .. ingredient.amount)
+    ingredients_tt = ingredients_tt .. "[img=item/" .. ingredient.name .. "]" .. ingredient.amount
   end
-  table.insert(tooltip, " [img=quantity-time][font=default-semibold]")
-  table.insert(tooltip, util.format_time_short(technology.research_unit_energy))
-  table.insert(tooltip, " [/font]] × " .. technology.research_unit_count)
+  table.insert(tooltip, {
+    "",
+    "\n[",
+    ingredients_tt,
+    " [img=quantity-time][font=default-semibold]",
+    util.format_time_short(technology.research_unit_energy),
+    "[/font]] × ",
+    technology.research_unit_count,
+  })
   -- Controls
   if show_controls then
     table.insert(tooltip, { "gui.urq-tech-slot-tooltip-view-details" })
