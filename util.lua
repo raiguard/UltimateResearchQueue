@@ -45,6 +45,24 @@ function util.format_time_short(ticks)
   return result
 end
 
+--- @param technology LuaTechnology|LuaTechnologyPrototype
+--- @return string
+function util.get_base_name(technology)
+  local result = string.gsub(technology.name, "%-%d*$", "")
+  return result
+end
+
+--- @param technology LuaTechnology
+--- @param level uint
+--- @return string
+function util.get_queue_key(technology, level)
+  if util.is_multilevel(technology) then
+    return util.get_base_name(technology) .. "-" .. level
+  else
+    return technology.name
+  end
+end
+
 --- @param technology LuaTechnology
 --- @param level uint
 --- @return double
@@ -78,24 +96,6 @@ end
 --- @param player LuaPlayer
 function util.is_cheating(player)
   return player.cheat_mode or player.controller_type == defines.controllers.editor
-end
-
---- @param technology LuaTechnology
---- @param level uint
---- @return string
-function util.get_queue_key(technology, level)
-  if util.is_multilevel(technology) then
-    return util.get_base_name(technology) .. "-" .. level
-  else
-    return technology.name
-  end
-end
-
---- @param technology LuaTechnology|LuaTechnologyPrototype
---- @return string
-function util.get_base_name(technology)
-  local result = string.gsub(technology.name, "%-%d*$", "")
-  return result
 end
 
 --- @param technology LuaTechnology|LuaTechnologyPrototype
