@@ -28,7 +28,7 @@ local util = require("__UltimateResearchQueue__/util")
 --- @field queue_trash_button LuaGuiElement
 --- @field queue_scroll_pane LuaGuiElement
 --- @field queue_table LuaGuiElement
---- @field tech_info_tutorial_flow LuaGuiElement
+--- @field tech_info_scroll_pane LuaGuiElement
 --- @field tech_info_name_label LuaGuiElement
 --- @field tech_info_main_slot_frame LuaGuiElement
 --- @field tech_info_description_label LuaGuiElement
@@ -45,6 +45,7 @@ local util = require("__UltimateResearchQueue__/util")
 --- @field tech_info_footer_cancel_button LuaGuiElement
 --- @field tech_info_footer_start_button LuaGuiElement
 --- @field tech_info_footer_unresearch_button LuaGuiElement
+--- @field tech_info_welcome_flow LuaGuiElement
 
 --- @class GuiMod
 local gui = {}
@@ -485,6 +486,11 @@ function gui.update_tech_info(self)
   end
   local technology, level = selected.technology, selected.level
 
+  -- Flows
+  self.elems.welcome_flow.visible = false
+  self.elems.tech_info_scroll_pane.visible = true
+  self.elems.tech_info_footer_frame.visible = true
+
   -- Slot
   local main_slot_frame = self.elems.tech_info_main_slot_frame
   main_slot_frame.clear() -- The best thing to do is clear it, otherwise we'd need to diff all the sub-elements
@@ -795,10 +801,12 @@ function gui.new(player)
             },
             {
               type = "scroll-pane",
+              name = "tech_info_scroll_pane",
               style = "flib_naked_scroll_pane",
               style_mods = { horizontally_stretchable = true, vertically_stretchable = true },
               direction = "vertical",
               vertical_scroll_policy = "always",
+              visible = false,
               {
                 type = "flow",
                 style_mods = { horizontal_spacing = 12 },
@@ -864,6 +872,7 @@ function gui.new(player)
               type = "frame",
               name = "tech_info_footer_frame",
               style = "subfooter_frame",
+              visible = false,
               {
                 type = "progressbar",
                 name = "tech_info_footer_progressbar",
@@ -897,6 +906,13 @@ function gui.new(player)
                 tooltip = { "gui-technology-preview.start-research" },
                 handler = { [defines.events.on_gui_click] = gui.on_start_research_click },
               },
+            },
+            {
+              type = "flow",
+              name = "welcome_flow",
+              style_mods = { padding = 12, vertically_stretchable = true },
+              direction = "vertical",
+              { type = "label", style_mods = { single_line = false }, caption = { "gui.urq-welcome" } },
             },
           },
         },
