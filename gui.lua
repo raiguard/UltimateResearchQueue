@@ -176,9 +176,7 @@ end
 --- @param self Gui
 --- @param e EventData.on_gui_click
 function gui.on_tech_slot_click(self, e)
-  if DEBUG then
-    log("tech clicked: " .. e.element.name)
-  end
+  log("tech clicked: " .. e.element.name)
   local tags = e.element.tags
   local tech_name, level = tags.tech_name --[[@as string]], tags.level --[[@as uint]]
   local technology = self.force.technologies[tech_name]
@@ -475,9 +473,7 @@ function gui.update_queue(self)
     children[i].destroy()
   end
   profiler.stop()
-  if DEBUG then
-    log({ "", "update_queue ", profiler })
-  end
+  log({ "", "update_queue ", profiler })
 end
 
 --- @param self Gui
@@ -687,9 +683,7 @@ function gui.update_tech_list(self)
     end
   end
   profiler.stop()
-  if DEBUG then
-    log({ "", "update_tech_list ", profiler })
-  end
+  log({ "", "update_tech_list ", profiler })
 end
 
 flib_gui.add_handlers(gui, function(e, handler)

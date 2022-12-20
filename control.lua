@@ -1,5 +1,3 @@
-require("__UltimateResearchQueue__/debug")
-
 local dictionary = require("__flib__/dictionary-lite")
 local migration = require("__flib__/migration")
 
@@ -59,19 +57,17 @@ end)
 
 gui.handle_events()
 
-if not DEBUG then
-  script.on_event(defines.events.on_gui_opened, function(e)
-    local player = game.get_player(e.player_index) --[[@as LuaPlayer]]
-    if player.opened_gui_type == defines.gui_type.research then
-      local player_gui = gui.get(e.player_index)
-      if player_gui and not player_gui.state.opening_graph then
-        local opened = player.opened --[[@as LuaTechnology?]]
-        player.opened = nil
-        gui.show(player_gui, opened and opened.name or nil)
-      end
+script.on_event(defines.events.on_gui_opened, function(e)
+  local player = game.get_player(e.player_index) --[[@as LuaPlayer]]
+  if player.opened_gui_type == defines.gui_type.research then
+    local player_gui = gui.get(e.player_index)
+    if player_gui and not player_gui.state.opening_graph then
+      local opened = player.opened --[[@as LuaTechnology?]]
+      player.opened = nil
+      gui.show(player_gui, opened and opened.name or nil)
     end
-  end)
-end
+  end
+end)
 
 script.on_event(defines.events.on_gui_closed, function(e)
   if not gui.dispatch(e) and e.gui_type == defines.gui_type.research then

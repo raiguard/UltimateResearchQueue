@@ -205,9 +205,7 @@ function cache.sort_technologies()
   end
 
   profiler.stop()
-  if DEBUG then
-    log({ "", "Tech Sorting ", profiler })
-  end
+  log({ "", "Tech Sorting ", profiler })
 
   local profiler = game.create_profiler()
   -- Build all prerequisites and direct requisites of each technology
@@ -281,9 +279,7 @@ function cache.sort_technologies()
   end
   -- Profiling
   profiler.stop()
-  if DEBUG then
-    log({ "", "Prerequisite Generation ", profiler })
-  end
+  log({ "", "Prerequisite Generation ", profiler })
 
   global.num_technologies = #technologies
   global.technology_order = order
