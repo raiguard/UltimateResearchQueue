@@ -254,6 +254,10 @@ end
 --- @param self Gui
 --- @param select_tech string?
 function gui.show(self, select_tech)
+  if self.state.pending_update then
+    self.state.pending_update = false
+    gui.update(self)
+  end
   if select_tech then
     local select_data = self.force.technologies[select_tech]
     gui.select_tech(self, select_data)
@@ -997,6 +1001,7 @@ function gui.new(player)
     player = player,
     state = {
       opening_graph = false,
+      pending_update = false,
       pinned = false,
       research_state_counts = {},
       search_open = false,
@@ -1035,7 +1040,6 @@ function gui.get(player_index)
     if self then
       self.player.print({ "message.urq-recreated-gui" })
     end
-    gui.destroy(player_index)
     self = gui.new(game.get_player(player_index) --[[@as LuaPlayer]])
   end
   return self
@@ -1045,15 +1049,25 @@ end
 function gui.update_force(force)
   for _, player in pairs(force.players) do
     local player_gui = gui.get(player.index)
-    -- TODO: Only update when open
-    if player_gui then
-      gui.update_queue(player_gui)
-      gui.update_tech_info(player_gui)
-      gui.update_tech_list(player_gui)
-      gui.filter_tech_list(player_gui)
-      gui.update_durations_and_progress(player_gui)
+    if not player_gui then
+      goto continue
     end
+    if player_gui.elems.urq_window.visible then
+      gui.update(player_gui)
+    else
+      player_gui.state.pending_update = true
+    end
+    ::continue::
   end
+end
+
+--- @param self Gui
+function gui.update(self)
+  gui.update_queue(self)
+  gui.update_tech_info(self)
+  gui.update_tech_list(self)
+  gui.filter_tech_list(self)
+  gui.update_durations_and_progress(self)
 end
 
 --- @param force LuaForce
