@@ -502,7 +502,6 @@ function gui.update_tech_info(self)
       self.force_table.research_states[technology.name],
       self.player.mod_settings["urq-show-control-hints"].value --[[@as boolean]]
     )
-    button_template.ignored_by_interaction = true
     button_template[5].visible = false
     button_template[6].visible = false
     flib_gui.add(main_slot_frame, button_template)
