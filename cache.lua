@@ -7,19 +7,6 @@ local research_queue = require("__UltimateResearchQueue__/research-queue")
 --- @class Cache
 local cache = {}
 
-function cache.build_dictionaries()
-  -- Build dictionaries
-  dictionary.on_init()
-  dictionary.new("recipe")
-  for name, recipe in pairs(game.recipe_prototypes) do
-    dictionary.add("recipe", name, { "?", recipe.localised_name, name })
-  end
-  dictionary.new("technology")
-  for name, technology in pairs(game.technology_prototypes) do
-    dictionary.add("technology", name, { "?", technology.localised_name, name })
-  end
-end
-
 local function first_entity_prototype(type)
   --- LuaCustomTable does not work with next() and is keyed by name, so we must use pairs()
   for name in pairs(game.get_filtered_entity_prototypes({ { filter = "type", type = type } })) do
@@ -114,26 +101,20 @@ function cache.build_effect_icons()
   global.effect_icons = icons
 end
 
---- @param force LuaForce
-function cache.build_force_technologies(force)
-  local force_table = global.forces[force.index]
-  --- @type table<ResearchState, table<uint, LuaTechnology>>
-  local technology_groups = {}
-  for _, research_state in pairs(constants.research_state) do
-    technology_groups[research_state] = {}
+function cache.build_dictionaries()
+  -- Build dictionaries
+  dictionary.on_init()
+  dictionary.new("recipe")
+  for name, recipe in pairs(game.recipe_prototypes) do
+    dictionary.add("recipe", name, { "?", recipe.localised_name, name })
   end
-  force_table.technology_groups = technology_groups
-  --- @type table<string, ResearchState>
-  local research_states = {}
-  force_table.research_states = research_states
-  for name, technology in pairs(force.technologies) do
-    local research_state = research_queue.get_research_state(force_table, technology)
-    research_states[name] = research_state
-    technology_groups[research_state][global.technology_order[technology.name]] = technology
+  dictionary.new("technology")
+  for name, technology in pairs(game.technology_prototypes) do
+    dictionary.add("technology", name, { "?", technology.localised_name, name })
   end
 end
 
-function cache.sort_technologies()
+function cache.build_technologies()
   local profiler = game.create_profiler()
   -- game.technology_prototypes is a LuaCustomTable, so we need to convert it to an array
   --- @type LuaTechnologyPrototype[]
@@ -189,12 +170,13 @@ function cache.sort_technologies()
   local upgrade_groups = {}
   --- @type table<string, number>
   local order = {}
-  for i, prototype in pairs(technologies) do
-    order[prototype.name] = i
-    if prototype.upgrade then
-      local base_name = string.match(prototype.name, "^(.*)%-%d*$") or prototype.name
+  for i = 1, #technologies do
+    local technology = technologies[i]
+    order[technology.name] = i
+    if technology.upgrade then
+      local base_name = string.match(technology.name, "^(.*)%-%d*$") or technology.name
       local group = table.get_or_insert(upgrade_groups, base_name, {})
-      table.insert(group, prototype)
+      group[#group + 1] = technology
     end
   end
   -- Sort upgrade groups
@@ -216,23 +198,27 @@ function cache.sort_technologies()
   --- @type LuaTechnologyPrototype[]
   local base_techs = {}
   -- Step 1: Assemble requisites for each tech and determine base technologies
-  for _, prototype in pairs(technologies) do
-    local prerequisites = prototype.prerequisites
+  for i = 1, #technologies do
+    local technology = technologies[i]
+    local prerequisites = technology.prerequisites
     if next(prerequisites) then
+      local technology_name = technology.name
       for prerequisite_name in pairs(prerequisites) do
-        if not requisites[prerequisite_name] then
-          requisites[prerequisite_name] = {}
+        local requisite_prerequisites = requisites[prerequisite_name]
+        if not requisite_prerequisites then
+          requisite_prerequisites = {}
+          requisites[prerequisite_name] = requisite_prerequisites
         end
-        table.insert(requisites[prerequisite_name], prototype.name)
+        requisite_prerequisites[#requisite_prerequisites + 1] = technology_name
       end
     else
-      table.insert(base_techs, prototype)
+      base_techs[#base_techs + 1] = technology
     end
   end
   -- Step 2: Recursively assemble prerequisites for each tech
   local tech_prototypes = game.technology_prototypes
   local checked = {}
-  --- @param tbl {string: boolean, integer: string}
+  --- @param tbl {[string]: boolean, [integer]: string}
   --- @param obj string
   local function unique_insert(tbl, obj)
     if not tbl[obj] then
@@ -249,29 +235,26 @@ function cache.sort_technologies()
       end
     end
     local technology_name = technology.name
-    local technology_prerequisites = prerequisites[technology_name]
-    local tech_requisites = requisites[technology_name]
-    if tech_requisites then
-      for _, requisite_name in pairs(tech_requisites) do
-        -- Create the requisite's prerequisite table
-        local requisite_prerequisites = prerequisites[requisite_name]
-        if not requisite_prerequisites then
-          requisite_prerequisites = {}
-          prerequisites[requisite_name] = requisite_prerequisites
-        end
-        -- Add all of this technology's prerequisites to the requisite's prerequisites
-        if technology_prerequisites then
-          for i = 1, #technology_prerequisites do
-            unique_insert(requisite_prerequisites, technology_prerequisites[i])
-          end
-        end
-        -- Add this technology to the requisite's prerequisites
-        unique_insert(requisite_prerequisites, technology_name)
+    local technology_prerequisites = prerequisites[technology_name] or {}
+    local technology_requisites = requisites[technology_name] or {}
+    for i = 1, #technology_requisites do
+      local requisite_name = technology_requisites[i]
+      -- Create the requisite's prerequisite table
+      local requisite_prerequisites = prerequisites[requisite_name]
+      if not requisite_prerequisites then
+        requisite_prerequisites = {}
+        prerequisites[requisite_name] = requisite_prerequisites
       end
-      checked[technology_name] = true
-      for _, requisite_name in pairs(tech_requisites) do
-        propagate(tech_prototypes[requisite_name])
+      -- Add all of this technology's prerequisites to the requisite's prerequisites
+      for i = 1, #technology_prerequisites do
+        unique_insert(requisite_prerequisites, technology_prerequisites[i])
       end
+      -- Add this technology to the requisite's prerequisites
+      unique_insert(requisite_prerequisites, technology_name)
+    end
+    checked[technology_name] = true
+    for i = 1, #technology_requisites do
+      propagate(tech_prototypes[technology_requisites[i]])
     end
   end
   for _, technology in pairs(base_techs) do
@@ -286,6 +269,25 @@ function cache.sort_technologies()
   global.technology_prerequisites = prerequisites
   global.technology_requisites = requisites
   global.technology_upgrade_groups = upgrade_groups
+end
+
+--- @param force LuaForce
+function cache.init_force(force)
+  local force_table = global.forces[force.index]
+  --- @type table<ResearchState, table<uint, LuaTechnology>>
+  local technology_groups = {}
+  for _, research_state in pairs(constants.research_state) do
+    technology_groups[research_state] = {}
+  end
+  force_table.technology_groups = technology_groups
+  --- @type table<string, ResearchState>
+  local research_states = {}
+  force_table.research_states = research_states
+  for name, technology in pairs(force.technologies) do
+    local research_state = research_queue.get_research_state(force_table, technology)
+    research_states[name] = research_state
+    technology_groups[research_state][global.technology_order[technology.name]] = technology
+  end
 end
 
 return cache

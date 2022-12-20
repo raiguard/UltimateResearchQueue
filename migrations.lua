@@ -8,7 +8,7 @@ local migrations = {}
 function migrations.generic()
   cache.build_dictionaries()
   cache.build_effect_icons()
-  cache.sort_technologies()
+  cache.build_technologies()
   for _, force in pairs(game.forces) do
     migrations.migrate_force(force)
   end
@@ -40,7 +40,7 @@ function migrations.migrate_force(force)
   if not force_table then
     return
   end
-  cache.build_force_technologies(force)
+  cache.init_force(force)
   util.ensure_queue_disabled(force)
   research_queue.verify_integrity(force_table.queue)
 end
