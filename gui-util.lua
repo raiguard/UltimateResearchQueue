@@ -27,7 +27,7 @@ function gui_util.effect_button(effect, show_controls)
       },
     }
     if show_controls and script.active_mods["RecipeBook"] then
-      table.insert(tooltip, { "gui.urq-tech-slot-tooltip-view-in-recipe-book" })
+      table.insert(tooltip, { "gui.urq-tooltip-view-in-recipe-book" })
     end
   elseif effect.type == "gun-speed" then
     sprite = global.effect_icons[effect.ammo_category]
@@ -62,7 +62,7 @@ function gui_util.effect_button(effect, show_controls)
       { "?", { "", "\n", prototype.localised_description }, "" },
     }
     if show_controls and script.active_mods["RecipeBook"] then
-      table.insert(tooltip, { "gui.urq-tech-slot-tooltip-view-in-recipe-book" })
+      table.insert(tooltip, { "gui.urq-tooltip-view-in-recipe-book" })
     end
   else
     sprite = global.effect_icons[effect.type] or ("utility/" .. string.gsub(effect.type, "%-", "_") .. "_modifier_icon")
@@ -170,12 +170,12 @@ function gui_util.technology_slot(handler, technology, level, research_state, sh
   })
   -- Controls
   if show_controls then
-    table.insert(tooltip, { "gui.urq-tech-slot-tooltip-view-details" })
-    table.insert(tooltip, { "gui.urq-tech-slot-tooltip-add-to-queue" })
-    table.insert(tooltip, { "gui.urq-tech-slot-tooltip-add-to-queue-front" })
-    table.insert(tooltip, { "gui.urq-tech-slot-tooltip-remove-from-queue" })
+    table.insert(tooltip, { "gui.urq-tooltip-view-details" })
+    table.insert(tooltip, { "gui.urq-tooltip-add-to-queue" })
+    table.insert(tooltip, { "gui.urq-tooltip-add-to-queue-front" })
+    table.insert(tooltip, { "gui.urq-tooltip-remove-from-queue" })
     if script.active_mods["RecipeBook"] then
-      table.insert(tooltip, { "gui.urq-tech-slot-tooltip-view-in-recipe-book" })
+      table.insert(tooltip, { "gui.urq-tooltip-view-in-recipe-book" })
     end
   end
 

@@ -541,7 +541,7 @@ function gui.update_tech_info(self)
         "",
         { "gui.urq-tooltip-title", { "?", prototype.localised_name, prototype.name } },
         { "?", { "", "\n", prototype.localised_description }, "" },
-        show_controls and script.active_mods["RecipeBook"] and { "gui.urq-tech-slot-tooltip-view-in-recipe-book" }
+        show_controls and script.active_mods["RecipeBook"] and { "gui.urq-tooltip-view-in-recipe-book" }
           or nil,
       },
       handler = { [defines.events.on_gui_click] = gui.open_in_recipe_book },
