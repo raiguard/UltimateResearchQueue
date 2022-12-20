@@ -525,7 +525,7 @@ function gui.update_tech_info(self)
     caption = { "", caption, " ", level }
   end
   self.elems.tech_info_name_label.caption = caption
-  self.elems.tech_info_description_label.caption = technology.localised_description
+  self.elems.tech_info_description_label.caption = { "?", technology.localised_description, "" }
 
   -- Ingredients
   local ingredients_table = self.elems.tech_info_ingredients_table
@@ -541,8 +541,7 @@ function gui.update_tech_info(self)
         "",
         { "gui.urq-tooltip-title", { "?", prototype.localised_name, prototype.name } },
         { "?", { "", "\n", prototype.localised_description }, "" },
-        show_controls and script.active_mods["RecipeBook"] and { "gui.urq-tooltip-view-in-recipe-book" }
-          or nil,
+        show_controls and script.active_mods["RecipeBook"] and { "gui.urq-tooltip-view-in-recipe-book" } or nil,
       },
       handler = { [defines.events.on_gui_click] = gui.open_in_recipe_book },
     }
