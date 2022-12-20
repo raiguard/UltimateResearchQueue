@@ -8,7 +8,8 @@ local util = require("__UltimateResearchQueue__/util")
 local gui_util = {}
 
 --- @param effect TechnologyModifier
-function gui_util.effect_button(effect)
+--- @param show_controls boolean
+function gui_util.effect_button(effect, show_controls)
   local sprite, tooltip
 
   if effect.type == "ammo-damage" then
@@ -25,6 +26,9 @@ function gui_util.effect_button(effect)
         { "?", game.item_prototypes[effect.item].localised_name, effect.item },
       },
     }
+    if show_controls and script.active_mods["RecipeBook"] then
+      table.insert(tooltip, { "gui.urq-tech-slot-tooltip-view-in-recipe-book" })
+    end
   elseif effect.type == "gun-speed" then
     sprite = global.effect_icons[effect.ammo_category]
     tooltip = {
@@ -56,8 +60,10 @@ function gui_util.effect_button(effect)
         },
       },
       { "?", { "", "\n", prototype.localised_description }, "" },
-      -- TODO: Ingredients, etc... maybe?
     }
+    if show_controls and script.active_mods["RecipeBook"] then
+      table.insert(tooltip, { "gui.urq-tech-slot-tooltip-view-in-recipe-book" })
+    end
   else
     sprite = global.effect_icons[effect.type] or ("utility/" .. string.gsub(effect.type, "%-", "_") .. "_modifier_icon")
     local modifier = effect.modifier
@@ -168,6 +174,9 @@ function gui_util.technology_slot(handler, technology, level, research_state, sh
     table.insert(tooltip, { "gui.urq-tech-slot-tooltip-add-to-queue" })
     table.insert(tooltip, { "gui.urq-tech-slot-tooltip-add-to-queue-front" })
     table.insert(tooltip, { "gui.urq-tech-slot-tooltip-remove-from-queue" })
+    if script.active_mods["RecipeBook"] then
+      table.insert(tooltip, { "gui.urq-tech-slot-tooltip-view-in-recipe-book" })
+    end
   end
 
   return {

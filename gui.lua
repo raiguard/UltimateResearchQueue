@@ -187,6 +187,10 @@ function gui.on_tech_slot_click(self, e)
     gui.schedule_update(self.force_table)
     return
   end
+  if script.active_mods["RecipeBook"] and e.alt then
+    remote.call("RecipeBook", "open_page", self.player.index, "technology", tech_name)
+    return
+  end
   if gui_util.is_double_click(e.element) then
     gui.start_research(self, technology, level, e.shift, e.control and util.is_cheating(self.player))
     return
@@ -223,6 +227,16 @@ function gui.open_in_graph(self)
     self.player.open_technology_gui(selected.technology)
     self.state.opening_graph = false
   end
+end
+
+--- @param self Gui
+--- @param e EventData.on_gui_click
+function gui.open_in_recipe_book(self, e)
+  if not script.active_mods["RecipeBook"] or not e.alt then
+    return
+  end
+  local class, name = string.match(e.element.sprite, "(.*)/(.*)")
+  remote.call("RecipeBook", "open_page", self.player.index, class, name)
 end
 
 --- @param self Gui
@@ -486,6 +500,8 @@ function gui.update_tech_info(self)
   end
   local technology, level = selected.technology, selected.level
 
+  local show_controls = self.player.mod_settings["urq-show-control-hints"].value --[[@as boolean]]
+
   -- Flows
   self.elems.welcome_flow.visible = false
   self.elems.tech_info_scroll_pane.visible = true
@@ -500,12 +516,13 @@ function gui.update_tech_info(self)
       technology,
       level,
       self.force_table.research_states[technology.name],
-      self.player.mod_settings["urq-show-control-hints"].value --[[@as boolean]]
+      show_controls
     )
     button_template[5].visible = false
     button_template[6].visible = false
     flib_gui.add(main_slot_frame, button_template)
   end
+
   -- Name and description
   local caption = technology.localised_name
   if util.is_multilevel(technology) then
@@ -513,6 +530,7 @@ function gui.update_tech_info(self)
   end
   self.elems.tech_info_name_label.caption = caption
   self.elems.tech_info_description_label.caption = technology.localised_description
+
   -- Ingredients
   local ingredients_table = self.elems.tech_info_ingredients_table
   ingredients_table.clear()
@@ -527,7 +545,10 @@ function gui.update_tech_info(self)
         "",
         { "gui.urq-tooltip-title", { "?", prototype.localised_name, prototype.name } },
         { "?", { "", "\n", prototype.localised_description }, "" },
+        show_controls and script.active_mods["RecipeBook"] and { "gui.urq-tech-slot-tooltip-view-in-recipe-book" }
+          or nil,
       },
+      handler = { [defines.events.on_gui_click] = gui.open_in_recipe_book },
     }
   end)
   flib_gui.add(ingredients_table, ingredients_children)
@@ -536,10 +557,19 @@ function gui.update_tech_info(self)
   local research_unit_count = util.get_research_unit_count(technology, level)
   self.elems.tech_info_ingredients_count_label.caption = "[img=quantity-multiplier] "
     .. format.number(research_unit_count, research_unit_count > 9999)
+
   -- Effects
   local effects_table = self.elems.tech_info_effects_table
   effects_table.clear()
-  flib_gui.add(effects_table, table.map(technology.effects, gui_util.effect_button))
+  flib_gui.add(
+    effects_table,
+    table.map(technology.effects, function(effect)
+      local template = gui_util.effect_button(effect, show_controls)
+      template.handler = { [defines.events.on_gui_click] = gui.open_in_recipe_book }
+      return template
+    end)
+  )
+
   -- Prerequisites
   local prerequisites = {}
   for _, prerequisite in pairs(technology.prerequisites) do
@@ -551,6 +581,7 @@ function gui.update_tech_info(self)
     gui.on_tech_slot_click,
     prerequisites
   )
+
   -- Requisites
   local technologies = self.force.technologies
   gui_util.update_tech_info_sublist(
@@ -561,6 +592,7 @@ function gui.update_tech_info(self)
       return technologies[requisite_name]
     end)
   )
+
   -- Upgrade group
   local technologies = self.force.technologies
   gui_util.update_tech_info_sublist(
@@ -571,6 +603,7 @@ function gui.update_tech_info(self)
       return technologies[prototype.name]
     end)
   )
+
   -- Footer
   gui.update_tech_info_footer(self)
 end
