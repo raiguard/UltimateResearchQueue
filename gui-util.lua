@@ -1,4 +1,5 @@
 local flib_gui = require("__flib__/gui-lite")
+local format = require("__flib__/format")
 local math = require("__flib__/math")
 local table = require("__flib__/table")
 
@@ -275,7 +276,7 @@ function gui_util.technology_slot(technology, level, research_state, show_contro
     "\n[",
     ingredients_tt,
     " [img=quantity-time][font=default-semibold]",
-    math.round(technology.research_unit_energy / 60, 0.1),
+    format.number(technology.research_unit_energy / 60, true),
     "[/font]] × ",
     technology.research_unit_count,
   }

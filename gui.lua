@@ -70,7 +70,7 @@ function gui.destroy(player_index)
   if self.elems.urq_window.valid then
     self.elems.urq_window.destroy()
   end
-  global.guis[self.player.index] = nil
+  global.guis[player_index] = nil
 end
 
 --- @param self Gui
@@ -581,7 +581,7 @@ function gui.update_tech_info(self)
   flib_gui.add(ingredients_table, {
     type = "label",
     style = "count_label",
-    caption = "[img=quantity-time] " .. math.round(technology.research_unit_energy / 60, 0.1),
+    caption = "[img=quantity-time] " .. format.number(technology.research_unit_energy / 60, true),
   })
   local research_unit_count = util.get_research_unit_count(technology, level)
   self.elems.tech_info_ingredients_count_label.caption = "[img=quantity-multiplier] "
