@@ -1,8 +1,10 @@
 .gitattributes export-ignore
 .gitignore export-ignore
+graphics/technology-slots.aseprite export-ignore
 imgui.ini export-ignore
 .kakrc export-ignore
 .mailmap export-ignore
-pesticide.toml export-ignore
+.pesticide export-ignore
+screenshots export-ignore
 stylua.toml export-ignore
 .vscode export-ignore
