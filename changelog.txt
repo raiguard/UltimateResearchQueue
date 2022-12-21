@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.1
-Date: ????
+Date: 2022-12-20
   Compatibility:
     - Added incompatibility with Improved Research Queue - the two mods break one another
   Bugfixes:
