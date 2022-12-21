@@ -3,6 +3,7 @@ Version: 1.0.3
 Date: ????
   Bugfixes:
     - Fixed a crash when queueing to front a technology with no prerequisites
+    - Fixed that clicking the "open in graph" button without a technology selected would do nothing
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.2
 Date: 2022-12-20

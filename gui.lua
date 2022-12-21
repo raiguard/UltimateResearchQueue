@@ -239,12 +239,14 @@ end
 
 --- @param self Gui
 function gui.open_in_graph(self)
-  local selected = self.state.selected
-  if not selected then
-    return
-  end
   self.state.opening_graph = true
-  self.player.open_technology_gui(selected.technology)
+  local selected = self.state.selected
+  -- Passing `or nil` throws an error
+  if selected then
+    self.player.open_technology_gui(selected.technology)
+  else
+    self.player.open_technology_gui()
+  end
   self.state.opening_graph = false
 end
 
