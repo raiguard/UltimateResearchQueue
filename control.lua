@@ -23,6 +23,15 @@ script.on_init(function()
     migrations.init_force(force)
   end
   migrations.generic()
+
+  -- Add each force's current research to the queue
+  for _, force in pairs(game.forces) do
+    local current_research = force.current_research
+    if current_research then
+      research_queue.push(global.forces[force.index].queue, current_research, current_research.level)
+      gui.update_force(force)
+    end
+  end
 end)
 
 migration.handle_on_configuration_changed(nil, migrations.generic)

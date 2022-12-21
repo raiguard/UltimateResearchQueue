@@ -2,6 +2,7 @@
 Version: 1.0.1
 Date: ????
   Bugfixes:
+    - Fixed that the active research would not be added to the queue when adding to an existing game
     - Removed technology slot clicked debug logging
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.0
