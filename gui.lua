@@ -110,8 +110,8 @@ end
 --- @return Gui?
 function gui.get(player_index)
   local self = global.guis[player_index]
-  if not self or not self.elems.urq_window.valid then
-    if self then
+  if not self or not self.elems.urq_window.valid or not self.player.valid then
+    if self and self.player.valid then
       self.player.print({ "message.urq-recreated-gui" })
     end
     self = gui.new(game.get_player(player_index) --[[@as LuaPlayer]])
@@ -131,9 +131,12 @@ function gui.hide(self)
 end
 
 --- @param player LuaPlayer
---- @return Gui
+--- @return Gui?
 function gui.new(player)
   gui.destroy(player.index)
+  if not player.valid then
+    return
+  end
 
   --- @type GuiElems
   local elems = flib_gui.add(player.gui.screen, gui.base_template)

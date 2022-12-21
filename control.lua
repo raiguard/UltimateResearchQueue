@@ -13,7 +13,7 @@ script.on_init(function()
   global.filter_tech_list = {}
   --- @type table<uint, ForceTable>
   global.forces = {}
-  --- @type table<uint, Gui>
+  --- @type table<uint, Gui?>
   global.guis = {}
   --- @type table<uint, boolean>
   global.update_force_guis = {}
