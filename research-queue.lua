@@ -101,7 +101,7 @@ function research_queue.get_research_state(self, technology)
   if technology.researched then
     return constants.research_state.researched
   end
-  if not technology.enabled then
+  if technology.prototype.hidden or not technology.enabled then
     return constants.research_state.disabled
   end
   if are_prereqs_satisfied(technology) then
