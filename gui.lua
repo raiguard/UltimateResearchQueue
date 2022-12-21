@@ -87,7 +87,9 @@ function gui.filter_tech_list(self)
     local technology = technologies[technology_name]
     local research_state = research_states[technology_name]
     -- Show/hide disabled
-    local disabled_matched = show_disabled or research_state ~= constants.research_state.disabled
+    local disabled_matched = show_disabled
+      or technology.visible_when_disabled
+      or research_state ~= constants.research_state.disabled
     -- Show/hide upgrade techs
     local upgrade_matched = true
     if technology.upgrade and research_state ~= constants.research_state.conditionally_available then
