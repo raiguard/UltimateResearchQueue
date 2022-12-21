@@ -1,6 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.1
 Date: ????
+  Compatibility:
+    - Added incompatibility with Improved Research Queue - the two mods break one another
   Bugfixes:
     - Fixed that the active research would not be added to the queue when adding to an existing game
     - Removed technology slot clicked debug logging
