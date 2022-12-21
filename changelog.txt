@@ -3,6 +3,7 @@ Version: 1.0.2
 Date: ????
   Bugfixes:
     - Fixed a crash when a player is invalidated during on_init
+    - Fixed a crash when a technology is removed from the game
     - Fixed that the techs list would include hidden technologies
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.1
