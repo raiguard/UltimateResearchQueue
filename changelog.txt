@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.2
-Date: ????
+Date: 2022-12-20
   Bugfixes:
     - Fixed a crash when a player is invalidated during on_init
     - Fixed a crash when a technology is removed from the game
