@@ -248,7 +248,7 @@ function research_queue.push(self, technology, level)
   if research_state == constants.research_state.not_available then
     -- Add all prerequisites to research this technology ASAP
     local technologies = self.force.technologies
-    local technology_prerequisites = global.technology_prerequisites[technology.name]
+    local technology_prerequisites = global.technology_prerequisites[technology.name] or {}
     for i = 1, #technology_prerequisites do
       local prerequisite_name = technology_prerequisites[i]
       local prerequisite = technologies[prerequisite_name]
@@ -299,7 +299,7 @@ function research_queue.push_front(self, technology, level)
   local to_move = {}
   -- Add all prerequisites to research this technology ASAP
   local technologies = self.force.technologies
-  local technology_prerequisites = global.technology_prerequisites[technology.name]
+  local technology_prerequisites = global.technology_prerequisites[technology.name] or {}
   for i = 1, #technology_prerequisites do
     local prerequisite_name = technology_prerequisites[i]
     local prerequisite = technologies[prerequisite_name]

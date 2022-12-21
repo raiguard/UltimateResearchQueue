@@ -195,9 +195,9 @@ function cache.build_technologies()
   profiler.reset()
 
   -- Build all prerequisites and direct requisites of each technology
-  --- @type table<string, string[]>
+  --- @type table<string, string[]?>
   local prerequisites = {}
-  --- @type table<string, string[]>
+  --- @type table<string, string[]?>
   local requisites = {}
   --- @type LuaTechnologyPrototype[]
   local base_techs = {}
