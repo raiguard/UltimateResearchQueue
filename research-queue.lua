@@ -532,7 +532,7 @@ function research_queue.verify_integrity(self)
     if old_technology.valid then
       local technology = technologies[old_technology.name]
       if old_level >= technology.prototype.level and old_level <= technology.prototype.max_level then
-        research_queue.push(self, technology, level)
+        research_queue.push(self, technology, technology.prototype.level)
       end
     end
     node = node.next

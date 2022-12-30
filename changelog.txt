@@ -1,7 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.4
 Date: ????
-  Features:
+  Bugfixes:
+    - Fixed a memory leak and infinite loop when migrating with an infinite technology in the queue
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.3
 Date: 2022-12-21
