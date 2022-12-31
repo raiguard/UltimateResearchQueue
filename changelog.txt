@@ -5,6 +5,7 @@ Date: ????
     - Fixed a memory leak and infinite loop when migrating with an infinite technology in the queue
     - Fixed several bugs related to hidden and disabled technologies being changed at runtime
     - Fixed that disabled technologies would always be shown in the tech info panel
+    - Fixed that you were able to queue disabled technologies
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.3
 Date: 2022-12-21

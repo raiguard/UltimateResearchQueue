@@ -237,6 +237,8 @@ function research_queue.push(self, technology, level)
   local research_state = self.force_table.research_states[technology.name]
   if research_state == constants.research_state.researched then
     return { "message.urq-already-researched" }
+  elseif research_state == constants.research_state.disabled then
+    return { "message.urq-tech-is-disabled" }
   elseif research_queue.contains(self, technology, level) then
     return { "message.urq-already-in-queue" }
   end
@@ -250,6 +252,9 @@ function research_queue.push(self, technology, level)
       local prerequisite_name = technology_prerequisites[i]
       local prerequisite = technologies[prerequisite_name]
       local prerequisite_research_state = self.force_table.research_states[prerequisite_name]
+      if prerequisite_research_state == constants.research_state.disabled then
+        return { "message.urq-has-disabled-prerequisites" }
+      end
       if
         not research_queue.contains(self, prerequisite, true)
         and prerequisite_research_state ~= constants.research_state.researched

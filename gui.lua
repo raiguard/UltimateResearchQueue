@@ -641,13 +641,21 @@ function gui.update_tech_info_footer(self, progress_only)
   local research_state = self.force_table.research_states[technology.name]
   local selected_name = util.get_queue_key(technology, level)
 
-  local elems = self.elems
+  local is_disabled = research_state == constants.research_state.disabled
   local is_researched = research_state == constants.research_state.researched
-  local in_queue = research_queue.contains(self.force_table.queue, technology, level)
-  local progress = util.get_research_progress(technology, level)
   local is_cheating = util.is_cheating(self.player)
 
-  elems.tech_info_footer_frame.visible = not (is_researched and not is_cheating)
+  local elems = self.elems
+  local frame = elems.tech_info_footer_frame
+  if is_disabled or (is_researched and not is_cheating) then
+    frame.visible = false
+    return
+  else
+    frame.visible = true
+  end
+
+  local in_queue = research_queue.contains(self.force_table.queue, technology, level)
+  local progress = util.get_research_progress(technology, level)
 
   local progressbar = elems.tech_info_footer_progressbar
   progressbar.visible = progress > 0
