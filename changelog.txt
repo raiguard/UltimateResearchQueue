@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.4
-Date: ????
+Date: 2022-12-30
   Changes:
     - Renamed "requisite" to "descendant" - requisite was not a valid word for the context
   Bugfixes:
