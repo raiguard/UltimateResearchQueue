@@ -32,7 +32,7 @@ local util = require("__UltimateResearchQueue__/util")
 --- @field tech_info_ingredients_time_label LuaGuiElement
 --- @field tech_info_effects_table LuaGuiElement
 --- @field tech_info_prerequisites_table LuaGuiElement
---- @field tech_info_requisites_table LuaGuiElement
+--- @field tech_info_descendants_table LuaGuiElement
 --- @field tech_info_upgrade_group_table LuaGuiElement
 --- @field tech_info_footer_frame LuaGuiElement
 --- @field tech_info_footer_progressbar LuaGuiElement
@@ -608,10 +608,10 @@ function gui.update_tech_info(self)
   local technologies = self.force.technologies
   gui_util.update_technology_info_sublist(
     self,
-    self.elems.tech_info_requisites_table,
+    self.elems.tech_info_descendants_table,
     gui.on_tech_slot_click,
-    table.map(global.technology_requisites[technology.name] or {}, function(requisite_name)
-      return technologies[requisite_name]
+    table.map(global.technology_descendants[technology.name] or {}, function(descendant_name)
+      return technologies[descendant_name]
     end)
   )
 
@@ -905,7 +905,7 @@ gui.base_template = {
               },
             },
             gui_util.tech_info_sublist({ "gui.urq-prerequisites" }, "tech_info_prerequisites_table"),
-            gui_util.tech_info_sublist({ "gui.urq-requisites" }, "tech_info_requisites_table"),
+            gui_util.tech_info_sublist({ "gui.urq-descendants" }, "tech_info_descendants_table"),
             gui_util.tech_info_sublist({ "gui.urq-upgrade-group" }, "tech_info_upgrade_group_table"),
           },
           {

@@ -194,26 +194,26 @@ function cache.build_technologies()
 
   profiler.reset()
 
-  -- Build all prerequisites and direct requisites of each technology
+  -- Build all prerequisites and direct descendants of each technology
   --- @type table<string, string[]?>
   local prerequisites = {}
   --- @type table<string, string[]?>
-  local requisites = {}
+  local descendants = {}
   --- @type LuaTechnologyPrototype[]
   local base_techs = {}
-  -- Step 1: Assemble requisites for each technology and determine base technologies
+  -- Step 1: Assemble descendants for each technology and determine base technologies
   for i = 1, #technologies do
     local technology = technologies[i]
     local prerequisites = technology.prerequisites
     if next(prerequisites) then
       local technology_name = technology.name
       for prerequisite_name in pairs(prerequisites) do
-        local requisite_prerequisites = requisites[prerequisite_name]
-        if not requisite_prerequisites then
-          requisite_prerequisites = {}
-          requisites[prerequisite_name] = requisite_prerequisites
+        local descendant_prerequisites = descendants[prerequisite_name]
+        if not descendant_prerequisites then
+          descendant_prerequisites = {}
+          descendants[prerequisite_name] = descendant_prerequisites
         end
-        requisite_prerequisites[#requisite_prerequisites + 1] = technology_name
+        descendant_prerequisites[#descendant_prerequisites + 1] = technology_name
       end
     else
       base_techs[#base_techs + 1] = technology
@@ -240,25 +240,25 @@ function cache.build_technologies()
     end
     local technology_name = technology.name
     local technology_prerequisites = prerequisites[technology_name] or {}
-    local technology_requisites = requisites[technology_name] or {}
-    for i = 1, #technology_requisites do
-      local requisite_name = technology_requisites[i]
-      -- Create the requisite's prerequisite table
-      local requisite_prerequisites = prerequisites[requisite_name]
-      if not requisite_prerequisites then
-        requisite_prerequisites = {}
-        prerequisites[requisite_name] = requisite_prerequisites
+    local technology_descendants = descendants[technology_name] or {}
+    for i = 1, #technology_descendants do
+      local descendant_name = technology_descendants[i]
+      -- Create the descendant's prerequisite table
+      local descendant_prerequisites = prerequisites[descendant_name]
+      if not descendant_prerequisites then
+        descendant_prerequisites = {}
+        prerequisites[descendant_name] = descendant_prerequisites
       end
-      -- Add all of this technology's prerequisites to the requisite's prerequisites
+      -- Add all of this technology's prerequisites to the descendant's prerequisites
       for i = 1, #technology_prerequisites do
-        unique_insert(requisite_prerequisites, technology_prerequisites[i])
+        unique_insert(descendant_prerequisites, technology_prerequisites[i])
       end
-      -- Add this technology to the requisite's prerequisites
-      unique_insert(requisite_prerequisites, technology_name)
+      -- Add this technology to the descendant's prerequisites
+      unique_insert(descendant_prerequisites, technology_name)
     end
     checked[technology_name] = true
-    for i = 1, #technology_requisites do
-      propagate(tech_prototypes[technology_requisites[i]])
+    for i = 1, #technology_descendants do
+      propagate(tech_prototypes[technology_descendants[i]])
     end
   end
   for _, technology in pairs(base_techs) do
@@ -271,7 +271,7 @@ function cache.build_technologies()
   global.num_technologies = #technologies
   global.technology_order = order
   global.technology_prerequisites = prerequisites
-  global.technology_requisites = requisites
+  global.technology_descendants = descendants
   global.technology_upgrade_groups = upgrade_groups
 end
 

@@ -364,19 +364,19 @@ function research_queue.remove(self, technology, level)
   else
     prev.next = node.next
   end
-  -- Remove requisites
+  -- Remove descendants
   local technologies = self.force.technologies
-  local requisites = global.technology_requisites[technology.name]
+  local descendants = global.technology_descendants[technology.name]
   local is_multilevel = util.is_multilevel(technology)
-  if requisites then
-    for _, requisite_name in pairs(requisites) do
-      local requisite = technologies[requisite_name]
-      local level = requisite.level
+  if descendants then
+    for _, descendant_name in pairs(descendants) do
+      local descendant = technologies[descendant_name]
+      local level = descendant.level
       if is_multilevel then
         level = level + 1
       end
-      if research_queue.contains(self, requisite, level) then
-        research_queue.remove(self, requisite, level)
+      if research_queue.contains(self, descendant, level) then
+        research_queue.remove(self, descendant, level)
       end
     end
   end
@@ -433,12 +433,12 @@ function research_queue.unresearch(self, technology)
 
   --- @param technology LuaTechnology
   local function propagate(technology)
-    local requisites = global.technology_requisites[technology.name] or {}
-    for i = 1, #requisites do
-      local requisite_name = requisites[i]
-      if research_states[requisite_name] == constants.research_state.researched then
-        local requisite_data = technologies[requisite_name]
-        propagate(requisite_data)
+    local descendants = global.technology_descendants[technology.name] or {}
+    for i = 1, #descendants do
+      local descendant_name = descendants[i]
+      if research_states[descendant_name] == constants.research_state.researched then
+        local descendant_data = technologies[descendant_name]
+        propagate(descendant_data)
       end
     end
     technology.researched = false
