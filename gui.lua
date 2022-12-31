@@ -52,13 +52,13 @@ function gui.cancel_selected_research(self)
     return
   end
   research_queue.remove(self.force_table.queue, selected.technology, selected.level)
-  gui.schedule_update(self.force_table)
+  util.schedule_force_update(self.force)
 end
 
 --- @param self Gui
 function gui.clear_queue(self)
   research_queue.clear(self.force_table.queue)
-  gui.schedule_update(self.force_table)
+  util.schedule_force_update(self.force)
 end
 
 --- @param player_index uint
@@ -160,10 +160,11 @@ function gui.new(player)
   end
   flib_gui.add(elems.techs_table, buttons)
 
+  local force = player.force --[[@as LuaForce]]
   --- @class Gui
   local self = {
     elems = elems,
-    force = player.force,
+    force = force,
     force_table = force_table,
     player = player,
     state = {
@@ -202,7 +203,7 @@ function gui.on_tech_slot_click(self, e)
   local technology = self.force.technologies[tech_name]
   if e.button == defines.mouse_button_type.right then
     research_queue.remove(self.force_table.queue, technology, level)
-    gui.schedule_update(self.force_table)
+    util.schedule_force_update(self.force)
     return
   end
   if script.active_mods["RecipeBook"] and e.alt then
@@ -260,15 +261,6 @@ function gui.open_in_recipe_book(self, e)
   remote.call("RecipeBook", "open_page", self.player.index, class, name)
 end
 
---- @param force_table ForceTable
-function gui.schedule_update(force_table)
-  if game.tick_paused then
-    gui.update_force(force_table.force)
-  else
-    global.update_force_guis[force_table.force.index] = true
-  end
-end
-
 --- @param self Gui
 --- @param technology LuaTechnology
 function gui.select_technology(self, technology, level)
@@ -319,7 +311,7 @@ function gui.start_research(self, technology, level, to_front, instant_research)
     util.flying_text(self.player, push_error)
     return
   end
-  gui.schedule_update(self.force_table)
+  util.schedule_force_update(self.force)
 end
 
 --- @param self Gui
@@ -357,13 +349,13 @@ end
 --- @param self Gui
 function gui.toggle_queue_paused(self)
   research_queue.toggle_paused(self.force_table.queue)
-  gui.schedule_update(self.force_table)
+  util.schedule_force_update(self.force)
 end
 
 --- @param self Gui
 function gui.toggle_queue_requeue_multilevel(self)
   research_queue.toggle_requeue_multilevel(self.force_table.queue)
-  gui.schedule_update(self.force_table)
+  util.schedule_force_update(self.force)
 end
 
 --- @param self Gui

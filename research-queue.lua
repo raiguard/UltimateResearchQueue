@@ -149,11 +149,8 @@ local function push(self, technology, level, index)
     -- This shouldn't ever fail...
     node.next = new_node
   end
-  -- Update research states
-  research_queue.update_research_state_reqs(self, technology)
-  if self.head.technology == technology and self.head.level == level then
-    research_queue.update_active_research(self)
-  end
+
+  util.schedule_force_update(self.force)
 end
 
 --- @param self ResearchQueue
@@ -339,9 +336,8 @@ end
 --- @param self ResearchQueue
 --- @param technology LuaTechnology
 --- @param level uint
---- @param is_recursive boolean?
 --- @return boolean?
-function research_queue.remove(self, technology, level, is_recursive)
+function research_queue.remove(self, technology, level)
   local key = util.get_queue_key(technology, level)
   if not self.lookup[key] then
     return
@@ -363,27 +359,19 @@ function research_queue.remove(self, technology, level, is_recursive)
   else
     prev.next = node.next
   end
-  -- Update research states
-  research_queue.update_research_state(self, technology)
   -- Remove requisites
   local technologies = self.force.technologies
-  local force_table = self.force_table
-  local research_states = force_table.research_states
   local requisites = global.technology_requisites[technology.name]
   local is_multilevel = util.is_multilevel(technology)
   if requisites then
     for _, requisite_name in pairs(requisites) do
       local requisite = technologies[requisite_name]
-      research_queue.update_research_state(self, requisite)
       local level = requisite.level
       if is_multilevel then
         level = level + 1
       end
-      if
-        research_queue.contains(self, requisite, level)
-        and research_states[requisite_name] == constants.research_state.not_available
-      then
-        research_queue.remove(self, requisite, level, true)
+      if research_queue.contains(self, requisite, level) then
+        research_queue.remove(self, requisite, level)
       end
     end
   end
@@ -392,14 +380,13 @@ function research_queue.remove(self, technology, level, is_recursive)
     local node = self.head
     while node do
       if node.technology == technology and node.level > level then
-        research_queue.remove(self, technology, node.level, true)
+        research_queue.remove(self, technology, node.level)
       end
       node = node.next
     end
   end
-  if not is_recursive then
-    research_queue.update_active_research(self)
-  end
+
+  util.schedule_force_update(self.force)
 end
 
 --- @param self ResearchQueue
@@ -494,29 +481,17 @@ function research_queue.update_durations(self)
 end
 
 --- @param self ResearchQueue
---- @param technology LuaTechnology
-function research_queue.update_research_state(self, technology)
-  local order = global.technology_order[technology.name]
-  local groups = self.force_table.technology_groups
-  local research_states = self.force_table.research_states
-  local previous_state = research_states[technology.name]
-  local new_state = research_queue.get_research_state(self, technology)
-  if new_state ~= previous_state then
-    groups[previous_state][order] = nil
-    groups[new_state][order] = technology
-    research_states[technology.name] = new_state
-  end
-end
-
---- @param self ResearchQueue
---- @param technology LuaTechnology
-function research_queue.update_research_state_reqs(self, technology)
-  research_queue.update_research_state(self, technology)
-  local requisites = global.technology_requisites[technology.name]
-  if requisites then
-    local technologies = self.force.technologies
-    for _, requisite_name in pairs(requisites) do
-      research_queue.update_research_state(self, technologies[requisite_name])
+function research_queue.update_all_research_states(self)
+  for _, technology in pairs(self.force.technologies) do
+    local order = global.technology_order[technology.name]
+    local groups = self.force_table.technology_groups
+    local research_states = self.force_table.research_states
+    local previous_state = research_states[technology.name]
+    local new_state = research_queue.get_research_state(self, technology)
+    if new_state ~= previous_state then
+      groups[previous_state][order] = nil
+      groups[new_state][order] = technology
+      research_states[technology.name] = new_state
     end
   end
 end

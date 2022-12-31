@@ -106,4 +106,10 @@ function util.is_multilevel(technology)
   return technology.level ~= technology.max_level
 end
 
+--- @param force LuaForce
+function util.schedule_force_update(force)
+  -- FIXME: Tick paused
+  global.update_force_guis[force.index] = true
+end
+
 return util

@@ -141,7 +141,7 @@ script.on_event(defines.events.on_research_started, function(e)
     research_queue.remove(force_table.queue, technology, level)
   end
   research_queue.push(force_table.queue, technology, level)
-  gui.schedule_update(force_table)
+  util.schedule_force_update(force)
 end)
 
 script.on_event(defines.events.on_research_cancelled, function(e)
@@ -161,7 +161,7 @@ script.on_event(defines.events.on_research_cancelled, function(e)
     local technology = technologies[tech_name]
     research_queue.remove(force_queue, technology, technology.level)
   end
-  gui.schedule_update(force_table)
+  util.schedule_force_update(force)
 end)
 
 script.on_event(defines.events.on_research_finished, function(e)
@@ -182,12 +182,9 @@ script.on_event(defines.events.on_research_finished, function(e)
   if research_queue.contains(force_table.queue, technology, level) then
     research_queue.requeue_multilevel(force_table.queue)
     research_queue.remove(force_table.queue, technology, level)
-  else
-    -- This was insta-researched
-    research_queue.update_research_state_reqs(force_table.queue, technology)
   end
 
-  gui.schedule_update(force_table)
+  util.schedule_force_update(force)
 
   for _, player in pairs(force.players) do
     if player.mod_settings["urq-print-completed-message"].value then
@@ -204,10 +201,7 @@ script.on_event(defines.events.on_research_reversed, function(e)
     return
   end
   util.ensure_queue_disabled(force)
-
-  research_queue.update_research_state_reqs(force_table.queue, technology)
-
-  gui.schedule_update(force_table)
+  util.schedule_force_update(force)
 end)
 
 -- Settings
@@ -234,7 +228,10 @@ script.on_event(defines.events.on_tick, function(e)
   -- Update force GUIs
   if next(global.update_force_guis) then
     for force_index in pairs(global.update_force_guis) do
-      gui.update_force(game.forces[force_index])
+      local force_table = global.forces[force_index]
+      research_queue.update_all_research_states(force_table.queue)
+      research_queue.update_active_research(force_table.queue)
+      gui.update_force(force_table.force)
     end
     global.update_force_guis = {}
   end
