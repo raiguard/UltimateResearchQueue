@@ -210,7 +210,7 @@ script.on_event(defines.events.on_runtime_mod_setting_changed, function(e)
   if e.setting == "urq-show-disabled-techs" then
     local player_gui = gui.get(e.player_index)
     if player_gui then
-      gui.filter_tech_list(player_gui)
+      gui.update(player_gui)
     end
   elseif e.setting == "urq-show-control-hints" then
     local player = game.get_player(e.player_index)

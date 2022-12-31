@@ -1,5 +1,7 @@
 local math = require("__flib__/math")
 
+local constants = require("__UltimateResearchQueue__/constants")
+
 local util = {}
 
 --- Ensure that the vanilla research queue is disabled
@@ -110,6 +112,12 @@ end
 function util.schedule_force_update(force)
   -- FIXME: Tick paused
   global.update_force_guis[force.index] = true
+end
+
+--- @param technology LuaTechnology
+--- @param research_state ResearchState
+function util.should_show(technology, research_state)
+  return technology.visible_when_disabled or research_state ~= constants.research_state.disabled
 end
 
 return util

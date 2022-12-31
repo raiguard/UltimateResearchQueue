@@ -366,15 +366,16 @@ function gui_util.update_technology_info_sublist(self, elem_table, handler, tech
   local selected = self.state.selected or {}
   local research_states = self.force_table.research_states
   local show_controls = self.player.mod_settings["urq-show-control-hints"].value --[[@as boolean]]
+  local show_disabled = self.player.mod_settings["urq-show-disabled-techs"].value --[[@as boolean]]
   elem_table.clear()
-  if #technologies > 0 then
-    elem_table.parent.parent.visible = true
-    local group_buttons = {}
-    for _, technology in pairs(technologies) do
+  local group_buttons = {}
+  for _, technology in pairs(technologies) do
+    local research_state = research_states[technology.name]
+    if show_disabled or util.should_show(technology, research_state) then
       local button_template = gui_util.technology_slot(
         technology,
         technology.level,
-        research_states[technology.name],
+        research_state,
         show_controls,
         selected.technology == technology and selected.level == technology.level
       )
@@ -382,6 +383,9 @@ function gui_util.update_technology_info_sublist(self, elem_table, handler, tech
 
       group_buttons[#group_buttons + 1] = button_template
     end
+  end
+  if #group_buttons > 0 then
+    elem_table.parent.parent.visible = true
     flib_gui.add(elem_table, group_buttons)
   else
     elem_table.parent.parent.visible = false
