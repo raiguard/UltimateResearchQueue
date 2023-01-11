@@ -1,7 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.5
 Date: ????
-  Features:
+  Bugfixes:
+    - Fixed that a technology's descendants would be removed when research was completed
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.4
 Date: 2022-12-30

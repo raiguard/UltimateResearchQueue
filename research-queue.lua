@@ -341,8 +341,9 @@ end
 --- @param self ResearchQueue
 --- @param technology LuaTechnology
 --- @param level uint
+--- @param skip_validation boolean?
 --- @return boolean?
-function research_queue.remove(self, technology, level)
+function research_queue.remove(self, technology, level, skip_validation)
   local key = util.get_queue_key(technology, level)
   if not self.lookup[key] then
     return
@@ -363,6 +364,12 @@ function research_queue.remove(self, technology, level)
     self.head = node.next
   else
     prev.next = node.next
+  end
+
+  util.schedule_force_update(self.force)
+
+  if skip_validation then
+    return
   end
   -- Remove descendants
   local technologies = self.force.technologies
@@ -390,8 +397,6 @@ function research_queue.remove(self, technology, level)
       node = node.next
     end
   end
-
-  util.schedule_force_update(self.force)
 end
 
 --- @param self ResearchQueue
