@@ -420,6 +420,9 @@ function gui_util.update_technology_slot(button, technology, level, research_sta
     if tags.level ~= level then
       tags.level = level
       button.tags = tags
+      local tooltip = button.tooltip
+      tooltip[2][2][4] = level --- @diagnostic disable-line
+      button.tooltip = tooltip
     end
     local level_label = button.level_label
     if level_label then

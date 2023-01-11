@@ -3,6 +3,7 @@ Version: 1.0.5
 Date: ????
   Bugfixes:
     - Fixed that a technology's descendants would be removed when research was completed
+    - Fixed that multi-level technology tooltips did not update when the level changed
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.4
 Date: 2022-12-30
