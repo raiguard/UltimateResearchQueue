@@ -153,7 +153,7 @@ script.on_event(defines.events.on_research_cancelled, function(e)
   util.ensure_queue_disabled(force)
 
   local force_queue = force_table.queue
-  if force_queue.paused then
+  if force_queue.paused or force_queue.updating_active_research then
     return
   end
   local technologies = force.technologies

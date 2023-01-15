@@ -209,6 +209,7 @@ function research_queue.new(force, force_table)
     lookup = {},
     paused = false,
     requeue_multilevel = false,
+    updating_active_research = true,
   }
   return self
 end
@@ -458,11 +459,15 @@ function research_queue.update_active_research(self)
   if not self.paused and head then
     local current_research = self.force.current_research
     if not current_research or head.technology.name ~= current_research.name then
+      self.updating_active_research = true
       self.force.add_research(head.technology)
+      self.updating_active_research = false
       self.force_table.last_research_progress = util.get_research_progress(head.technology, head.level)
     end
   else
+    self.updating_active_research = true
     self.force.cancel_current_research()
+    self.updating_active_research = false
     self.force_table.last_research_progress = 0
   end
   self.force_table.last_research_progress_tick = game.tick
