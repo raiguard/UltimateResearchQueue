@@ -278,7 +278,7 @@ function gui_util.technology_slot(technology, level, research_state, show_contro
     " [img=quantity-time][font=default-semibold]",
     format.number(technology.research_unit_energy / 60, true),
     "[/font]] × ",
-    technology.research_unit_count,
+    format.number(util.get_research_unit_count(technology, level)),
   }
   -- Controls
   if show_controls then
@@ -422,6 +422,7 @@ function gui_util.update_technology_slot(button, technology, level, research_sta
       button.tags = tags
       local tooltip = button.tooltip
       tooltip[2][2][4] = level --- @diagnostic disable-line
+      tooltip[4][7] = format.number(util.get_research_unit_count(technology, level)) --- @diagnostic disable-line
       button.tooltip = tooltip
     end
     local level_label = button.level_label

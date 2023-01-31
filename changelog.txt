@@ -2,6 +2,7 @@
 Version: 1.0.7
 Date: ????
   Bugfixes:
+    - Fixed that technology slot tooltips would only show the base unit count for multilevel techs
     - Fixed that the GUI would not refresh if the player's force is changed
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.6
