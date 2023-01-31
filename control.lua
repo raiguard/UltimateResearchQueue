@@ -66,6 +66,11 @@ script.on_event({
   end
 end)
 
+script.on_event(defines.events.on_player_changed_surface, function(e)
+  -- Recreate GUI if the force changed
+  gui.get(e.player_index)
+end)
+
 -- Gui
 
 gui.handle_events()

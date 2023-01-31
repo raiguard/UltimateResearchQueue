@@ -116,6 +116,9 @@ function gui.get(player_index)
     end
     self = gui.new(game.get_player(player_index) --[[@as LuaPlayer]])
   end
+  if self and self.player.force ~= self.force then
+    self = gui.new(self.player)
+  end
   return self
 end
 
@@ -242,7 +245,7 @@ function gui.open_in_graph(self)
   local selected = self.state.selected
   -- Passing `or nil` throws an error
   if selected then
-    self.player.open_technology_gui(selected.technology)
+    self.player.open_technology_gui(selected.technology.name)
   else
     self.player.open_technology_gui()
   end
