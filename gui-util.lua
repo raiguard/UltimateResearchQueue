@@ -371,7 +371,7 @@ function gui_util.update_technology_info_sublist(self, elem_table, handler, tech
   local group_buttons = {}
   for _, technology in pairs(technologies) do
     local research_state = research_states[technology.name]
-    if show_disabled or util.should_show(technology, research_state) then
+    if util.should_show(technology, research_state, show_disabled) then
       local button_template = gui_util.technology_slot(
         technology,
         technology.level,

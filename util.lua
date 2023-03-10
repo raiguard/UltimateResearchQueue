@@ -116,8 +116,12 @@ end
 
 --- @param technology LuaTechnology
 --- @param research_state ResearchState
-function util.should_show(technology, research_state)
-  return technology.visible_when_disabled or research_state ~= constants.research_state.disabled
+--- @param show_disabled boolean
+function util.should_show(technology, research_state, show_disabled)
+  if technology.prototype.hidden then
+    return false
+  end
+  return show_disabled or technology.visible_when_disabled or research_state ~= constants.research_state.disabled
 end
 
 return util

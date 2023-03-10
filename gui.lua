@@ -79,7 +79,7 @@ function gui.filter_tech_list(self)
   local dictionaries = dictionary.get_all(self.player.index)
   local technologies = self.force.technologies
   local research_states = self.force_table.research_states
-  local show_disabled = self.player.mod_settings["urq-show-disabled-techs"].value
+  local show_disabled = self.player.mod_settings["urq-show-disabled-techs"].value --[[@as boolean]]
   local children = self.elems.techs_table.children
   for i = 1, #children do
     local button = children[i]
@@ -87,7 +87,7 @@ function gui.filter_tech_list(self)
     local technology = technologies[technology_name]
     local research_state = research_states[technology_name]
     -- Show/hide disabled
-    local disabled_matched = show_disabled or util.should_show(technology, research_state)
+    local disabled_matched = util.should_show(technology, research_state, show_disabled)
     -- Show/hide upgrade techs
     local upgrade_matched = true
     if technology.upgrade and research_state ~= constants.research_state.conditionally_available then
