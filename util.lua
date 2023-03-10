@@ -97,7 +97,11 @@ end
 
 --- @param player LuaPlayer
 function util.is_cheating(player)
-  return player.cheat_mode or player.controller_type == defines.controllers.editor
+  local cheat_mode = player.cheat_mode
+  if script.active_mods["space-exploration"] and player.controller_type == defines.controllers.god then
+    cheat_mode = false
+  end
+  return cheat_mode or player.controller_type == defines.controllers.editor
 end
 
 --- @param technology LuaTechnology|LuaTechnologyPrototype

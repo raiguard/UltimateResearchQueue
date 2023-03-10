@@ -1,7 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.9
 Date: ????
-  Features:
+  Bugfixes:
+    - Fixed that technologies could be insta-researched when in the Space Exploration navsat view
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.8
 Date: 2023-03-09
