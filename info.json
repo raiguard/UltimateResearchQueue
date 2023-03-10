@@ -14,6 +14,18 @@
     "! sonaxaton-research-queue"
   ],
   "package": {
-    "git_publish_branch": "main"
+    "git_publish_branch": "main",
+    "ignore": [
+      ".gitattributes",
+      ".gitignore",
+      "graphics/technology-slots.aseprite",
+      "imgui.ini",
+      ".kakrc",
+      ".mailmap",
+      ".pesticide",
+      "screenshots",
+      "stylua.toml",
+      ".vscode"
+    ]
   }
 }
