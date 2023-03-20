@@ -267,6 +267,7 @@ function gui_util.technology_slot(technology, level, research_state, show_contro
   -- Description
   tooltip[#tooltip + 1] = { "?", { "", "\n", technology.localised_description }, "" }
   -- Cost
+  local cost = util.get_research_unit_count(technology, level)
   local ingredients_tt = ""
   for _, ingredient in pairs(technology.research_unit_ingredients) do
     ingredients_tt = ingredients_tt .. "[img=item/" .. ingredient.name .. "]" .. ingredient.amount
@@ -278,7 +279,7 @@ function gui_util.technology_slot(technology, level, research_state, show_contro
     " [img=quantity-time][font=default-semibold]",
     format.number(technology.research_unit_energy / 60, true),
     "[/font]] × ",
-    format.number(util.get_research_unit_count(technology, level)),
+    format.number(cost),
   }
   -- Controls
   if show_controls then
@@ -296,7 +297,7 @@ function gui_util.technology_slot(technology, level, research_state, show_contro
     name = technology.name,
     style = properties.style,
     tooltip = tooltip,
-    tags = { research_state = research_state, tech_name = technology.name, level = level },
+    tags = { cost = cost, level = level, research_state = research_state, tech_name = technology.name },
     {
       type = "flow",
       style = "urq_technology_slot_sprite_flow",
@@ -416,21 +417,34 @@ function gui_util.update_technology_slot(button, technology, level, research_sta
     tags.research_state = research_state --[[@as AnyBasic]]
     button.tags = tags
   end
+  --- @type LocalisedString?
+  local tooltip
   if util.is_multilevel(technology) then
     if tags.level ~= level then
       tags.level = level
       button.tags = tags
-      local tooltip = button.tooltip
+      tooltip = button.tooltip
       tooltip[2][2][4] = level --- @diagnostic disable-line
-      tooltip[4][7] = format.number(util.get_research_unit_count(technology, level)) --- @diagnostic disable-line
-      button.tooltip = tooltip
     end
     local level_label = button.level_label
     if level_label then
       level_label.caption = tostring(level)
     end
   end
+  local cost = util.get_research_unit_count(technology, level)
+  if tags.cost ~= cost then
+    tags.cost = cost
+    if not tooltip then
+      tooltip = button.tooltip
+    end
+    tooltip[4][7] = format.number(cost) --- @diagnostic disable-line
+  end
+  if tooltip then
+    button.tooltip = tooltip
+  end
   button.duration_label.visible = in_queue
+
+  button.tags = tags
 end
 
 return gui_util
