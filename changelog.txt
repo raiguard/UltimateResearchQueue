@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.11
-Date: ????
+Date: 2023-03-26
   Bugfixes:
     - Fixed that fractional research unit counts would be displayed with too much precision (#6)
     - Fixed that lower levels of a multi-level tech would not be moved when queuing to the front
