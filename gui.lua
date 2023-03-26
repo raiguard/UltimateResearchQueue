@@ -576,7 +576,7 @@ function gui.update_tech_info(self)
   flib_gui.add(ingredients_table, {
     type = "label",
     style = "count_label",
-    caption = "[img=quantity-time] " .. format.number(technology.research_unit_energy / 60, true),
+    caption = "[img=quantity-time] " .. format.number(math.round(technology.research_unit_energy / 60, 0.01), true),
   })
   local research_unit_count = util.get_research_unit_count(technology, level)
   self.elems.tech_info_ingredients_count_label.caption = "[img=quantity-multiplier] "

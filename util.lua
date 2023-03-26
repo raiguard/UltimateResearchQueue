@@ -89,9 +89,9 @@ function util.get_research_unit_count(technology, level)
   local formula = technology.research_unit_count_formula
   if formula then
     local level = level or technology.level
-    return game.evaluate_expression(formula, { l = level, L = level })
+    return math.floor(game.evaluate_expression(formula, { l = level, L = level }))
   else
-    return technology.research_unit_count --[[@as double]]
+    return math.floor(technology.research_unit_count) --[[@as double]]
   end
 end
 

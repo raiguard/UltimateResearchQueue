@@ -1,7 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.11
 Date: ????
-  Features:
+  Bugfixes:
+    - Fixed that fractional research unit counts would be displayed with too much precision (#6)
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.10
 Date: 2023-03-20
