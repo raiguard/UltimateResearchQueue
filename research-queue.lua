@@ -50,7 +50,7 @@ function research_queue.contains(self, technology, level)
   else
     -- Any level
     for key in pairs(self.lookup) do
-      if string.find(key, base_name) then
+      if string.find(key, base_name, nil, true) then
         return true
       end
     end
@@ -264,13 +264,13 @@ function research_queue.push(self, technology, level)
       end
     end
   end
-  add_technology(to_research, technology, level, self.force_table.queue)
+  add_technology(to_research, technology, level, self)
   -- Check for errors
   local num_to_research = #to_research
   if num_to_research > constants.queue_limit then
     return { "message.urq-too-many-unresearched-prerequisites" }
   else
-    local len = self.force_table.queue.len
+    local len = self.len
     -- It shouldn't ever be greater... right?
     if len >= constants.queue_limit then
       return { "message.urq-queue-is-full" }
@@ -314,13 +314,18 @@ function research_queue.push_front(self, technology, level)
       add_technology(to_research, prerequisite)
     end
   end
-  add_technology(to_research, technology, level, self.force_table.queue)
+  -- Move higher levels of this tech forward
+  if util.is_multilevel(technology) and research_queue.contains(self, technology, true) then
+    local highest = research_queue.get_highest_level(self, technology)
+    add_technology(to_move, technology, highest)
+  end
+  add_technology(to_research, technology, level, self)
   -- Check for errors
   local num_to_research = #to_research
   if num_to_research > constants.queue_limit then
     return { "message.urq-too-many-unresearched-prerequisites" }
   else
-    local len = self.force_table.queue.len
+    local len = self.len
     -- It shouldn't ever be greater... right?
     if len >= constants.queue_limit then
       return { "message.urq-queue-is-full" }
