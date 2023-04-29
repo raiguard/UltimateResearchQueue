@@ -166,7 +166,7 @@ end
 function gui_util.is_double_click(elem)
   local tags = elem.tags
   local last_click_tick = tags.last_click_tick or 0
-  local is_double_click = game.ticks_played - last_click_tick < 12
+  local is_double_click = game.ticks_played - last_click_tick < 20
   if is_double_click then
     tags.last_click_tick = nil
   else
