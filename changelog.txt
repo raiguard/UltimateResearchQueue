@@ -3,6 +3,8 @@ Version: 1.0.12
 Date: ????
   Changes:
     - Made the double-click detection window 20 ticks (up from 12) to match the base game
+  Bugfixes:
+    - Fixed being unable to queue level-0 technologies (#8)
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.11
 Date: 2023-03-26

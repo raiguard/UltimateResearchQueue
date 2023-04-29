@@ -221,7 +221,7 @@ end
 local function add_technology(to_research, technology, level, queue)
   local lower = technology.level
   if queue then
-    lower = math.max(research_queue.get_highest_level(queue, technology) + 1, lower)
+    lower = math.clamp(research_queue.get_highest_level(queue, technology) + 1, lower, technology.prototype.max_level) --[[@as uint]]
   end
   for i = lower, level or technology.prototype.max_level do
     --- @cast i uint
