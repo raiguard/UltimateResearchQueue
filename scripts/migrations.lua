@@ -1,7 +1,7 @@
-local cache = require("__UltimateResearchQueue__/cache")
-local gui = require("__UltimateResearchQueue__/gui")
-local research_queue = require("__UltimateResearchQueue__/research-queue")
-local util = require("__UltimateResearchQueue__/util")
+local cache = require("__UltimateResearchQueue__/scripts/cache")
+local gui = require("__UltimateResearchQueue__/scripts/gui")
+local research_queue = require("__UltimateResearchQueue__/scripts/research-queue")
+local util = require("__UltimateResearchQueue__/scripts/util")
 
 local migrations = {}
 

@@ -1,8 +1,8 @@
 local format = require("__flib__/format")
 local math = require("__flib__/math")
 
-local constants = require("__UltimateResearchQueue__/constants")
-local util = require("__UltimateResearchQueue__/util")
+local constants = require("__UltimateResearchQueue__/scripts/constants")
+local util = require("__UltimateResearchQueue__/scripts/util")
 
 --- @class ResearchQueueNode
 --- @field technology LuaTechnology

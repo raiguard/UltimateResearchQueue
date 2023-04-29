@@ -4,10 +4,10 @@ local flib_gui = require("__flib__/gui-lite")
 local math = require("__flib__/math")
 local table = require("__flib__/table")
 
-local constants = require("__UltimateResearchQueue__/constants")
-local gui_util = require("__UltimateResearchQueue__/gui-util")
-local research_queue = require("__UltimateResearchQueue__/research-queue")
-local util = require("__UltimateResearchQueue__/util")
+local constants = require("__UltimateResearchQueue__/scripts/constants")
+local gui_util = require("__UltimateResearchQueue__/scripts/gui-util")
+local research_queue = require("__UltimateResearchQueue__/scripts/research-queue")
+local util = require("__UltimateResearchQueue__/scripts/util")
 
 --- @class GuiElems
 --- @field urq_window LuaGuiElement
