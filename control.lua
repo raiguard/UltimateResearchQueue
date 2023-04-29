@@ -1,3 +1,7 @@
+local handler = require("__core__/lualib/event_handler")
+
+handler.add_lib(require("__UltimateResearchQueue__/scripts/cache"))
+
 local dictionary = require("__flib__/dictionary-lite")
 local migration = require("__flib__/migration")
 
@@ -11,17 +15,11 @@ local util = require("__UltimateResearchQueue__/scripts/util")
 script.on_init(function()
   --- @type table<uint, integer>
   global.filter_tech_list = {}
-  --- @type table<uint, ForceTable>
-  global.forces = {}
   --- @type table<uint, Gui?>
   global.guis = {}
   --- @type table<uint, boolean>
   global.update_force_guis = {}
 
-  -- game.forces is apparently keyed by name, not index
-  for _, force in pairs(game.forces) do
-    migrations.init_force(force)
-  end
   migrations.generic()
 
   -- Add each force's current research to the queue
@@ -43,7 +41,6 @@ dictionary.handle_events()
 -- Force and Player
 
 script.on_event(defines.events.on_force_created, function(e)
-  migrations.init_force(e.force)
   migrations.migrate_force(e.force)
 end)
 

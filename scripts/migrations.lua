@@ -1,14 +1,11 @@
-local cache = require("__UltimateResearchQueue__/scripts/cache")
 local gui = require("__UltimateResearchQueue__/scripts/gui")
 local research_queue = require("__UltimateResearchQueue__/scripts/research-queue")
 local util = require("__UltimateResearchQueue__/scripts/util")
 
+--- @class Migrations
 local migrations = {}
 
 function migrations.generic()
-  cache.build_dictionaries()
-  cache.build_effect_icons()
-  cache.build_technologies()
   for _, force in pairs(game.forces) do
     migrations.migrate_force(force)
   end
@@ -18,29 +15,11 @@ function migrations.generic()
 end
 
 --- @param force LuaForce
-function migrations.init_force(force)
-  --- @class ForceTable
-  local force_table = {
-    force = force,
-    last_research_progress = 0,
-    last_research_progress_tick = 0,
-    research_speed = 0,
-    --- @type table<string, ResearchState>
-    research_states = {},
-    --- @type table<ResearchState, table<uint, LuaTechnology>>
-    technology_groups = {},
-  }
-  force_table.queue = research_queue.new(force, force_table)
-  global.forces[force.index] = force_table
-end
-
---- @param force LuaForce
 function migrations.migrate_force(force)
   local force_table = global.forces[force.index]
   if not force_table then
     return
   end
-  cache.init_force(force)
   util.ensure_queue_disabled(force)
   research_queue.verify_integrity(force_table.queue)
 end

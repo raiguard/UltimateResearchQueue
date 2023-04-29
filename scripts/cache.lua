@@ -3,9 +3,6 @@ local dictionary = require("__flib__/dictionary-lite")
 local constants = require("__UltimateResearchQueue__/scripts/constants")
 local research_queue = require("__UltimateResearchQueue__/scripts/research-queue")
 
---- @class Cache
-local cache = {}
-
 local function first_entity_prototype(type)
   --- LuaCustomTable does not work with next() and is keyed by name, so we must use pairs()
   for name in pairs(game.get_filtered_entity_prototypes({ { filter = "type", type = type } })) do
@@ -13,7 +10,7 @@ local function first_entity_prototype(type)
   end
 end
 
-function cache.build_effect_icons()
+local function build_effect_icons()
   --- Effect icons for dynamic effects. Key is either an effect type or an ammo category name
   --- @type table<string, string>
   local icons = {
@@ -100,7 +97,7 @@ function cache.build_effect_icons()
   global.effect_icons = icons
 end
 
-function cache.build_dictionaries()
+local function build_dictionaries()
   -- Build dictionaries
   dictionary.on_init()
   dictionary.new("recipe")
@@ -113,7 +110,7 @@ function cache.build_dictionaries()
   end
 end
 
-function cache.build_technologies()
+local function build_technologies()
   local profiler = game.create_profiler()
   -- game.technology_prototypes is a LuaCustomTable, so we need to convert it to an array
   --- @type LuaTechnologyPrototype[]
@@ -276,7 +273,7 @@ function cache.build_technologies()
 end
 
 --- @param force LuaForce
-function cache.init_force(force)
+local function init_force_cache(force)
   local force_table = global.forces[force.index]
   --- @type table<ResearchState, table<uint, LuaTechnology>>
   local technology_groups = {}
@@ -293,5 +290,54 @@ function cache.init_force(force)
     technology_groups[research_state][global.technology_order[technology.name]] = technology
   end
 end
+
+local function rebuild_cache()
+  build_dictionaries()
+  build_effect_icons()
+  build_technologies()
+
+  for _, force in pairs(game.forces) do
+    init_force_cache(force)
+  end
+end
+
+--- @param e EventData.on_force_created
+local function on_force_created(e)
+  local force = e.force
+  if not force.valid then
+    return
+  end
+
+  --- @class ForceTable
+  local force_table = {
+    force = force,
+    last_research_progress = 0,
+    last_research_progress_tick = 0,
+    research_speed = 0,
+    --- @type table<string, ResearchState>
+    research_states = {},
+    --- @type table<ResearchState, table<uint, LuaTechnology>>
+    technology_groups = {},
+  }
+  force_table.queue = research_queue.new(force, force_table)
+  global.forces[force.index] = force_table
+
+  init_force_cache(force)
+end
+
+--- @class Cache
+local cache = {}
+
+cache.on_init = function()
+  --- @type table<uint, ForceTable>
+  global.forces = {}
+
+  rebuild_cache()
+end
+cache.on_configuration_changed = rebuild_cache
+
+cache.events = {
+  [defines.events.on_force_created] = on_force_created,
+}
 
 return cache
