@@ -259,6 +259,9 @@ function gui.open_in_recipe_book(self, e)
     return
   end
   local class, name = string.match(e.element.sprite, "(.*)/(.*)")
+  if class ~= "item" and class ~= "recipe" then
+    return
+  end
   remote.call("RecipeBook", "open_page", self.player.index, class, name)
 end
 
