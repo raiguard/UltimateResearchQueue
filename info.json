@@ -14,18 +14,10 @@
     "! sonaxaton-research-queue"
   ],
   "package": {
-    "git_publish_branch": "main",
-    "ignore": [
-      ".gitattributes",
-      ".gitignore",
-      "graphics/technology-slots.aseprite",
-      "imgui.ini",
-      ".kakrc",
-      ".mailmap",
-      ".pesticide",
-      "screenshots",
-      "stylua.toml",
-      ".vscode"
-    ]
+    "ignore": [ "crowdin.yml", "imgui.ini", "screenshots/*", "stylua.toml" ],
+    "scripts": {
+      "prepublish": "factorio-crowdin-sync"
+    },
+    "sync_portal_details": true
   }
 }
