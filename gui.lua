@@ -562,19 +562,13 @@ function gui.update_tech_info(self)
   local ingredients_table = self.elems.tech_info_ingredients_table
   ingredients_table.clear()
   local ingredients_children = table.map(technology.research_unit_ingredients, function(ingredient)
-    local prototype = game.item_prototypes[ingredient.name]
     return {
       type = "sprite-button",
       style = "transparent_slot",
       sprite = "item/" .. ingredient.name,
       number = ingredient.amount,
-      tooltip = {
-        "",
-        { "gui.urq-tooltip-title", { "?", prototype.localised_name, prototype.name } },
-        { "?", { "", "\n", prototype.localised_description }, "" },
-        show_controls and script.active_mods["RecipeBook"] and { "", "\n", { "gui.urq-tooltip-view-in-recipe-book" } }
-          or nil,
-      },
+      elem_tooltip = { type = "item", name = ingredient.name },
+      tooltip = show_controls and script.active_mods["RecipeBook"] and { "gui.urq-tooltip-view-in-recipe-book" },
       handler = { [defines.events.on_gui_click] = gui.open_in_recipe_book },
     }
   end)
