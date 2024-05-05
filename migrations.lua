@@ -17,17 +17,25 @@ function migrations.generic()
   end
 end
 
+--- @class ForceTable
+--- @field force LuaForce
+--- @field last_research_progress double
+--- @field last_research_progress_tick uint
+--- @field research_speed double
+--- @field research_states table<string, ResearchState>
+--- @field queue ResearchQueue
+--- @field technology_groups table<ResearchState, table<uint, LuaTechnology>>
+
 --- @param force LuaForce
 function migrations.init_force(force)
-  --- @class ForceTable
+  --- @type ForceTable
   local force_table = {
     force = force,
     last_research_progress = 0,
     last_research_progress_tick = 0,
+    queue = nil, --- @diagnostic disable-line
     research_speed = 0,
-    --- @type table<string, ResearchState>
     research_states = {},
-    --- @type table<ResearchState, table<uint, LuaTechnology>>
     technology_groups = {},
   }
   force_table.queue = research_queue.new(force, force_table)
