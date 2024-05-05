@@ -34,8 +34,8 @@ end
 --- @param effect TechnologyModifier
 --- @param show_controls boolean
 function gui_util.effect_button(effect, show_controls)
-  --- @type LocalisedString?, LocalisedString?
-  local sprite, tooltip
+  --- @type LocalisedString?, LocalisedString?, ElemID?
+  local sprite, tooltip, elem_tooltip
 
   if effect.type == "ammo-damage" then
     sprite = global.effect_icons[effect.ammo_category]
@@ -71,23 +71,9 @@ function gui_util.effect_button(effect, show_controls)
   elseif effect.type == "unlock-recipe" then
     sprite = "recipe/" .. effect.recipe
 
-    local prototype = game.recipe_prototypes[effect.recipe]
-    tooltip = {
-      "",
-      {
-        "gui.urq-tooltip-title",
-        {
-          "",
-          prototype.localised_name,
-          " (",
-          { "description.recipe" },
-          ")",
-        },
-      },
-      { "?", { "", "\n", prototype.localised_description }, "" },
-    }
+    elem_tooltip = { type = "recipe", name = effect.recipe }
     if show_controls and script.active_mods["RecipeBook"] then
-      tooltip[#tooltip + 1] = { "gui.urq-tooltip-view-in-recipe-book" }
+      tooltip = { "gui.urq-tooltip-view-in-recipe-book" }
     end
   else
     sprite = global.effect_icons[effect.type] or ("utility/" .. string.gsub(effect.type, "%-", "_") .. "_modifier_icon")
@@ -123,6 +109,7 @@ function gui_util.effect_button(effect, show_controls)
     sprite = sprite or "utility/nothing_modifier_icon",
     number = effect.count,
     tooltip = tooltip,
+    elem_tooltip = elem_tooltip,
     overlay_elem,
   }
 end
@@ -288,7 +275,7 @@ function gui_util.technology_slot(technology, level, research_state, show_contro
     tooltip[#tooltip + 1] = { "gui.urq-tooltip-add-to-queue-front" }
     tooltip[#tooltip + 1] = { "gui.urq-tooltip-remove-from-queue" }
     if script.active_mods["RecipeBook"] then
-      tooltip[#tooltip + 1] = { "gui.urq-tooltip-view-in-recipe-book" }
+      tooltip[#tooltip + 1] = { "", "\n", { "gui.urq-tooltip-view-in-recipe-book" } }
     end
   end
 

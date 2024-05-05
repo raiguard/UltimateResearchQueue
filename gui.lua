@@ -200,7 +200,9 @@ end
 --- @param e EventData.on_gui_click
 function gui.on_tech_slot_click(self, e)
   local tags = e.element.tags
-  local tech_name, level = tags.tech_name --[[@as string]], tags.level --[[@as uint]]
+  local tech_name, level =
+    tags.tech_name, --[[@as string]]
+    tags.level --[[@as uint]]
   local technology = self.force.technologies[tech_name]
   if e.button == defines.mouse_button_type.right then
     research_queue.remove(self.force_table.queue, technology, level)
@@ -570,7 +572,8 @@ function gui.update_tech_info(self)
         "",
         { "gui.urq-tooltip-title", { "?", prototype.localised_name, prototype.name } },
         { "?", { "", "\n", prototype.localised_description }, "" },
-        show_controls and script.active_mods["RecipeBook"] and { "gui.urq-tooltip-view-in-recipe-book" } or nil,
+        show_controls and script.active_mods["RecipeBook"] and { "", "\n", { "gui.urq-tooltip-view-in-recipe-book" } }
+          or nil,
       },
       handler = { [defines.events.on_gui_click] = gui.open_in_recipe_book },
     }
