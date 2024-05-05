@@ -1,6 +1,6 @@
 {
   "name": "UltimateResearchQueue",
-  "version": "1.0.13",
+  "version": "1.1.0",
   "title": "Ultimate Research Queue",
   "description": "Queue technologies for research, see research time ETAs, automatically research all prerequisites, auto-research infinite technologies.",
   "author": "raiguard",
@@ -8,8 +8,8 @@
   "homepage": "https://github.com/raiguard/UltimateResearchQueue",
   "factorio_version": "1.1",
   "dependencies": [
-    "base >= 1.1.74",
-    "flib >= 0.12.0",
+    "base >= 1.1.101",
+    "flib >= 0.14.0",
     "? RecipeBook",
     "! sonaxaton-research-queue"
   ],
