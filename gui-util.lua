@@ -43,16 +43,9 @@ function gui_util.effect_button(effect, show_controls)
       { "modifier-description." .. effect.ammo_category .. "-damage-bonus", tostring(effect.modifier * 100) .. "%" }
   elseif effect.type == "give-item" then
     sprite = "item/" .. effect.item
-    tooltip = {
-      "gui.urq-tooltip-title",
-      {
-        "",
-        effect.count .. " × ",
-        game.item_prototypes[effect.item].localised_name,
-      },
-    }
+    elem_tooltip = { type = "item", name = effect.item }
     if show_controls and script.active_mods["RecipeBook"] then
-      tooltip[#tooltip + 1] = { "gui.urq-tooltip-view-in-recipe-book" }
+      tooltip = { "gui.urq-tooltip-view-in-recipe-book" }
     end
   elseif effect.type == "gun-speed" then
     sprite = global.effect_icons[effect.ammo_category]
