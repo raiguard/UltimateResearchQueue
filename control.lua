@@ -191,12 +191,6 @@ script.on_event(defines.events.on_research_finished, function(e)
   end
 
   util.schedule_force_update(force)
-
-  for _, player in pairs(force.players) do
-    if player.mod_settings["urq-print-completed-message"].value then
-      player.print({ "message.urq-research-completed", technology.name })
-    end
-  end
 end)
 
 script.on_event(defines.events.on_research_reversed, function(e)
