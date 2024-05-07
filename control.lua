@@ -278,9 +278,14 @@ end
 script.on_nth_tick(60, function()
   for force_index, force_table in pairs(global.forces) do
     local force = game.forces[force_index]
+    if not force then
+      global.forces[force_index] = nil
+      goto continue
+    end
     local current_research = force.current_research
     if current_research then
       update_force_durations(force, force_table, current_research)
     end
+    ::continue::
   end
 end)
