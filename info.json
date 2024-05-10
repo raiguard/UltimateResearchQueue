@@ -8,8 +8,8 @@
   "homepage": "https://github.com/raiguard/UltimateResearchQueue",
   "factorio_version": "1.1",
   "dependencies": [
-    "base >= 1.1.101",
-    "flib >= 0.14.0",
+    "base >= 1.1.107",
+    "flib >= 0.14.1",
     "? RecipeBook",
     "! sonaxaton-research-queue"
   ],
