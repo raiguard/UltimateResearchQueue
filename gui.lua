@@ -1,14 +1,14 @@
-local dictionary = require("__flib__/dictionary-lite")
-local format = require("__flib__/format")
-local flib_gui = require("__flib__/gui-lite")
-local math = require("__flib__/math")
-local table = require("__flib__/table")
-local flib_technology = require("__flib__/technology")
+local dictionary = require("__flib__.dictionary-lite")
+local format = require("__flib__.format")
+local flib_gui = require("__flib__.gui-lite")
+local math = require("__flib__.math")
+local table = require("__flib__.table")
+local flib_technology = require("__flib__.technology")
 
-local constants = require("__UltimateResearchQueue__/constants")
-local gui_util = require("__UltimateResearchQueue__/gui-util")
-local research_queue = require("__UltimateResearchQueue__/research-queue")
-local util = require("__UltimateResearchQueue__/util")
+local constants = require("constants")
+local gui_util = require("gui-util")
+local research_queue = require("research-queue")
+local util = require("util")
 
 --- @class GuiElems
 --- @field urq_window LuaGuiElement

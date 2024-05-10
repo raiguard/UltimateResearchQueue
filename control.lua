@@ -1,11 +1,11 @@
-local dictionary = require("__flib__/dictionary-lite")
-local migration = require("__flib__/migration")
-local flib_technology = require("__flib__/technology")
+local dictionary = require("__flib__.dictionary-lite")
+local migration = require("__flib__.migration")
+local flib_technology = require("__flib__.technology")
 
-local gui = require("__UltimateResearchQueue__/gui")
-local migrations = require("__UltimateResearchQueue__/migrations")
-local research_queue = require("__UltimateResearchQueue__/research-queue")
-local util = require("__UltimateResearchQueue__/util")
+local gui = require("gui")
+local migrations = require("migrations")
+local research_queue = require("research-queue")
+local util = require("util")
 
 -- Bootstrap
 

@@ -1,11 +1,11 @@
-local flib_format = require("__flib__/format")
-local flib_math = require("__flib__/math")
-local flib_table = require("__flib__/table")
-local flib_gui_templates = require("__flib__/gui-templates")
-local flib_technology = require("__flib__/technology")
+local flib_format = require("__flib__.format")
+local flib_math = require("__flib__.math")
+local flib_table = require("__flib__.table")
+local flib_gui_templates = require("__flib__.gui-templates")
+local flib_technology = require("__flib__.technology")
 
-local constants = require("__UltimateResearchQueue__/constants")
-local util = require("__UltimateResearchQueue__/util")
+local constants = require("constants")
+local util = require("util")
 
 local gui_util = {}
 

@@ -1,6 +1,6 @@
-local math = require("__flib__/math")
+local math = require("__flib__.math")
 
-local constants = require("__UltimateResearchQueue__/constants")
+local constants = require("constants")
 
 local util = {}
 
