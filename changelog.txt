@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.0
-Date: ????
+Date: 2024-05-10
   Changes:
     - The mod now uses built-in tooltips wherever possible. (#11)
     - Removed research completion notifications as they are now built in to vanilla.
