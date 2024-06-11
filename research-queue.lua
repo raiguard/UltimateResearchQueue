@@ -302,9 +302,6 @@ function research_queue.push_front(self, technology, level)
   local research_state = self.force_table.research_states[technology.name]
   if research_state == constants.research_state.researched then
     return { "message.urq-already-researched" }
-  elseif research_queue.contains(self, technology, level) then
-    -- TODO: Move to front of queue
-    return { "message.urq-already-in-queue" }
   end
   --- @type TechnologyAndLevel[]
   local to_research = {}
@@ -329,7 +326,11 @@ function research_queue.push_front(self, technology, level)
     local highest = research_queue.get_highest_level(self, technology)
     add_technology(to_move, technology, highest)
   end
-  add_technology(to_research, technology, level, self)
+  if research_queue.contains(self, technology, level) then
+    add_technology(to_move, technology, level, self)
+  else
+    add_technology(to_research, technology, level, self)
+  end
   -- Check for errors
   local num_to_research = #to_research
   if num_to_research > constants.queue_limit then
