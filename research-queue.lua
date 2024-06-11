@@ -124,6 +124,23 @@ function research_queue.get_research_state(self, technology)
   return constants.research_state.not_available
 end
 
+--- @param self ResearchQueue
+--- @param technology LuaTechnology
+--- @param level uint
+--- @return uint
+function research_queue.get_position(self, technology, level)
+  local node = self.head
+  local position = 1
+  while node do
+    if node.technology == technology and node.level == level then
+      return position
+    end
+    node = node.next
+    position = position + 1
+  end
+  return 0
+end
+
 --- Add a technology and its prerequisites to the queue.
 --- @param self ResearchQueue
 --- @param technology LuaTechnology
@@ -328,6 +345,13 @@ function research_queue.push_front(self, technology, level)
   end
   if research_queue.contains(self, technology, level) then
     add_technology(to_move, technology, level, self)
+    --- Check if it's already in the front of the queue and this will be a no-op
+    --- We assume that to_research will be empty since its prerequisites will already be in
+    old_position = research_queue.get_position(self, technology, level)
+    new_position = #to_move
+    if new_position == old_position then
+      return { "message.urq-already-in-front-of-queue" }
+    end
   else
     add_technology(to_research, technology, level, self)
   end
