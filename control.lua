@@ -188,6 +188,8 @@ script.on_event(defines.events.on_research_finished, function(e)
   if research_queue.contains(force_table.queue, technology, level) then
     research_queue.requeue_multilevel(force_table.queue)
     research_queue.remove(force_table.queue, technology, level, true)
+  elseif (not force_table.queue.head) and force_table.queue.requeue_multilevel and flib_technology.is_multilevel(technology) then
+    research_queue.push(force_table.queue, technology, technology.level)
   end
 
   util.schedule_force_update(force)
